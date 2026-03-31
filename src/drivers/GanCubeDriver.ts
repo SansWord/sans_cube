@@ -27,8 +27,10 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   }
 
   async disconnect(): Promise<void> {
+    const conn = this.connection
     this.connection = null
     this.emit('connection', 'disconnected')
+    await conn?.disconnect()
   }
 
   // Translates a raw GAN event from gan-web-bluetooth into normalized driver events
