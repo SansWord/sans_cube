@@ -3,25 +3,25 @@ import { GanCubeDriver } from '../drivers/GanCubeDriver'
 import type { CubeDriver, ConnectionStatus } from '../drivers/CubeDriver'
 
 export function useCubeDriver() {
-  const driverRef = useRef<CubeDriver | null>(null)
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
 
-  const getDriver = useCallback((): CubeDriver => {
-    if (!driverRef.current) {
-      const driver = new GanCubeDriver()
-      driver.on('connection', setStatus)
-      driverRef.current = driver
-    }
-    return driverRef.current
-  }, [])
+  // Initialize eagerly so driver.current is non-null on first render.
+  // Lazy init (inside a callback) caused all hooks' useEffects to find null,
+  // bail out, and never re-subscribe when the driver was eventually created.
+  const driverRef = useRef<CubeDriver | null>(null)
+  if (driverRef.current === null) {
+    const driver = new GanCubeDriver()
+    driver.on('connection', setStatus)
+    driverRef.current = driver
+  }
 
   const connect = useCallback(async () => {
-    await getDriver().connect()
-  }, [getDriver])
+    await driverRef.current!.connect()
+  }, [])
 
   const disconnect = useCallback(async () => {
-    await getDriver().disconnect()
-  }, [getDriver])
+    await driverRef.current!.disconnect()
+  }, [])
 
   return { driver: driverRef, connect, disconnect, status }
 }
