@@ -9,6 +9,7 @@ import { ControlBar } from './components/ControlBar'
 import { CubeCanvas } from './components/CubeCanvas'
 import { OrientationConfig } from './components/OrientationConfig'
 import { MoveHistory } from './components/MoveHistory'
+import { FaceletDebug } from './components/FaceletDebug'
 import { SolveReplayer } from './components/SolveReplayer'
 import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move } from './types/cube'
@@ -60,6 +61,7 @@ export default function App() {
         onUseCurrentOrientation={resetGyro}
         disabled={!isConnected}
       />
+      <FaceletDebug facelets={facelets} />
       <MoveHistory moves={moves} />
       {lastSession && (
         <SolveReplayer

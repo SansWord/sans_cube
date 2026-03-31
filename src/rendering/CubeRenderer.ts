@@ -86,16 +86,16 @@ export class CubeRenderer {
       const { x, y, z } = cubie.userData as { x: number; y: number; z: number }
       const mats = cubie.material as THREE.MeshLambertMaterial[]
 
-      // +X face (R): x===1, y from 1→-1 (top-bottom), z from -1→1 (left-right)
+      // +X face (R): x===1, y from 1→-1 (top-bottom), z from 1→-1 (left-right, Kociemba: col=0=front)
       if (x === 1) {
         const row = 1 - y  // y=1→row=0, y=0→row=1, y=-1→row=2
-        const col = z + 1  // z=-1→col=0, z=0→col=1, z=1→col=2
+        const col = 1 - z  // z=1→col=0, z=0→col=1, z=-1→col=2  (Kociemba: col=0 at z=+1=front)
         mats[0].color.setHex(colorMap(facelets[9 + row * 3 + col]))
       }
       // -X face (L): x===-1, y from 1→-1, z from 1→-1
       if (x === -1) {
         const row = 1 - y
-        const col = 1 - z  // z=1→col=0, z=0→col=1, z=-1→col=2
+        const col = z + 1  // z=-1→col=0, z=0→col=1, z=1→col=2  (col=0=left=back, col=2=right=front, adjacent to F)
         mats[1].color.setHex(colorMap(facelets[36 + row * 3 + col]))
       }
       // +Y face (U): y===1, z from -1→1 (back to front), x from -1→1
@@ -205,6 +205,7 @@ export class CubeRenderer {
             c.position.x = Math.round(c.position.x)
             c.position.y = Math.round(c.position.y)
             c.position.z = Math.round(c.position.z)
+            c.rotation.set(0, 0, 0)
             const ud = c.userData as { x: number; y: number; z: number }
             ud.x = c.position.x
             ud.y = c.position.y

@@ -20,7 +20,6 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
         this._handleGanEvent(event)
       })
       this.emit('connection', 'connected')
-      await this.requestState()
     } catch (err) {
       this.emit('connection', 'disconnected')
       throw err
@@ -30,10 +29,6 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   async disconnect(): Promise<void> {
     this.connection = null
     this.emit('connection', 'disconnected')
-  }
-
-  async requestState(): Promise<void> {
-    await this.connection?.sendCubeCommand({ type: 'REQUEST_FACELETS' })
   }
 
   // Translates a raw GAN event from gan-web-bluetooth into normalized driver events
@@ -52,8 +47,6 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
       const q = event.quaternion as { x: number; y: number; z: number; w: number }
       const quaternion: Quaternion = { x: q.x, y: q.y, z: q.z, w: q.w }
       this.emit('gyro', quaternion)
-    } else if (event.type === 'FACELETS') {
-      this.emit('state', { facelets: event.facelets as string })
     } else if (event.type === 'DISCONNECT') {
       this.emit('connection', 'disconnected')
     }
@@ -72,10 +65,6 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
 
   _simulateGanGyro(q: { x: number; y: number; z: number; w: number }): void {
     this._handleGanEvent({ type: 'GYRO', quaternion: q })
-  }
-
-  _simulateGanFacelets(facelets: string): void {
-    this._handleGanEvent({ type: 'FACELETS', facelets })
   }
 
   _simulateGanDisconnect(): void {

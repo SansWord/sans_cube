@@ -1,10 +1,9 @@
-import type { Move, CubeState, Quaternion } from '../types/cube'
+import type { Move, Quaternion } from '../types/cube'
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 
 type EventMap = {
   move: Move
-  state: CubeState
   gyro: Quaternion
   connection: ConnectionStatus
 }
@@ -38,5 +37,4 @@ export class CubeEventEmitter {
 export interface CubeDriver extends CubeEventEmitter {
   connect(): Promise<void>
   disconnect(): Promise<void>
-  requestState(): Promise<void>
 }

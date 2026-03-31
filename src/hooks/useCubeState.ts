@@ -83,14 +83,14 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
       // We want: F-top←L-top, R-top←F-top, B-top←R-top, L-top←B-top
       // So: a=F-top(18,19,20), b=R-top(9,10,11), c=B-top(45,46,47), d=L-top(36,37,38)
       if (ccw) rotateFaceCCW(f, 0); else rotateFaceCW(f, 0)
-      cycle(f, 18, 19, 20, 11, 10, 9, 45, 46, 47, 38, 37, 36)
+      cycle(f, 18, 19, 20, 36, 37, 38, 45, 46, 47, 9, 10, 11)
       break
 
     case 'D':
       // D CW: rotate D face CW; side cycle: F-bot←R-bot, L-bot←F-bot, B-bot←L-bot, R-bot←B-bot
       // a=F-bot(24,25,26), b=L-bot(42,43,44), c=B-bot(51,52,53), d=R-bot(15,16,17)
       if (ccw) rotateFaceCCW(f, 27); else rotateFaceCW(f, 27)
-      cycle(f, 24, 25, 26, 44, 43, 42, 51, 52, 53, 17, 16, 15)
+      cycle(f, 24, 25, 26, 15, 16, 17, 51, 52, 53, 42, 43, 44)
       break
 
     case 'R':
@@ -100,7 +100,7 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
       // U-right: 2,5,8  F-right: 20,23,26  D-right: 29,32,35  B-left(inv): 53,50,47
       // a=U-right(2,5,8), b=F-right(20,23,26), c=D-right(29,32,35), d=B(53,50,47)
       if (ccw) rotateFaceCCW(f, 9); else rotateFaceCW(f, 9)
-      cycle(f, 2, 5, 8, 20, 23, 26, 29, 32, 35, 51, 48, 45)
+      cycle(f, 2, 5, 8, 51, 48, 45, 29, 32, 35, 20, 23, 26)
       break
 
     case 'L':
@@ -118,7 +118,7 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
       // F CW: R-left←U-bot, D-top-inv←R-left, L-right-inv←D-top-inv, U-bot←L-right-inv
       // a=U-bot(6,7,8), b=R-left(9,12,15), c=D-top(29,28,27), d=L-right(44,41,38)
       if (ccw) rotateFaceCCW(f, 18); else rotateFaceCW(f, 18)
-      cycle(f, 6, 7, 8, 11, 14, 17, 29, 28, 27, 42, 39, 36)
+      cycle(f, 6, 7, 8, 9, 12, 15, 29, 28, 27, 44, 41, 38)
       break
 
     case 'B':
@@ -127,7 +127,7 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
       // B CW: L-left←U-top-inv, D-bot-inv←L-left, R-right←D-bot-inv, U-top-inv←R-right
       // a=U-top(2,1,0), b=L-left(36,39,42), c=D-bot(33,34,35), d=R-right(17,14,11)
       if (ccw) rotateFaceCCW(f, 45); else rotateFaceCW(f, 45)
-      cycle(f, 0, 1, 2, 44, 41, 38, 35, 34, 33, 9, 12, 15)
+      cycle(f, 0, 1, 2, 42, 39, 36, 35, 34, 33, 11, 14, 17)
       break
   }
 
@@ -159,16 +159,9 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
       })
     }
 
-    const onState = (state: { facelets: string }) => {
-      setFacelets(state.facelets)
-      setIsSolved(isSolvedFacelets(state.facelets))
-    }
-
     d.on('move', onMove)
-    d.on('state', onState)
     return () => {
       d.off('move', onMove)
-      d.off('state', onState)
     }
   }, [driver])
 

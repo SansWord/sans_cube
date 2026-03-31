@@ -8,10 +8,6 @@ export interface Move {
   serial: number
 }
 
-export interface CubeState {
-  facelets: string // 54-char Kociemba notation: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
-}
-
 export interface Quaternion {
   x: number
   y: number
