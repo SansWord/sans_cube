@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move, GesturePattern } from '../types/cube'
@@ -26,6 +26,9 @@ export function useGestureDetector(
   driver: MutableRefObject<CubeDriver | null>,
   handlers: GestureHandlers
 ) {
+  const handlersRef = useRef(handlers)
+  handlersRef.current = handlers
+
   useEffect(() => {
     const d = driver.current
     if (!d) return
@@ -34,19 +37,18 @@ export function useGestureDetector(
 
     const onMove = (move: Move) => {
       history.push(move)
-      // Keep only last 20 moves to bound memory
       if (history.length > 20) history.shift()
 
       for (const { pattern, action } of DEFAULT_PATTERNS) {
         if (matchGesture(history, pattern)) {
-          if (action === 'resetGyro') handlers.resetGyro()
-          if (action === 'resetState') handlers.resetState()
-          history.length = 0 // clear after gesture fires
+          if (action === 'resetGyro') handlersRef.current.resetGyro()
+          if (action === 'resetState') handlersRef.current.resetState()
+          history.length = 0
         }
       }
     }
 
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver, handlers])
+  }, [driver]) // handlers removed from deps — accessed via ref
 }

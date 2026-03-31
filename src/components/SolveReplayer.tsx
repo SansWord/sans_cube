@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { SolveSession } from '../types/cube'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 
@@ -58,6 +58,14 @@ export function SolveReplayer({ session, renderer, onClose }: Props) {
     setIsPlaying(false)
     setCurrentIndex(idx)
   }, [cancelScheduled])
+
+  // Pause if speed changes while playing — user must press play again at new speed
+  useEffect(() => {
+    if (isPlaying) {
+      cancelScheduled()
+      setIsPlaying(false)
+    }
+  }, [speed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const solveSeconds = (totalMs / 1000).toFixed(1)
 

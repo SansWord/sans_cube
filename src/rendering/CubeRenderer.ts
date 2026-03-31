@@ -28,6 +28,8 @@ export class CubeRenderer {
   // Separate frame IDs: renderFrameId is always running; animFrameId is only set during an animation tick
   private renderFrameId: number | null = null
   private animFrameId: number | null = null
+  private animationQueue: Array<() => Promise<void>> = []
+  private animationRunning = false
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene()
@@ -129,12 +131,28 @@ export class CubeRenderer {
 
   animateMove(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
     return new Promise((resolve) => {
+      this.animationQueue.push(() => this._runMoveAnimation(face, direction, durationMs).then(resolve))
+      if (!this.animationRunning) this._drainAnimationQueue()
+    })
+  }
+
+  private _drainAnimationQueue(): void {
+    if (this.animationQueue.length === 0) {
+      this.animationRunning = false
+      return
+    }
+    this.animationRunning = true
+    const next = this.animationQueue.shift()!
+    next().then(() => this._drainAnimationQueue())
+  }
+
+  private _runMoveAnimation(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
+    return new Promise((resolve) => {
       const axis = LAYER_AXIS[face]
       const layerVal = LAYER_VALUE[face]
       const cwAngle = LAYER_CW_ANGLE[face]
       const totalAngle = direction === 'CW' ? cwAngle : -cwAngle
 
-      // Move matching cubies from pivotGroup into a temporary pivot for animation
       const pivot = new THREE.Group()
       this.scene.add(pivot)
       const moving: THREE.Mesh[] = []
@@ -160,7 +178,6 @@ export class CubeRenderer {
         else pivot.rotation.z = angle
 
         if (t >= 1) {
-          // Snap to exact final angle before baking world transform
           pivot.rotation.set(
             axis === 'x' ? totalAngle : 0,
             axis === 'y' ? totalAngle : 0,
@@ -168,13 +185,10 @@ export class CubeRenderer {
           )
           pivot.updateMatrixWorld()
           moving.forEach(c => {
-            // Attach back to pivotGroup (bakes world transform from pivot into the mesh)
             this.pivotGroup.attach(c)
-            // Round positions to avoid floating-point drift
             c.position.x = Math.round(c.position.x)
             c.position.y = Math.round(c.position.y)
             c.position.z = Math.round(c.position.z)
-            // Update userData logical position
             const ud = c.userData as { x: number; y: number; z: number }
             ud.x = c.position.x
             ud.y = c.position.y
@@ -208,14 +222,10 @@ export class CubeRenderer {
   }
 
   dispose(): void {
-    if (this.renderFrameId !== null) {
-      cancelAnimationFrame(this.renderFrameId)
-      this.renderFrameId = null
-    }
-    if (this.animFrameId !== null) {
-      cancelAnimationFrame(this.animFrameId)
-      this.animFrameId = null
-    }
+    this.animationQueue = []
+    this.animationRunning = false
+    if (this.renderFrameId !== null) cancelAnimationFrame(this.renderFrameId)
+    if (this.animFrameId !== null) cancelAnimationFrame(this.animFrameId)
     this.renderer.dispose()
   }
 }
