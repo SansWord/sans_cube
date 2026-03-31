@@ -20,6 +20,7 @@ export interface Quaternion {
 }
 
 export interface SolveSession {
+  // cubeTimestamp mirrors move.cubeTimestamp for convenient access during replay scheduling
   moves: Array<{ move: Move; cubeTimestamp: number }>
   startTimestamp: number
   endTimestamp: number

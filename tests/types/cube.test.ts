@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Move, CubeState, Quaternion, SolveSession, GesturePattern } from '../../src/types/cube'
+import type { Move, SolveSession, GesturePattern } from '../../src/types/cube'
 
 describe('cube types', () => {
   it('Move has required fields', () => {
