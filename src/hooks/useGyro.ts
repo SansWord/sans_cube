@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Quaternion, OrientationConfig, CubeColor } from '../types/cube'
+import type { Quaternion, OrientationConfig } from '../types/cube'
 
 const IDENTITY_QUATERNION: Quaternion = { x: 0, y: 0, z: 0, w: 1 }
 const STORAGE_KEY = 'cubeOrientationConfig'

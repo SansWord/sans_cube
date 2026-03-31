@@ -125,8 +125,24 @@ export class CubeRenderer {
     })
   }
 
+  // GAN coordinate system: +X=Red, +Y=Blue(back), +Z=White(top)
+  // Three.js cube layout:   +X=Red, +Y=White(top), +Z=Green(front)
+  // Conversion: rotate -90° around X  →  q_three = R * q_gan * R⁻¹
+  private static readonly _GAN_TO_THREE = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2)
+
   setQuaternion(q: Quaternion): void {
-    this.pivotGroup.quaternion.set(q.x, q.y, q.z, q.w)
+    const R = CubeRenderer._GAN_TO_THREE
+    const ganQ = new THREE.Quaternion(q.x, q.y, q.z, q.w)
+    const converted = R.clone().multiply(ganQ).multiply(R.clone().invert())
+    this.pivotGroup.quaternion.copy(converted)
+  }
+
+  queueFaceletsUpdate(facelets: string): void {
+    this.animationQueue.push(() => {
+      this.updateFacelets(facelets)
+      return Promise.resolve()
+    })
+    if (!this.animationRunning) this._drainAnimationQueue()
   }
 
   animateMove(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
@@ -154,7 +170,7 @@ export class CubeRenderer {
       const totalAngle = direction === 'CW' ? cwAngle : -cwAngle
 
       const pivot = new THREE.Group()
-      this.scene.add(pivot)
+      this.pivotGroup.add(pivot)
       const moving: THREE.Mesh[] = []
 
       this.cubies.forEach(c => {
@@ -194,7 +210,7 @@ export class CubeRenderer {
             ud.y = c.position.y
             ud.z = c.position.z
           })
-          this.scene.remove(pivot)
+          this.pivotGroup.remove(pivot)
           this.animFrameId = null
           resolve()
           return

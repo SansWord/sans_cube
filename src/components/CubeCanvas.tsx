@@ -32,7 +32,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady }: Props) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    rendererRef.current?.updateFacelets(facelets)
+    rendererRef.current?.queueFaceletsUpdate(facelets)
   }, [facelets])
 
   useEffect(() => {

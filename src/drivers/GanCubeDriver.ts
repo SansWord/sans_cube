@@ -1,5 +1,5 @@
 import { connectGanCube } from 'gan-web-bluetooth'
-import { CubeEventEmitter, type CubeDriver, type ConnectionStatus } from './CubeDriver'
+import { CubeEventEmitter, type CubeDriver } from './CubeDriver'
 import type { Move, Quaternion, Face } from '../types/cube'
 
 // GAN face index → standard face letter
@@ -13,7 +13,7 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
     this.emit('connection', 'connecting')
     try {
       this.connection = await connectGanCube(
-        async (_device: unknown, isFallback: boolean) =>
+        async (_device: unknown, isFallback: boolean | undefined) =>
           isFallback ? prompt('Enter cube MAC address (check cube box or nRF Connect app)') : null
       )
       this.connection.events$.subscribe((event: Record<string, unknown>) => {
@@ -39,7 +39,7 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   // Translates a raw GAN event from gan-web-bluetooth into normalized driver events
   private _handleGanEvent(event: Record<string, unknown>): void {
     if (event.type === 'MOVE') {
-      const ganFaceIndex = event.faceIndex as number
+      const ganFaceIndex = event.face as number
       const ganDir = event.direction as number
       const move: Move = {
         face: GAN_FACE_MAP[ganFaceIndex],
@@ -63,7 +63,7 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   _simulateGanMove(raw: { face: number; dir: number; cubeTimestamp: number; serial: number }): void {
     this._handleGanEvent({
       type: 'MOVE',
-      faceIndex: raw.face,
+      face: raw.face,
       direction: raw.dir,
       cubeTimestamp: raw.cubeTimestamp,
       serial: raw.serial,

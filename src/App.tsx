@@ -30,6 +30,17 @@ export default function App() {
     return () => d.off('move', onMove)
   }, [driver])
 
+  // Trigger layer animation on each live move
+  useEffect(() => {
+    const d = driver.current
+    if (!d) return
+    const onMove = (m: Move) => {
+      rendererRef.current?.animateMove(m.face, m.direction, 150)
+    }
+    d.on('move', onMove)
+    return () => d.off('move', onMove)
+  }, [driver])
+
   useGestureDetector(driver, { resetGyro, resetState })
 
   const isConnected = status === 'connected'
