@@ -1,7 +1,7 @@
 // Debug overlay: shows the logical facelet state as a 2D net
-// Net layout:      [U]
-//             [L] [F] [R] [B]
-//                  [D]
+// Net layout:  [U]
+//          [L] [F] [R] [B]
+//               [D]
 
 const FACE_BG: Record<string, string> = {
   U: '#ffffff', R: '#cc0000', F: '#00aa00',
@@ -65,7 +65,7 @@ export function FaceletDebug({ facelets }: { facelets: string }) {
       <div style={{ marginBottom: 4, color: '#888' }}>Facelet state</div>
       {/* Row 1: U */}
       <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
-        {blank}{blank}{cell('U')}
+        {blank}{cell('U')}
       </div>
       {/* Row 2: L F R B */}
       <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
@@ -73,7 +73,7 @@ export function FaceletDebug({ facelets }: { facelets: string }) {
       </div>
       {/* Row 3: D */}
       <div style={{ display: 'flex', gap: 2 }}>
-        {blank}{blank}{cell('D')}
+        {blank}{cell('D')}
       </div>
       <div style={{ marginTop: 6, color: '#666', fontSize: 10 }}>
         {facelets}
