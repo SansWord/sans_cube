@@ -20,7 +20,7 @@ export class CubeEventEmitter {
   }
 
   off<K extends keyof EventMap>(event: K, handler: EventHandler<EventMap[K]>): void {
-    this.handlers[event] = (this.handlers[event] as EventHandler<EventMap[K]>[])?.filter(
+    this.handlers[event] = ((this.handlers[event] ?? []) as EventHandler<EventMap[K]>[]).filter(
       (h) => h !== handler
     )
   }
