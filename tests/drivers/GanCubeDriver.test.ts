@@ -39,4 +39,26 @@ describe('GanCubeDriver event translation', () => {
     expect(quats[0].x).toBeCloseTo(0.1)
     expect(quats[0].w).toBeCloseTo(0.9)
   })
+
+  it('translates a GAN FACELETS event to a CubeState', () => {
+    const driver = new GanCubeDriver()
+    const states: { facelets: string }[] = []
+    driver.on('state', (s) => states.push(s))
+
+    driver._simulateGanFacelets('UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB')
+
+    expect(states).toHaveLength(1)
+    expect(states[0].facelets).toBe('UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB')
+  })
+
+  it('emits disconnected on GAN DISCONNECT event', () => {
+    const driver = new GanCubeDriver()
+    const statuses: string[] = []
+    driver.on('connection', (s) => statuses.push(s))
+
+    driver._simulateGanDisconnect()
+
+    expect(statuses).toHaveLength(1)
+    expect(statuses[0]).toBe('disconnected')
+  })
 })

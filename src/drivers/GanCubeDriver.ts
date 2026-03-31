@@ -73,4 +73,12 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   _simulateGanGyro(q: { x: number; y: number; z: number; w: number }): void {
     this._handleGanEvent({ type: 'GYRO', quaternion: q })
   }
+
+  _simulateGanFacelets(facelets: string): void {
+    this._handleGanEvent({ type: 'FACELETS', facelets })
+  }
+
+  _simulateGanDisconnect(): void {
+    this._handleGanEvent({ type: 'DISCONNECT' })
+  }
 }
