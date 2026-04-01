@@ -80,8 +80,11 @@ export function ScrambleDisplay({
           ) : (
             <div style={{
               display: 'flex',
-              flexDirection: 'column-reverse',
-              alignItems: 'center',
+              flexDirection: 'row-reverse',
+              justifyContent: 'flex-start',
+              gap: 6,
+              flexWrap: 'wrap',
+              minWidth: `${WRONG_SEQUENCE_LIMIT * 42}px`,
             }}>
               {wrongSegments.map((seg, i) => (
                 <span key={i} style={{
@@ -89,7 +92,6 @@ export function ScrambleDisplay({
                   fontWeight: 'bold',
                   color: '#e74c3c',
                   fontFamily: 'monospace',
-                  lineHeight: 1.4,
                 }}>
                   {segmentToCancel(seg)}
                 </span>
