@@ -52,6 +52,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const [confirmDelete, setConfirmDelete] = useState(false)
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   // Sync canvas to currentIndex
   useEffect(() => {
     const facelets = computeFaceletsAtIndex(solve.moves, currentIndex)
