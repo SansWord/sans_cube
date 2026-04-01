@@ -180,6 +180,7 @@ export function useScrambleTracker(
   steps: ScrambleStep[],
   driver: MutableRefObject<CubeDriver | null>,
   onArmed?: () => void,
+  driverVersion = 0,
 ) {
   const [state, setState] = useState<TrackerState>(() => makeInitialTrackerState(steps))
 
@@ -201,7 +202,7 @@ export function useScrambleTracker(
     }
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver, steps]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [driver, driverVersion, steps]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => setState(makeInitialTrackerState(steps)), [steps])
 

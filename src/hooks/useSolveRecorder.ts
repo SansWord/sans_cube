@@ -16,7 +16,8 @@ export function buildSolveSession(entries: Entry[]): SolveSession | null {
 
 export function useSolveRecorder(
   driver: MutableRefObject<CubeDriver | null>,
-  isSolved: boolean
+  isSolved: boolean,
+  driverVersion = 0,
 ) {
   const [lastSession, setLastSession] = useState<SolveSession | null>(null)
   const isRecording = useRef(false)
@@ -51,7 +52,7 @@ export function useSolveRecorder(
 
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
   const clearSession = useCallback(() => setLastSession(null), [])
 

@@ -1,7 +1,17 @@
 import * as THREE from 'three'
 import type { Quaternion, Face } from '../types/cube'
 
-const BG_COLOR = 0x2d3250
+export interface FaceHit {
+  face: Face
+  hitX: number   // world-space hit point
+  hitY: number
+  hitZ: number
+  cubieX: number // cubie grid position (-1, 0, or 1 in local cube space)
+  cubieY: number
+  cubieZ: number
+}
+
+const BG_COLOR = 0x363c65
 
 const FACE_COLORS: Record<string, number> = {
   U: 0xe8e8e8, D: 0xf0d000, F: 0x50c050,
@@ -353,6 +363,135 @@ export class CubeRenderer {
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(width, height)
+  }
+
+  // Material index → Face name (BoxGeometry order: +X=R, -X=L, +Y=U, -Y=D, +Z=F, -Z=B)
+  private static readonly _MAT_TO_FACE: Face[] = ['R', 'L', 'U', 'D', 'F', 'B']
+
+  raycastFace(pixelX: number, pixelY: number, canvasWidth: number, canvasHeight: number): FaceHit | null {
+    const ndcX = (pixelX / canvasWidth) * 2 - 1
+    const ndcY = -(pixelY / canvasHeight) * 2 + 1
+    const raycaster = new THREE.Raycaster()
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera)
+    const hits = raycaster.intersectObjects(this.cubies)
+    if (hits.length === 0) return null
+    const hit = hits[0]
+    const faceIndex = hit.face?.materialIndex
+    if (faceIndex === undefined || faceIndex === null) return null
+    const face = CubeRenderer._MAT_TO_FACE[faceIndex]
+    const { x: cubieX, y: cubieY, z: cubieZ } = (hit.object as THREE.Mesh).userData as { x: number; y: number; z: number }
+    return { face, hitX: hit.point.x, hitY: hit.point.y, hitZ: hit.point.z, cubieX, cubieY, cubieZ }
+  }
+
+  /**
+   * Determine which face layer to rotate and in which direction from a drag gesture.
+   *
+   * Algorithm: ω = P_local × D_local (cross product of cubie grid position with local
+   * drag direction). The sign of the dominant ω component determines the rotation axis
+   * and direction, while the cubie's coordinate along that axis selects the layer face.
+   */
+  determineMoveFromDrag(hit: FaceHit, screenDx: number, screenDy: number): { face: Face; direction: 'CW' | 'CCW' } | null {
+    this.camera.updateMatrixWorld()
+    this.pivotGroup.updateMatrixWorld()
+
+    // Camera basis in world space: right = col 0, up = col 1
+    const cameraRight = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0)
+    const cameraUp = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1)
+
+    // World-space drag vector (screen Y goes down, so negate cameraUp for screenDy)
+    const worldDrag = cameraRight.clone().multiplyScalar(screenDx)
+      .addScaledVector(cameraUp, -screenDy)
+
+    // Transform to cube-local space by removing cube's rotation
+    const invQ = this.pivotGroup.quaternion.clone().invert()
+    const localDrag = worldDrag.applyQuaternion(invQ)
+
+    // Determine face normal axis first
+    const normalAxis: 'x' | 'y' | 'z' =
+      hit.face === 'R' || hit.face === 'L' ? 'x' :
+      hit.face === 'U' || hit.face === 'D' ? 'y' : 'z'
+
+    // Project drag onto the face's tangent plane before the cross product.
+    // The camera is tilted, so its "up" direction has a normal component that
+    // would otherwise leak into the perpendicular axis and flip the layer pick.
+    localDrag[normalAxis] = 0
+
+    // Rotation tendency: ω = P × D (both in cube-local space)
+    const P = new THREE.Vector3(hit.cubieX, hit.cubieY, hit.cubieZ)
+    const omega = new THREE.Vector3().crossVectors(P, localDrag)
+    omega[normalAxis] = 0  // discard remaining face-spin component
+
+    let axis: 'x' | 'y' | 'z'
+    const ox = Math.abs(omega.x), oy = Math.abs(omega.y), oz = Math.abs(omega.z)
+    if (normalAxis === 'x')      axis = oy >= oz ? 'y' : 'z'
+    else if (normalAxis === 'y') axis = ox >= oz ? 'x' : 'z'
+    else                         axis = ox >= oy ? 'x' : 'y'
+
+    // Layer is identified by the cubie's coordinate along the rotation axis
+    const layerPos = axis === 'x' ? hit.cubieX : axis === 'y' ? hit.cubieY : hit.cubieZ
+    if (layerPos === 0) return null  // middle slice — skip
+
+    const faceByLayer: Record<string, Face> = {
+      x1: 'R', 'x-1': 'L', y1: 'U', 'y-1': 'D', z1: 'F', 'z-1': 'B',
+    }
+    const face = faceByLayer[`${axis}${layerPos}`]
+
+    // ω[axis] > 0 means positive rotation around that axis.
+    // Positive rotation around +X/+Y/+Z = CCW for R/U/F (whose CW is -π/2) and CW for L/D/B (CW is +π/2).
+    const omegaSign = omega[axis]
+    const positiveMeansCCW = face === 'R' || face === 'U' || face === 'F'
+    const direction: 'CW' | 'CCW' = (omegaSign > 0) === positiveMeansCCW ? 'CCW' : 'CW'
+
+    return { face, direction }
+  }
+
+  resetOrientation(): void {
+    this.pivotGroup.quaternion.identity()
+  }
+
+  animateQuaternionTo(q: { x: number; y: number; z: number; w: number }, durationMs: number): void {
+    const R = CubeRenderer._GAN_TO_THREE
+    const ganQ = new THREE.Quaternion(q.x, q.y, q.z, q.w)
+    const target = R.clone().multiply(ganQ).multiply(R.clone().invert())
+    const start = this.pivotGroup.quaternion.clone()
+    const startTime = performance.now()
+    const animate = () => {
+      const t = Math.min((performance.now() - startTime) / durationMs, 1)
+      this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
+      if (t < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }
+
+  // Smoothly rotates orbit to a view that shows F, U, R over the given duration
+  animateOrbitToDefaultView(durationMs = 400): void {
+    const target = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6)
+    const start = this.pivotGroup.quaternion.clone()
+    const startTime = performance.now()
+    const animate = () => {
+      const t = Math.min((performance.now() - startTime) / durationMs, 1)
+      this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
+      if (t < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }
+
+  // Returns the current orbit quaternion converted to GAN sensor space,
+  // so it can be emitted as a 'gyro' event and round-trip correctly through setQuaternion().
+  // setQuaternion does: pivotQ = R * q_sensor * R^-1
+  // Inverse:            q_sensor = R^-1 * pivotQ * R
+  getOrbitQuaternionAsSensorSpace(): { x: number; y: number; z: number; w: number } {
+    const R = CubeRenderer._GAN_TO_THREE
+    const Rinv = R.clone().invert()
+    const sensorQ = Rinv.clone().multiply(this.pivotGroup.quaternion).multiply(R.clone())
+    return { x: sensorQ.x, y: sensorQ.y, z: sensorQ.z, w: sensorQ.w }
+  }
+
+  applyOrbitDelta(dx: number, dy: number): void {
+    const sensitivity = 0.005
+    const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), dy * sensitivity)
+    const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dx * sensitivity)
+    this.pivotGroup.quaternion.premultiply(qY).premultiply(qX)
   }
 
   dispose(): void {

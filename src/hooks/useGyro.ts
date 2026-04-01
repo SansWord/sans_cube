@@ -36,7 +36,7 @@ function saveConfig(config: OrientationConfig): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
 }
 
-export function useGyro(driver: MutableRefObject<CubeDriver | null>) {
+export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersion = 0) {
   const [quaternion, setQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
   const [config, setConfig] = useState<OrientationConfig>(loadConfig)
   const latestRawQ = useRef<Quaternion>(IDENTITY_QUATERNION)
@@ -64,7 +64,7 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>) {
     }
     d.on('gyro', onGyro)
     return () => d.off('gyro', onGyro)
-  }, [driver, reference])
+  }, [driver, driverVersion, reference])
 
   return { quaternion, config, resetGyro, saveOrientationConfig }
 }

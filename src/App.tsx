@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { useCubeDriver } from './hooks/useCubeDriver'
 import { useCubeState } from './hooks/useCubeState'
 import { useGyro } from './hooks/useGyro'
@@ -13,13 +13,14 @@ import { FaceletDebug } from './components/FaceletDebug'
 import { SolveReplayer } from './components/SolveReplayer'
 import { TimerScreen } from './components/TimerScreen'
 import type { CubeRenderer } from './rendering/CubeRenderer'
-import type { Move } from './types/cube'
+import type { Move, Face } from './types/cube'
+import { MouseDriver } from './drivers/MouseDriver'
 
 export default function App() {
-  const { driver, connect, disconnect, status } = useCubeDriver()
-  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver)
-  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver)
-  const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
+  const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
+  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver, driverVersion)
+  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
+  const { lastSession, clearSession } = useSolveRecorder(driver, isSolved, driverVersion)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
   const gestureResetRef = useRef<() => void>(resetState)
@@ -27,13 +28,18 @@ export default function App() {
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
   const [battery, setBattery] = useState<number | null>(null)
 
+  const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
+    const d = driver.current
+    if (d instanceof MouseDriver) d.sendMove(face, direction)
+  }, [driver])
+
   useEffect(() => {
     const d = driver.current
     if (!d) return
     const onBattery = (pct: number) => setBattery(pct)
     d.on('battery', onBattery)
     return () => d.off('battery', onBattery)
-  }, [driver])
+  }, [driver, driverVersion])
 
   useEffect(() => {
     if (status === 'disconnected') setBattery(null)
@@ -45,7 +51,7 @@ export default function App() {
     const onMove = (m: Move) => setMoves((prev) => [...prev.slice(-100), m])
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
   useEffect(() => {
     const d = driver.current
@@ -55,9 +61,9 @@ export default function App() {
     }
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
-  useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef)
+  useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef, driverVersion)
 
   const isConnected = status === 'connected'
 
@@ -70,8 +76,9 @@ export default function App() {
         mode={mode}
         onToggleMode={() => setMode((m) => (m === 'debug' ? 'timer' : 'debug'))}
         battery={battery}
+        driverType={driverType}
+        onSwitchDriver={switchDriver}
       />
-
       {mode === 'timer' ? (
         <TimerScreen
           driver={driver}
@@ -84,6 +91,10 @@ export default function App() {
           onResetState={resetState}
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
+          driverVersion={driverVersion}
+          driverType={driverType}
+          interactive={driverType === 'mouse'}
+          onCubeMove={handleCubeMove}
         />
       ) : (
         <>

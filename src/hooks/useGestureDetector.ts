@@ -29,6 +29,7 @@ export function useGestureDetector(
   handlers: GestureHandlers,
   isSolvedRef: MutableRefObject<boolean>,
   blockedRef?: MutableRefObject<boolean>,
+  driverVersion = 0,
 ) {
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
@@ -56,5 +57,5 @@ export function useGestureDetector(
 
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver]) // handlers removed from deps — accessed via ref
+  }, [driver, driverVersion]) // handlers removed from deps — accessed via ref
 }

@@ -138,7 +138,7 @@ export function isSolvedFacelets(facelets: string): boolean {
   return facelets === SOLVED_FACELETS
 }
 
-export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
+export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driverVersion = 0) {
   const [facelets, setFacelets] = useState<string>(SOLVED_FACELETS)
   const [isSolved, setIsSolved] = useState(true)
   const faceletsRef = useRef(SOLVED_FACELETS)
@@ -168,7 +168,7 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
     return () => {
       d.off('move', onMove)
     }
-  }, [driver])
+  }, [driver, driverVersion])
 
   return { facelets, isSolved, isSolvedRef, resetState }
 }

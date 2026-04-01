@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { CFOP } from '../methods/cfop'
 import { PhaseBar } from './PhaseBar'
@@ -54,7 +54,7 @@ function findSlerpedQuaternion(snapshots: { quaternion: Quaternion; relativeMs: 
   const t = (solveElapsedMs - prev.relativeMs) / (next.relativeMs - prev.relativeMs)
   return slerpQuaternion(prev.quaternion, next.quaternion, t)
 }
-const SPEED_OPTIONS = [0.5, 1, 2]
+const SPEED_OPTIONS = [0.5, 1, 2, 3, 5]
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString()
@@ -98,7 +98,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const [indicatorMs, setIndicatorMs] = useState(0)
   const [replayQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
+  const [speed, setSpeed] = useState(solve.driver === 'mouse' ? 3 : 1)
   const [gyroEnabled, setGyroEnabled] = useState(true)
   const gyroEnabledRef = useRef(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -140,6 +140,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     setIsPlaying(true)
     const moves = solve.moves
     const snapshots = solve.quaternionSnapshots ?? []
+    console.log('[Replay] snapshots=', snapshots.length, 'gyroEnabled=', gyroEnabledRef.current)
 
     const startOffsetMs = startIdx > 0
       ? moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp
@@ -161,15 +162,22 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
 
     playStartWallRef.current = performance.now()
     playStartOffsetRef.current = startOffsetMs
+    const totalMs = solve.timeMs
     const loop = () => {
-      const solveElapsed = playStartOffsetRef.current +
-        (performance.now() - playStartWallRef.current) * speed
+      const solveElapsed = Math.min(
+        playStartOffsetRef.current + (performance.now() - playStartWallRef.current) * speed,
+        totalMs,
+      )
       setIndicatorMs(solveElapsed)
       if (gyroEnabledRef.current && snapshots.length >= 2) {
         const q = findSlerpedQuaternion(snapshots, solveElapsed)
         if (q) rendererRef.current?.setQuaternion(q)
       }
-      gyroRafRef.current = requestAnimationFrame(loop)
+      if (solveElapsed < totalMs) {
+        gyroRafRef.current = requestAnimationFrame(loop)
+      } else {
+        gyroRafRef.current = null
+      }
     }
     gyroRafRef.current = requestAnimationFrame(loop)
   }, [cancelScheduled, solve.moves, solve.quaternionSnapshots, speed])
@@ -180,6 +188,71 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     cancelScheduled()
     setIsPlaying(false)
   }, [cancelScheduled])
+
+  // Seek to a move index without starting playback.
+  // quatAnimMs > 0 smoothly animates the orientation change over that duration.
+  const seekTo = useCallback((idx: number, quatAnimMs = 0) => {
+    cancelScheduled()
+    setIsPlaying(false)
+    const clamped = Math.max(0, Math.min(solve.moves.length, idx))
+    setCurrentIndex(clamped)
+    const ms = clamped > 0
+      ? solve.moves[clamped - 1].cubeTimestamp - solve.moves[0].cubeTimestamp
+      : 0
+    setIndicatorMs(ms)
+    const snapshots = solve.quaternionSnapshots ?? []
+    if (gyroEnabledRef.current && snapshots.length >= 2) {
+      const q = findSlerpedQuaternion(snapshots, ms)
+      if (q) {
+        if (quatAnimMs > 0) rendererRef.current?.animateQuaternionTo(q, quatAnimMs)
+        else rendererRef.current?.setQuaternion(q)
+      }
+    }
+  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots])
+
+  const stepForward = useCallback(() => {
+    if (currentIndex >= solve.moves.length) return
+    rendererRef.current?.animateMove(solve.moves[currentIndex].face, solve.moves[currentIndex].direction, 150)
+    seekTo(currentIndex + 1, 150)
+  }, [seekTo, currentIndex, solve.moves])
+
+  const stepBackward = useCallback(() => {
+    if (currentIndex <= 0) return
+    const move = solve.moves[currentIndex - 1]
+    rendererRef.current?.animateMove(move.face, move.direction === 'CW' ? 'CCW' : 'CW', 150)
+    seekTo(currentIndex - 1, 150)
+  }, [seekTo, currentIndex, solve.moves])
+
+  // Phase start indices for fast navigation
+  const phaseStarts = useMemo(() => {
+    const starts: number[] = []
+    let cum = 0
+    for (const p of solve.phases) {
+      starts.push(cum)
+      cum += p.turns
+    }
+    return starts
+  }, [solve.phases])
+
+  const fastForward = useCallback(() => {
+    const next = phaseStarts.find(s => s > currentIndex) ?? solve.moves.length
+    seekTo(next)
+  }, [seekTo, phaseStarts, currentIndex, solve.moves.length])
+
+  const lastFastBackwardMs = useRef(0)
+  const fastBackward = useCallback(() => {
+    const now = Date.now()
+    const currentPhaseStart = [...phaseStarts].reverse().find(s => s <= currentIndex) ?? 0
+    const atStart = currentIndex === currentPhaseStart
+    const quickRepeat = now - lastFastBackwardMs.current < 500
+    if (atStart || quickRepeat) {
+      const prevStart = [...phaseStarts].reverse().find(s => s < currentPhaseStart) ?? 0
+      seekTo(prevStart)
+    } else {
+      seekTo(currentPhaseStart)
+    }
+    lastFastBackwardMs.current = now
+  }, [seekTo, phaseStarts, currentIndex])
 
 useEffect(() => {
     if (isPlaying) { cancelScheduled(); setIsPlaying(false) }
@@ -194,6 +267,19 @@ useEffect(() => {
   const tps = totalTurns / (totalMs / 1000)
   const totalExecMs = solve.phases.reduce((s, p) => s + p.executionMs, 0)
 
+  // Indices of moves that cancel each other (same face, opposite direction, consecutive)
+  const cancelledIndices = useMemo(() => {
+    const set = new Set<number>()
+    const moves = solve.moves
+    for (let i = 0; i < moves.length - 1; i++) {
+      if (moves[i].face === moves[i + 1].face && moves[i].direction !== moves[i + 1].direction) {
+        set.add(i)
+        set.add(i + 1)
+      }
+    }
+    return set
+  }, [solve.moves])
+
   // Cumulative totals for analysis table, with move slice per phase
   let cumMs = 0
   let cumTurns = 0
@@ -206,8 +292,14 @@ useEffect(() => {
   })
 
   // Which phase and move-within-phase is currently active during replay
+  // If currentIndex lands exactly on a phase boundary, highlight the upcoming phase.
+  // Otherwise highlight the phase of the last played move (currentIndex - 1).
   const activePhaseIndex = currentIndex === 0 ? -1
-    : tableRows.findIndex((r) => currentIndex - 1 >= r.moveStart && currentIndex - 1 < r.moveStart + r.turns)
+    : (() => {
+        const exactStart = tableRows.findIndex((r) => r.moveStart === currentIndex)
+        if (exactStart >= 0) return exactStart
+        return tableRows.findIndex((r) => currentIndex - 1 >= r.moveStart && currentIndex - 1 < r.moveStart + r.turns)
+      })()
   const activeMoveInPhase = activePhaseIndex >= 0 ? (currentIndex - 1) - tableRows[activePhaseIndex].moveStart : -1
   const totalRecMs = solve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
@@ -245,6 +337,7 @@ useEffect(() => {
             { label: 'Turns', value: String(totalTurns) },
             { label: 'TPS', value: tps.toFixed(2) },
             { label: 'Date', value: formatDate(solve.date) },
+            { label: 'Driver', value: solve.driver === 'cube' ? 'Cube' : solve.driver === 'mouse' ? 'Mouse' : '—' },
           ].map(({ label, value }) => (
             <div key={label} style={{ flex: 1, background: '#161626', borderRadius: 4, padding: '8px 12px' }}>
               <div style={{ color: '#666', fontSize: 11 }}>{label}</div>
@@ -279,12 +372,13 @@ useEffect(() => {
                 <input type="checkbox" checked={gyroEnabled} onChange={(e) => setGyroEnabled(e.target.checked)} />
                 {' '}Gyro
               </label>
+              <label style={{ fontSize: 12, color: '#888' }}>Speed</label>
               <select
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
                 style={{ padding: '3px', fontSize: 12 }}
               >
-                {SPEED_OPTIONS.map((s) => <option key={s} value={s}>×{s}</option>)}
+                {SPEED_OPTIONS.map((s) => <option key={s} value={s}>{s}×</option>)}
               </select>
             </div>
             <CubeCanvas
@@ -297,23 +391,28 @@ useEffect(() => {
                 }
               }}
             />
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
               {[
+                { label: '↺',  title: 'Restart',              onClick: () => seekTo(0) },
+                { label: '⏮',  title: 'Fast backward',        onClick: fastBackward },
+                { label: '◁',  title: 'Step back',            onClick: stepBackward },
                 { label: isPlaying ? '⏸' : '▶', title: isPlaying ? 'Pause' : 'Play', onClick: isPlaying ? pause : play },
-                { label: '↺', title: 'Replay from start', onClick: () => playFrom(0) },
+                { label: '▷',  title: 'Step forward',         onClick: stepForward },
+                { label: '⏭',  title: 'Fast forward',         onClick: fastForward },
               ].map(({ label, title, onClick }) => (
                 <button
                   key={title}
                   onClick={onClick}
                   title={title}
                   style={{
-                    width: 40, height: 40, borderRadius: '50%',
+                    width: 36, height: 36, borderRadius: '50%',
                     background: 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.2)',
                     color: '#fff',
-                    fontSize: label === '↺' ? 22 : 16,
+                    fontSize: 15,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'background 0.15s',
+                    cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
@@ -323,7 +422,7 @@ useEffect(() => {
               ))}
             </div>
             <div style={{ fontSize: 11, color: '#666', textAlign: 'center', marginTop: 4 }}>
-              {getPhaseLabelAtIndex(solve, currentIndex)} — {formatTime(elapsedMs)} / {formatTime(totalMs)}
+              {getPhaseLabelAtIndex(solve, currentIndex)} — {formatTime(indicatorMs)} / {formatTime(totalMs)}
             </div>
           </div>
 
@@ -380,13 +479,20 @@ useEffect(() => {
                             {row.moves.length > 0
                               ? row.moves.map((m, mi) => {
                                   const isCurrentMove = isActive && mi === activeMoveInPhase
+                                  const isCancelled = cancelledIndices.has(row.moveStart + mi)
                                   return (
                                     <span
                                       key={mi}
+                                      onClick={() => {
+                                        const globalIdx = row.moveStart + mi
+                                        rendererRef.current?.animateMove(solve.moves[globalIdx].face, solve.moves[globalIdx].direction, 150)
+                                        playFrom(globalIdx + 1)
+                                      }}
                                       style={{
-                                        color: isCurrentMove ? '#2ecc71' : '#aaa',
+                                        color: isCurrentMove ? '#2ecc71' : isCancelled ? '#e74c3c' : '#aaa',
                                         fontWeight: isCurrentMove ? 'bold' : 'normal',
                                         marginRight: 4,
+                                        cursor: 'pointer',
                                       }}
                                     >
                                       {m.face + (m.direction === 'CCW' ? "'" : '')}
