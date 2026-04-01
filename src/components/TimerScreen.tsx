@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
@@ -15,7 +15,7 @@ import { PhaseBar } from './PhaseBar'
 import { SolveHistorySidebar } from './SolveHistorySidebar'
 import { SolveDetailModal } from './SolveDetailModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
-import type { Quaternion } from '../types/cube'
+import type { Quaternion, Move } from '../types/cube'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -36,6 +36,15 @@ export function TimerScreen({
   onResetState,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
+
+  useEffect(() => {
+    const d = driver.current
+    if (!d) return
+    const onMove = (m: Move) => rendererRef.current?.animateMove(m.face, m.direction, 150)
+    d.on('move', onMove)
+    return () => d.off('move', onMove)
+  }, [driver])
+
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
