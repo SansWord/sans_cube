@@ -28,5 +28,6 @@ dist-ssr
 
 #claude
 .claude/
+.superpowers/
 
 example/
