@@ -19,6 +19,7 @@ function fmtTps(turns: number, ms: number): string {
 
 export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
   if (phaseRecords.length === 0) {
     // Show empty placeholder bar
@@ -51,6 +52,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
               }}
               onMouseEnter={() => interactive && setHoveredIndex(i)}
               onMouseLeave={() => interactive && setHoveredIndex(null)}
+              onMouseMove={(e) => interactive && setMousePos({ x: e.clientX, y: e.clientY })}
             >
               {recPct > 0 && (
                 <div style={{ width: `${recPct}%`, background: color, opacity: 0.45 }} />
@@ -101,10 +103,9 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
 
         return (
           <div style={{
-            position: 'absolute',
-            top: '110%',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            position: 'fixed',
+            top: mousePos.y + 12,
+            left: mousePos.x + 12,
             background: '#1a1a2e',
             border: '1px solid #333',
             borderRadius: 6,
