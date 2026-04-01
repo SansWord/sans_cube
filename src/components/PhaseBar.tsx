@@ -24,7 +24,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
   if (phaseRecords.length === 0) {
     // Show empty placeholder bar
     return (
-      <div style={{ height: 24, background: '#222', borderRadius: 4, marginTop: 8 }} />
+      <div style={{ height: 24, background: 'rgba(255,255,255,0.06)', borderRadius: 4, marginTop: 8 }} />
     )
   }
 
