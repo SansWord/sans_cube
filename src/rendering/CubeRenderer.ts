@@ -4,8 +4,8 @@ import type { Quaternion, Face } from '../types/cube'
 const BG_COLOR = 0x2d3250
 
 const FACE_COLORS: Record<string, number> = {
-  U: 0xe8e8e8, D: 0xeec030, F: 0x50c050,
-  B: 0x4878d0, R: 0xcc3838, L: 0xe89030,
+  U: 0xe8e8e8, D: 0xf0d000, F: 0x50c050,
+  B: 0x4878d0, R: 0xcc3838, L: 0xe06820,
 }
 
 function makeStickerTexture(color: number): THREE.CanvasTexture {
