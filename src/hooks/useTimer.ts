@@ -140,6 +140,17 @@ export function useTimer(
         while (phaseIndexRef.current < methodRef.current.phases.length) {
           completePhase(now)
         }
+        // If CPLL and PLL finished on the same move (PLL has 0 turns), absorb CPLL into PLL
+        const phases = completedPhasesRef.current
+        const n = phases.length
+        if (n >= 2 && phases[n - 2].label === 'CPLL' && phases[n - 1].label === 'PLL' && phases[n - 1].turns === 0) {
+          const cpll = phases[n - 2]
+          completedPhasesRef.current = [
+            ...phases.slice(0, n - 2),
+            { ...cpll, recognitionMs: 0, executionMs: 0, turns: 0 },
+            { ...phases[n - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
+          ]
+        }
         stopInterval()
         const total = now - startTimeRef.current
         statusRef.current = 'solved'
