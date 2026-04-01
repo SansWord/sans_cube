@@ -21,6 +21,7 @@ export default function App() {
   const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver)
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
   const rendererRef = useRef<CubeRenderer | null>(null)
+  const isSolvingRef = useRef(false)
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
 
@@ -42,7 +43,7 @@ export default function App() {
     return () => d.off('move', onMove)
   }, [driver])
 
-  useGestureDetector(driver, { resetGyro, resetState }, isSolvedRef)
+  useGestureDetector(driver, { resetGyro, resetState }, isSolvedRef, isSolvingRef)
 
   const isConnected = status === 'connected'
 
@@ -66,6 +67,7 @@ export default function App() {
           onDisconnect={disconnect}
           onResetGyro={resetGyro}
           onResetState={resetState}
+          isSolvingRef={isSolvingRef}
         />
       ) : (
         <>

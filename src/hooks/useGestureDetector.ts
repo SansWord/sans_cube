@@ -27,7 +27,8 @@ interface GestureHandlers {
 export function useGestureDetector(
   driver: MutableRefObject<CubeDriver | null>,
   handlers: GestureHandlers,
-  isSolvedRef: MutableRefObject<boolean>
+  isSolvedRef: MutableRefObject<boolean>,
+  blockedRef?: MutableRefObject<boolean>,
 ) {
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
@@ -41,6 +42,8 @@ export function useGestureDetector(
     const onMove = (move: Move) => {
       history.push(move)
       if (history.length > 20) history.shift()
+
+      if (blockedRef?.current) return
 
       for (const { pattern, action } of DEFAULT_PATTERNS) {
         if (matchGesture(history, pattern)) {

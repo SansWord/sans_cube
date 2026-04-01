@@ -27,6 +27,7 @@ interface Props {
   onDisconnect: () => void
   onResetGyro: () => void
   onResetState: () => void
+  isSolvingRef: MutableRefObject<boolean>
 }
 
 export function TimerScreen({
@@ -35,6 +36,7 @@ export function TimerScreen({
   quaternion,
   onResetGyro,
   onResetState,
+  isSolvingRef,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
@@ -59,6 +61,8 @@ export function TimerScreen({
     CFOP,
     armed,
   )
+
+  isSolvingRef.current = status === 'solving'
 
   // Show last solve time while scrambling; reset to 0.0 when armed
   const lastSolveTimeRef = useRef(0)
