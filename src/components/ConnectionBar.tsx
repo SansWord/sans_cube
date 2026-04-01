@@ -52,6 +52,7 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
       >
         <option value="gan">GAN Cube</option>
         <option value="button">Button</option>
+        <option value="mouse">Mouse</option>
       </select>
       <span style={{ marginLeft: 'auto', fontSize: 13, ...batteryStyle }}>
         🔋 {batteryLabel}

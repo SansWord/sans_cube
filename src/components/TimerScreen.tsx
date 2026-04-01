@@ -15,7 +15,7 @@ import { PhaseBar } from './PhaseBar'
 import { SolveHistorySidebar } from './SolveHistorySidebar'
 import { SolveDetailModal } from './SolveDetailModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
-import type { Quaternion, Move } from '../types/cube'
+import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 
 interface Props {
@@ -30,6 +30,8 @@ interface Props {
   isSolvingRef: MutableRefObject<boolean>
   gestureResetRef: MutableRefObject<() => void>
   driverVersion?: number
+  interactive?: boolean
+  onCubeMove?: (face: Face, direction: 'CW' | 'CCW') => void
 }
 
 export function TimerScreen({
@@ -41,6 +43,8 @@ export function TimerScreen({
   isSolvingRef,
   gestureResetRef,
   driverVersion = 0,
+  interactive,
+  onCubeMove,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
@@ -51,7 +55,7 @@ export function TimerScreen({
     const onMove = (m: Move) => rendererRef.current?.animateMove(m.face, m.direction, 150)
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
@@ -209,6 +213,8 @@ export function TimerScreen({
             facelets={facelets}
             quaternion={quaternion}
             onRendererReady={(r) => { rendererRef.current = r }}
+            interactive={interactive}
+            onMove={onCubeMove}
           />
 
           <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />

@@ -1,9 +1,10 @@
 import { useRef, useState, useCallback } from 'react'
 import { GanCubeDriver } from '../drivers/GanCubeDriver'
 import { ButtonDriver } from '../drivers/ButtonDriver'
+import { MouseDriver } from '../drivers/MouseDriver'
 import type { CubeDriver, ConnectionStatus } from '../drivers/CubeDriver'
 
-export type DriverType = 'gan' | 'button'
+export type DriverType = 'gan' | 'button' | 'mouse'
 
 export function useCubeDriver() {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
@@ -22,7 +23,7 @@ export function useCubeDriver() {
     old?.removeAllListeners()
     old?.disconnect()
 
-    const next = type === 'button' ? new ButtonDriver() : new GanCubeDriver()
+    const next = type === 'button' ? new ButtonDriver() : type === 'mouse' ? new MouseDriver() : new GanCubeDriver()
     next.on('connection', setStatus)
     driverRef.current = next
     setDriverType(type)
@@ -39,6 +40,7 @@ export function useCubeDriver() {
   }, [])
 
   const buttonDriver = driverType === 'button' ? (driverRef.current as ButtonDriver) : null
+  const mouseDriver = driverType === 'mouse' ? (driverRef.current as MouseDriver) : null
 
-  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, buttonDriver, driverVersion }
+  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, buttonDriver, mouseDriver, driverVersion }
 }

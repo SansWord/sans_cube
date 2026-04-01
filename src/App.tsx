@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { useCubeDriver } from './hooks/useCubeDriver'
 import { useCubeState } from './hooks/useCubeState'
 import { useGyro } from './hooks/useGyro'
@@ -14,7 +14,8 @@ import { FaceletDebug } from './components/FaceletDebug'
 import { SolveReplayer } from './components/SolveReplayer'
 import { TimerScreen } from './components/TimerScreen'
 import type { CubeRenderer } from './rendering/CubeRenderer'
-import type { Move } from './types/cube'
+import type { Move, Face } from './types/cube'
+import { MouseDriver } from './drivers/MouseDriver'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, buttonDriver, driverVersion } = useCubeDriver()
@@ -27,6 +28,11 @@ export default function App() {
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
   const [battery, setBattery] = useState<number | null>(null)
+
+  const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
+    const d = driver.current
+    if (d instanceof MouseDriver) d.sendMove(face, direction)
+  }, [driver])
 
   useEffect(() => {
     const d = driver.current
@@ -89,6 +95,8 @@ export default function App() {
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
           driverVersion={driverVersion}
+          interactive={driverType === 'mouse'}
+          onCubeMove={handleCubeMove}
         />
       ) : (
         <>
