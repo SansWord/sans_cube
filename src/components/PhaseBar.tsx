@@ -105,7 +105,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
           <div style={{
             position: 'fixed',
             top: mousePos.y + 12,
-            left: mousePos.x + 12,
+            left: Math.min(mousePos.x + 12, window.innerWidth - 224),
             background: '#1a1a2e',
             border: '1px solid #333',
             borderRadius: 6,
