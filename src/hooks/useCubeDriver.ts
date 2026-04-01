@@ -1,19 +1,32 @@
 import { useRef, useState, useCallback } from 'react'
 import { GanCubeDriver } from '../drivers/GanCubeDriver'
+import { ButtonDriver } from '../drivers/ButtonDriver'
 import type { CubeDriver, ConnectionStatus } from '../drivers/CubeDriver'
+
+export type DriverType = 'gan' | 'button'
 
 export function useCubeDriver() {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
+  const [driverType, setDriverType] = useState<DriverType>('gan')
 
-  // Initialize eagerly so driver.current is non-null on first render.
-  // Lazy init (inside a callback) caused all hooks' useEffects to find null,
-  // bail out, and never re-subscribe when the driver was eventually created.
   const driverRef = useRef<CubeDriver | null>(null)
   if (driverRef.current === null) {
     const driver = new GanCubeDriver()
     driver.on('connection', setStatus)
     driverRef.current = driver
   }
+
+  const switchDriver = useCallback((type: DriverType) => {
+    const old = driverRef.current
+    old?.removeAllListeners()
+    old?.disconnect()
+
+    const next = type === 'button' ? new ButtonDriver() : new GanCubeDriver()
+    next.on('connection', setStatus)
+    driverRef.current = next
+    setDriverType(type)
+    setStatus('disconnected')
+  }, [])
 
   const connect = useCallback(async () => {
     await driverRef.current!.connect()
@@ -23,5 +36,7 @@ export function useCubeDriver() {
     await driverRef.current!.disconnect()
   }, [])
 
-  return { driver: driverRef, connect, disconnect, status }
+  const buttonDriver = driverType === 'button' ? (driverRef.current as ButtonDriver) : null
+
+  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, buttonDriver }
 }

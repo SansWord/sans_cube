@@ -5,6 +5,7 @@ import { useGyro } from './hooks/useGyro'
 import { useGestureDetector } from './hooks/useGestureDetector'
 import { useSolveRecorder } from './hooks/useSolveRecorder'
 import { ConnectionBar } from './components/ConnectionBar'
+import { ButtonDriverPanel } from './components/ButtonDriverPanel'
 import { ControlBar } from './components/ControlBar'
 import { CubeCanvas } from './components/CubeCanvas'
 import { OrientationConfig } from './components/OrientationConfig'
@@ -16,7 +17,7 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move } from './types/cube'
 
 export default function App() {
-  const { driver, connect, disconnect, status } = useCubeDriver()
+  const { driver, connect, disconnect, status, driverType, switchDriver, buttonDriver } = useCubeDriver()
   const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver)
   const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver)
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
@@ -70,7 +71,10 @@ export default function App() {
         mode={mode}
         onToggleMode={() => setMode((m) => (m === 'debug' ? 'timer' : 'debug'))}
         battery={battery}
+        driverType={driverType}
+        onSwitchDriver={switchDriver}
       />
+      {buttonDriver && <ButtonDriverPanel driver={buttonDriver} />}
 
       {mode === 'timer' ? (
         <TimerScreen
