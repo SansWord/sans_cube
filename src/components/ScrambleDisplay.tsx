@@ -8,7 +8,7 @@ interface Props {
   steps: ScrambleStep[]
   stepStates: StepState[]
   trackingState: TrackingState
-  wrongMove: Move | null
+  wrongMoves: Move[]
   onResetCube: () => void
   onResetGyro: () => void
 }
@@ -25,7 +25,7 @@ export function ScrambleDisplay({
   steps,
   stepStates,
   trackingState,
-  wrongMove,
+  wrongMoves,
   onResetCube,
   onResetGyro,
 }: Props) {
@@ -39,9 +39,13 @@ export function ScrambleDisplay({
 
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
-      {trackingState === 'wrong' && wrongMove ? (
-        <div style={{ fontSize: 36, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 8 }}>
-          {wrongMove.face}{wrongMove.direction === 'CW' ? "'" : ''}
+      {trackingState === 'wrong' && wrongMoves.length > 0 ? (
+        <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 8, letterSpacing: 2 }}>
+          {wrongMoves.slice().reverse().map((m, i) => (
+            <span key={i} style={{ marginRight: 6 }}>
+              {m.face}{m.direction === 'CW' ? "'" : ''}
+            </span>
+          ))}
         </div>
       ) : (
         <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>

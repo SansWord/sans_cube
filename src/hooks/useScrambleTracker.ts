@@ -10,18 +10,18 @@ export type TrackingState = 'scrambling' | 'warning' | 'wrong' | 'armed'
 export interface TrackerState {
   stepStates: StepState[]
   trackingState: TrackingState
-  wrongMove: Move | null
+  wrongMoves: Move[]           // stack of wrong moves; reverse sequence cancels them all
   partialDirection: Direction | null
   currentStepIndex: number
-  warningNetTurns: number  // net CW(+1)/CCW(-1) count while in warning state
-  wrongFromWarning: boolean  // whether wrong state was entered from warning
+  warningNetTurns: number      // net CW(+1)/CCW(-1) count while in warning state
+  wrongFromWarning: boolean    // whether wrong state was entered from warning
 }
 
 export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
   return {
     stepStates: steps.map((_, i) => (i === 0 ? 'current' : 'pending')),
     trackingState: steps.length === 0 ? 'armed' : 'scrambling',
-    wrongMove: null,
+    wrongMoves: [],
     partialDirection: null,
     currentStepIndex: 0,
     warningNetTurns: 0,
@@ -39,34 +39,40 @@ function buildStepStates(steps: ScrambleStep[], doneCount: number, currentIndex:
 }
 
 export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: Move): TrackerState {
-  const { trackingState, currentStepIndex, wrongMove, partialDirection } = state
+  const { trackingState, currentStepIndex, wrongMoves, partialDirection } = state
 
   // Armed: scramble done, ignore further moves
   if (trackingState === 'armed') return state
 
-  // Wrong state: wait for undo
+  // Wrong state: each move either cancels the top of the stack or pushes to it
   if (trackingState === 'wrong') {
-    if (wrongMove && move.face === wrongMove.face && move.direction !== wrongMove.direction) {
-      // Undone — return to warning if we came from there, otherwise scrambling
-      if (state.wrongFromWarning) {
+    const top = wrongMoves[wrongMoves.length - 1]
+    if (top && move.face === top.face && move.direction !== top.direction) {
+      // Cancels the top move — pop the stack
+      const remaining = wrongMoves.slice(0, -1)
+      if (remaining.length === 0) {
+        // Stack empty — exit wrong mode
+        if (state.wrongFromWarning) {
+          return {
+            ...state,
+            trackingState: 'warning',
+            wrongMoves: [],
+            wrongFromWarning: false,
+            stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+          }
+        }
         return {
           ...state,
-          trackingState: 'warning',
-          wrongMove: null,
+          trackingState: 'scrambling',
+          wrongMoves: [],
           wrongFromWarning: false,
-          stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+          stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
         }
       }
-      return {
-        ...state,
-        trackingState: 'scrambling',
-        wrongMove: null,
-        wrongFromWarning: false,
-        stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
-      }
+      return { ...state, wrongMoves: remaining }
     }
-    // Any other move while wrong: update wrongMove to this latest wrong move
-    return { ...state, wrongMove: move }
+    // New wrong move — push to stack
+    return { ...state, wrongMoves: [...wrongMoves, move] }
   }
 
   const expected = steps[currentStepIndex]
@@ -74,7 +80,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   // Warning state: track net turns on the expected face (mod 4)
   if (trackingState === 'warning') {
     if (move.face !== expected.face) {
-      return { ...state, trackingState: 'wrong', wrongMove: move, wrongFromWarning: true }
+      return { ...state, trackingState: 'wrong', wrongMoves: [move], wrongFromWarning: true }
     }
     const delta = move.direction === 'CW' ? 1 : -1
     const newNet = state.warningNetTurns + delta
@@ -89,7 +95,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
         trackingState: isArmed ? 'armed' : 'scrambling',
         stepStates: buildStepStates(steps, nextIndex, nextIndex, null),
         currentStepIndex: nextIndex,
-        wrongMove: null,
+        wrongMoves: [],
         warningNetTurns: 0,
       }
     }
@@ -108,11 +114,10 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
 
   // Normal scrambling state
   if (move.face !== expected.face) {
-    // Reset partial progress if in middle of double
     return {
       ...state,
       trackingState: 'wrong',
-      wrongMove: move,
+      wrongMoves: [move],
       partialDirection: null,
       stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
     }

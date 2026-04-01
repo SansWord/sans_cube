@@ -112,7 +112,7 @@ export function TimerScreen({
           steps={steps}
           stepStates={tracker.stepStates}
           trackingState={tracker.trackingState}
-          wrongMove={tracker.wrongMove}
+          wrongMoves={tracker.wrongMoves}
           onResetCube={handleResetCube}
           onResetGyro={onResetGyro}
         />

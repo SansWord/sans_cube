@@ -68,6 +68,7 @@ describe('applyTrackerMove — single CW step', () => {
     expect(state.trackingState).toBe('warning')
     state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong face → wrong
     expect(state.trackingState).toBe('wrong')
+    expect(state.wrongMoves).toEqual([move('U', 'CW')])
     expect(state.warningNetTurns).toBe(-1)  // preserved
     state = applyTrackerMove(state, steps, move('U', 'CCW'))  // undo wrong → back to warning
     expect(state.trackingState).toBe('warning')
@@ -79,7 +80,7 @@ describe('applyTrackerMove — single CW step', () => {
     let state = makeInitialTrackerState(steps)
     state = applyTrackerMove(state, steps, move('U', 'CW'))
     expect(state.trackingState).toBe('wrong')
-    expect(state.wrongMove).toEqual(move('U', 'CW'))
+    expect(state.wrongMoves).toEqual([move('U', 'CW')])
   })
 
   it('from wrong: reverse move → back to scrambling', () => {
@@ -87,7 +88,22 @@ describe('applyTrackerMove — single CW step', () => {
     state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong
     state = applyTrackerMove(state, steps, move('U', 'CCW'))  // undo
     expect(state.trackingState).toBe('scrambling')
-    expect(state.wrongMove).toBeNull()
+    expect(state.wrongMoves).toEqual([])
+    expect(state.currentStepIndex).toBe(0)
+  })
+
+  it('multiple wrong moves stack up; reverse sequence clears them', () => {
+    let state = makeInitialTrackerState(steps)
+    state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong: stack=[U]
+    state = applyTrackerMove(state, steps, move('F', 'CCW'))  // wrong: stack=[U, F']
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongMoves).toHaveLength(2)
+    state = applyTrackerMove(state, steps, move('F', 'CW'))   // cancels F': stack=[U]
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongMoves).toHaveLength(1)
+    state = applyTrackerMove(state, steps, move('U', 'CCW'))  // cancels U: stack=[]
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.wrongMoves).toEqual([])
     expect(state.currentStepIndex).toBe(0)
   })
 })
