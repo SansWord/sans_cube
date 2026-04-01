@@ -36,6 +36,8 @@ export function TimerScreen({
   onResetState,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
+  const { solves, addSolve, deleteSolve, stats } = useSolveHistory()
+  const idCounterRef = useRef(solves.length > 0 ? Math.max(...solves.map(s => s.id)) + 1 : 1)
 
   useEffect(() => {
     const d = driver.current
@@ -48,7 +50,6 @@ export function TimerScreen({
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
-  const idCounterRef = useRef(1)
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
@@ -57,8 +58,6 @@ export function TimerScreen({
     CFOP,
     armed,
   )
-
-  const { solves, addSolve, deleteSolve, stats } = useSolveHistory()
 
   // Show last solve time while scrambling; reset to 0.0 when armed
   const lastSolveTimeRef = useRef(0)
