@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { CFOP } from '../methods/cfop'
 import { PhaseBar } from './PhaseBar'
@@ -358,10 +358,8 @@ useEffect(() => {
                   const isHovered = i === hoveredRowIndex
                   const rowBg = isActive ? 'rgba(46,204,113,0.1)' : isHovered ? '#161626' : 'transparent'
                   return (
-                    <>
-                      <tr
-                        key={i}
-                        style={{ background: rowBg, cursor: 'pointer' }}
+                    <React.Fragment key={i}>
+                      <tr style={{ background: rowBg, cursor: 'pointer' }}
                         onClick={() => playFrom(row.moveStart)}
                         onMouseEnter={() => setHoveredRowIndex(i)}
                         onMouseLeave={() => setHoveredRowIndex(null)}
@@ -377,7 +375,7 @@ useEffect(() => {
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.cumMs)}</td>
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>{row.turns}</td>
                       </tr>
-                      <tr key={`${i}-moves`} style={{ borderBottom: '1px solid #1a1a2e', background: isActive ? 'rgba(46,204,113,0.05)' : 'transparent' }}>
+                      <tr style={{ borderBottom: '1px solid #1a1a2e', background: isActive ? 'rgba(46,204,113,0.05)' : 'transparent' }}>
                           <td colSpan={6} style={{ padding: '4px 8px 8px 20px', fontFamily: 'monospace', fontSize: 12, letterSpacing: 1 }}>
                             {row.moves.length > 0
                               ? row.moves.map((m, mi) => {
@@ -398,7 +396,7 @@ useEffect(() => {
                               : <span style={{ color: '#aaa' }}>—</span>}
                           </td>
                         </tr>
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </tbody>
