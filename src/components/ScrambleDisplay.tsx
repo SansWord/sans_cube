@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import type { ScrambleStep } from '../types/solve'
 import type { StepState, TrackingState, WrongSegment } from '../hooks/useScrambleTracker'
 import { scrambleStepToString } from '../utils/scramble'
@@ -21,6 +22,8 @@ const STATE_COLOR: Record<StepState, string> = {
   warning: '#f39c12',
 }
 
+const WRONG_SEQUENCE_LIMIT = 10
+
 function segmentToCancel(seg: WrongSegment): string {
   const net4 = ((seg.netTurns % 4) + 4) % 4
   if (net4 === 1) return seg.face + "'"  // 1 CW → cancel with CCW
@@ -40,6 +43,13 @@ export function ScrambleDisplay({
   onResetCube,
   onResetGyro,
 }: Props) {
+  const [showFullSequence, setShowFullSequence] = useState(false)
+
+  // Reset the toggle whenever we exit wrong mode
+  useEffect(() => {
+    if (trackingState !== 'wrong') setShowFullSequence(false)
+  }, [trackingState])
+
   if (scramble === null) {
     return (
       <div style={{ textAlign: 'center', color: '#666', fontSize: 14, padding: '16px 0' }}>
@@ -48,17 +58,30 @@ export function ScrambleDisplay({
     )
   }
 
+  const inWrong = trackingState === 'wrong' && wrongSegments.length > 0
+  const tooLong = wrongSegments.length > WRONG_SEQUENCE_LIMIT
+
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        {trackingState === 'wrong' && wrongSegments.length > 0 ? (
-          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
-            {wrongSegments.slice().reverse().map((seg, i) => (
-              <span key={i} style={{ marginRight: 6 }}>
-                {segmentToCancel(seg)}
-              </span>
-            ))}
-          </div>
+        {inWrong ? (
+          tooLong && !showFullSequence ? (
+            <span
+              onClick={() => setShowFullSequence(true)}
+              style={{ fontSize: 20, fontWeight: 'bold', color: '#e74c3c', cursor: 'pointer' }}
+              title="Click to see full cancellation sequence"
+            >
+              Reset Cube
+            </span>
+          ) : (
+            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
+              {wrongSegments.slice().reverse().map((seg, i) => (
+                <span key={i} style={{ marginRight: 6 }}>
+                  {segmentToCancel(seg)}
+                </span>
+              ))}
+            </div>
+          )
         ) : (
           <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>
             {steps.map((step, i) => (
