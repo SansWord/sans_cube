@@ -262,7 +262,7 @@ export function TimerScreen({
         <SolveHistorySidebar
           solves={solves}
           stats={stats}
-          onSelectSolve={(s) => { setSelectedSolve(s); setShowHistory(false) }}
+          onSelectSolve={(s) => setSelectedSolve(s)}
           width={sidebarWidth}
           onWidthChange={setSidebarWidth}
           onClose={() => setShowHistory(false)}
