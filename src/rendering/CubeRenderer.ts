@@ -36,7 +36,7 @@ export class CubeRenderer {
     this.scene.background = new THREE.Color(0x1a1a2e)
 
     this.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100)
-    this.camera.position.set(4, 4, 6)
+    this.camera.position.set(0, 6, 7)
     this.camera.lookAt(0, 0, 0)
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
