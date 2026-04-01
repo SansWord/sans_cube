@@ -70,7 +70,7 @@ export function ScrambleDisplay({
   return (
     <div style={{ textAlign: 'center', padding: '8px 0', width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <div style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minWidth: 0 }}>
+        <div className="scramble-area" style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {inWrong ? (
             tooLong && !showFullSequence ? (
               <span
