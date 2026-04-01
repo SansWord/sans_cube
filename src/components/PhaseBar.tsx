@@ -36,20 +36,27 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
         {phaseRecords.map((p, i) => {
           const stepMs = p.recognitionMs + p.executionMs
           const pct = totalMs > 0 ? (stepMs / totalMs) * 100 : 0
-          const phase = method.phases[i]
+          const color = method.phases[i]?.color ?? '#555'
+          const recPct = stepMs > 0 ? (p.recognitionMs / stepMs) * 100 : 0
+          const execPct = 100 - recPct
           return (
             <div
               key={i}
               style={{
                 width: `${pct}%`,
-                background: phase?.color ?? '#555',
+                display: 'flex',
                 cursor: interactive ? 'pointer' : 'default',
                 opacity: hoveredIndex === i ? 0.8 : 1,
                 transition: 'opacity 0.1s',
               }}
               onMouseEnter={() => interactive && setHoveredIndex(i)}
               onMouseLeave={() => interactive && setHoveredIndex(null)}
-            />
+            >
+              {recPct > 0 && (
+                <div style={{ width: `${recPct}%`, background: color, opacity: 0.45 }} />
+              )}
+              <div style={{ width: `${execPct}%`, background: color }} />
+            </div>
           )
         })}
       </div>
