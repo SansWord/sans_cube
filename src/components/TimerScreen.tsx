@@ -53,7 +53,14 @@ export function TimerScreen({
 
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
-  const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
+  const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(() => {
+    const m = window.location.hash.match(/^#solve-(\d+)$/)
+    if (m) {
+      const id = parseInt(m[1], 10)
+      return solves.find((s) => s.id === id) ?? null
+    }
+    return null
+  })
   const [regeneratePending, setRegeneratePending] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem('sidebarWidth')
@@ -63,6 +70,14 @@ export function TimerScreen({
   useEffect(() => {
     localStorage.setItem('sidebarWidth', String(sidebarWidth))
   }, [sidebarWidth])
+
+  useEffect(() => {
+    if (selectedSolve) {
+      window.location.hash = `solve-${selectedSolve.id}`
+    } else {
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [selectedSolve])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
