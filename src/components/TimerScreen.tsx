@@ -103,6 +103,17 @@ export function TimerScreen({
     }
   }, [facelets, regenerate, resetTimer, tracker])
 
+  // In wrong mode, if the cube is solved the user has undone everything — fresh start
+  useEffect(() => {
+    if (tracker.trackingState === 'wrong' && facelets === SOLVED_FACELETS) {
+      regenerate()
+      tracker.reset()
+      setArmed(false)
+      resetTimer()
+      setRegeneratePending(false)
+    }
+  }, [facelets]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Apply pending regenerate as soon as the cube reaches solved state
   useEffect(() => {
     if (regeneratePending && facelets === SOLVED_FACELETS && status === 'idle') {
