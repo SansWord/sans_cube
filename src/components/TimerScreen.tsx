@@ -51,6 +51,12 @@ export function TimerScreen({
 
   const { solves, addSolve, deleteSolve, stats } = useSolveHistory()
 
+  // Keep last solve's phase bar visible until next solve starts
+  const lastPhaseRecordsRef = useRef(phaseRecords)
+  if (status === 'solving') lastPhaseRecordsRef.current = []
+  if (phaseRecords.length > 0) lastPhaseRecordsRef.current = phaseRecords
+  const displayedPhaseRecords = phaseRecords.length > 0 ? phaseRecords : lastPhaseRecordsRef.current
+
   // Save solve when timer reaches solved
   const prevStatusRef = useRef(status)
   if (status === 'solved' && prevStatusRef.current !== 'solved') {
@@ -111,7 +117,7 @@ export function TimerScreen({
           onRendererReady={(r) => { rendererRef.current = r }}
         />
 
-        <PhaseBar phaseRecords={phaseRecords} method={CFOP} />
+        <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />
       </div>
 
       {selectedSolve && (
