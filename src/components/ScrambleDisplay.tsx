@@ -37,42 +37,32 @@ export function ScrambleDisplay({
     )
   }
 
-  if (trackingState === 'wrong' && wrongMove) {
-    return (
-      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <div style={{ fontSize: 36, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 12 }}>
-          {wrongMove.face}{wrongMove.direction === 'CCW' ? "'" : ''}
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-          <button onClick={onResetCube} style={{ padding: '6px 14px' }}>Reset Cube</button>
-          <button onClick={onResetGyro} style={{ padding: '6px 14px' }}>Reset Gyro</button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
-      <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>
-        {steps.map((step, i) => (
-          <span
-            key={i}
-            style={{
-              color: STATE_COLOR[stepStates[i] ?? 'pending'],
-              marginRight: 6,
-              fontWeight: stepStates[i] === 'current' ? 'bold' : 'normal',
-            }}
-          >
-            {scrambleStepToString(step)}
-          </span>
-        ))}
-      </div>
-      {(trackingState === 'warning') && (
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
-          <button onClick={onResetCube} style={{ padding: '6px 14px' }}>Reset Cube</button>
-          <button onClick={onResetGyro} style={{ padding: '6px 14px' }}>Reset Gyro</button>
+      {trackingState === 'wrong' && wrongMove ? (
+        <div style={{ fontSize: 36, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 8 }}>
+          {wrongMove.face}{wrongMove.direction === 'CCW' ? "'" : ''}
+        </div>
+      ) : (
+        <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>
+          {steps.map((step, i) => (
+            <span
+              key={i}
+              style={{
+                color: STATE_COLOR[stepStates[i] ?? 'pending'],
+                marginRight: 6,
+                fontWeight: stepStates[i] === 'current' ? 'bold' : 'normal',
+              }}
+            >
+              {scrambleStepToString(step)}
+            </span>
+          ))}
         </div>
       )}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 6 }}>
+        <button onClick={onResetCube} style={{ padding: '6px 14px' }}>Reset Cube</button>
+        <button onClick={onResetGyro} style={{ padding: '6px 14px' }}>Reset Gyro</button>
+      </div>
     </div>
   )
 }
