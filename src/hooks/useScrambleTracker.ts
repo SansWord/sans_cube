@@ -37,6 +37,9 @@ function buildStepStates(steps: ScrambleStep[], doneCount: number, currentIndex:
 export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: Move): TrackerState {
   const { trackingState, currentStepIndex, wrongMove, partialDirection } = state
 
+  // Armed: scramble done, ignore further moves
+  if (trackingState === 'armed') return state
+
   // Wrong state: wait for undo
   if (trackingState === 'wrong') {
     if (wrongMove && move.face === wrongMove.face && move.direction !== wrongMove.direction) {
