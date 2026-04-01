@@ -3,3 +3,16 @@ body { background: #2d3250; color: #e0e0e0; font-family: sans-serif; }
 button { cursor: pointer; border: none; background: #e94560; color: white; border-radius: 4px; }
 button:disabled { background: #555; cursor: not-allowed; }
 select { background: #0f3460; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; padding: 4px; }
+
+.solves-btn-mobile { display: none; }
+.cube-canvas { height: 480px; }
+
+@media (max-width: 768px) {
+  .sidebar-wrapper { display: none !important; }
+  .timer-center {
+    width: 100% !important;
+    transform: none !important;
+  }
+  .solves-btn-mobile { display: block !important; }
+  .cube-canvas { height: 300px; }
+}
