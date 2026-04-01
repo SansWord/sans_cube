@@ -60,6 +60,11 @@ export function TimerScreen({
 
   const { solves, addSolve, deleteSolve, stats } = useSolveHistory()
 
+  // Show last solve time while scrambling; reset to 0.0 when armed
+  const lastSolveTimeRef = useRef(0)
+  if (status === 'solved') lastSolveTimeRef.current = elapsedMs
+  const displayedElapsedMs = armed ? 0 : status === 'idle' ? lastSolveTimeRef.current : elapsedMs
+
   // Keep last solve's phase bar visible until next solve starts
   const lastPhaseRecordsRef = useRef(phaseRecords)
   if (status === 'solving') lastPhaseRecordsRef.current = []
@@ -115,7 +120,7 @@ export function TimerScreen({
         />
 
         <TimerDisplay
-          elapsedMs={elapsedMs}
+          elapsedMs={displayedElapsedMs}
           status={status}
           armed={armed}
         />
