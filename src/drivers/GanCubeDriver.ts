@@ -20,6 +20,7 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
         this._handleGanEvent(event)
       })
       this.emit('connection', 'connected')
+      this.connection.sendCubeCommand({ type: 'REQUEST_BATTERY' }).catch(() => {})
     } catch (err) {
       this.emit('connection', 'disconnected')
       throw err
@@ -50,7 +51,7 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
       const quaternion: Quaternion = { x: q.x, y: q.y, z: q.z, w: q.w }
       this.emit('gyro', quaternion)
     } else if (event.type === 'BATTERY') {
-      this.emit('battery', event.percent as number)
+      this.emit('battery', event.batteryLevel as number)
     } else if (event.type === 'DISCONNECT') {
       this.emit('connection', 'disconnected')
     }
