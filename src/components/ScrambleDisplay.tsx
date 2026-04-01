@@ -68,40 +68,42 @@ export function ScrambleDisplay({
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        {inWrong ? (
-          tooLong && !showFullSequence ? (
-            <span
-              onClick={() => setShowFullSequence(true)}
-              style={{ fontSize: 20, fontWeight: 'bold', color: '#e74c3c', cursor: 'pointer' }}
-              title="Click to see full cancellation sequence"
-            >
-              Reset Cube
-            </span>
+        <div style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {inWrong ? (
+            tooLong && !showFullSequence ? (
+              <span
+                onClick={() => setShowFullSequence(true)}
+                style={{ fontSize: 20, fontWeight: 'bold', color: '#e74c3c', cursor: 'pointer' }}
+                title="Click to see full cancellation sequence"
+              >
+                Reset Cube
+              </span>
+            ) : (
+              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
+                {wrongSegments.slice().reverse().map((seg, i) => (
+                  <span key={i} style={{ marginRight: 6 }}>
+                    {segmentToCancel(seg)}
+                  </span>
+                ))}
+              </div>
+            )
           ) : (
-            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
-              {wrongSegments.slice().reverse().map((seg, i) => (
-                <span key={i} style={{ marginRight: 6 }}>
-                  {segmentToCancel(seg)}
+            <div style={{ fontFamily: 'monospace', fontSize: 28, letterSpacing: 2, lineHeight: 1.5 }}>
+              {steps.map((step, i) => (
+                <span
+                  key={i}
+                  style={{
+                    color: STATE_COLOR[stepStates[i] ?? 'pending'],
+                    marginRight: 6,
+                    fontWeight: stepStates[i] === 'current' ? 'bold' : 'normal',
+                  }}
+                >
+                  {scrambleStepToString(step)}
                 </span>
               ))}
             </div>
-          )
-        ) : (
-          <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>
-            {steps.map((step, i) => (
-              <span
-                key={i}
-                style={{
-                  color: STATE_COLOR[stepStates[i] ?? 'pending'],
-                  marginRight: 6,
-                  fontWeight: stepStates[i] === 'current' ? 'bold' : 'normal',
-                }}
-              >
-                {scrambleStepToString(step)}
-              </span>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
         <button
           onClick={onRegenerate}
           title={regeneratePending ? 'Waiting for cube to be solved…' : 'Re-generate scramble pattern'}

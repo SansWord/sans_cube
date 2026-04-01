@@ -55,7 +55,14 @@ export function TimerScreen({
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
   const [regeneratePending, setRegeneratePending] = useState(false)
-  const [sidebarWidth, setSidebarWidth] = useState(160)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('sidebarWidth')
+    return saved ? parseInt(saved, 10) : 160
+  })
+
+  useEffect(() => {
+    localStorage.setItem('sidebarWidth', String(sidebarWidth))
+  }, [sidebarWidth])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
@@ -151,33 +158,42 @@ export function TimerScreen({
         onWidthChange={setSidebarWidth}
       />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '8px 16px' }}>
-        <ScrambleDisplay
-          scramble={scramble}
-          steps={steps}
-          stepStates={tracker.stepStates}
-          trackingState={tracker.trackingState}
-          wrongSegments={tracker.wrongSegments}
-          regeneratePending={regeneratePending}
-          onRegenerate={handleRegenerate}
-          onResetCube={handleResetCube}
-          onResetGyro={onResetGyro}
-        />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: 720,
+          alignSelf: 'center',
+          transform: `translateX(${-sidebarWidth / 2}px)`,
+          padding: '8px 16px',
+        }}>
+          <ScrambleDisplay
+            scramble={scramble}
+            steps={steps}
+            stepStates={tracker.stepStates}
+            trackingState={tracker.trackingState}
+            wrongSegments={tracker.wrongSegments}
+            regeneratePending={regeneratePending}
+            onRegenerate={handleRegenerate}
+            onResetCube={handleResetCube}
+            onResetGyro={onResetGyro}
+          />
 
-        <TimerDisplay
-          elapsedMs={displayedElapsedMs}
-          status={status}
-          armed={armed}
-        />
+          <TimerDisplay
+            elapsedMs={displayedElapsedMs}
+            status={status}
+            armed={armed}
+          />
 
-        <CubeCanvas
-          style={{ transform: `translateX(${-sidebarWidth / 2}px)` }}
-          facelets={facelets}
-          quaternion={quaternion}
-          onRendererReady={(r) => { rendererRef.current = r }}
-        />
+          <CubeCanvas
+            facelets={facelets}
+            quaternion={quaternion}
+            onRendererReady={(r) => { rendererRef.current = r }}
+          />
 
-        <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />
+          <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />
+        </div>
       </div>
 
       {selectedSolve && (
