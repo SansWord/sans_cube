@@ -70,7 +70,7 @@ export function ScrambleDisplay({
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <div style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minWidth: 0 }}>
           {inWrong ? (
             tooLong && !showFullSequence ? (
               <span
@@ -81,7 +81,7 @@ export function ScrambleDisplay({
                 Reset Cube
               </span>
             ) : (
-              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
+              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2, width: '100%', textAlign: 'center' }}>
                 {wrongSegments.slice().reverse().map((seg, i) => (
                   <span key={i} style={{ marginRight: 6 }}>
                     {segmentToCancel(seg)}
@@ -90,7 +90,7 @@ export function ScrambleDisplay({
               </div>
             )
           ) : (
-            <div style={{ fontFamily: 'monospace', fontSize: 28, letterSpacing: 2, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: 'monospace', fontSize: 28, letterSpacing: 2, lineHeight: 1.5, width: '100%', textAlign: 'center' }}>
               {steps.map((step, i) => (
                 <span
                   key={i}
