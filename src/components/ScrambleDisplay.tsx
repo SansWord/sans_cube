@@ -81,7 +81,7 @@ export function ScrambleDisplay({
                 Reset Cube
               </span>
             ) : (
-              <div className="scramble-moves" style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2, width: '100%', textAlign: 'center' }}>
+              <div className="scramble-moves" style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2, width: '100%', textAlign: 'center', wordBreak: 'break-all' }}>
                 {wrongSegments.slice().reverse().map((seg, i) => (
                   <span key={i} style={{ marginRight: 6 }}>
                     {segmentToCancel(seg)}
@@ -90,7 +90,7 @@ export function ScrambleDisplay({
               </div>
             )
           ) : (
-            <div className="scramble-moves" style={{ fontFamily: 'monospace', fontSize: 28, letterSpacing: 2, lineHeight: 1.5, width: '100%', textAlign: 'center' }}>
+            <div className="scramble-moves" style={{ fontFamily: 'monospace', fontSize: 28, letterSpacing: 2, lineHeight: 1.5, width: '100%', textAlign: 'center', wordBreak: 'break-all' }}>
               {steps.map((step, i) => (
                 <span
                   key={i}
