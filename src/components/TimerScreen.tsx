@@ -76,6 +76,7 @@ export function TimerScreen({
     const saved = localStorage.getItem('sidebarWidth')
     return saved ? parseInt(saved, 10) : 160
   })
+  const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
     localStorage.setItem('sidebarWidth', String(sidebarWidth))
@@ -205,7 +206,7 @@ export function TimerScreen({
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{
+        <div className="timer-center" style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -214,6 +215,16 @@ export function TimerScreen({
           transform: `translateX(${-sidebarWidth / 2}px)`,
           padding: '8px 16px',
         }}>
+          <div style={{ alignSelf: 'flex-end' }}>
+            <button
+              className="solves-btn-mobile"
+              onClick={() => setShowHistory(true)}
+              style={{ padding: '6px 14px', marginBottom: 4 }}
+            >
+              Solves
+            </button>
+          </div>
+
           <ScrambleDisplay
             scramble={scramble}
             steps={steps}
@@ -246,6 +257,17 @@ export function TimerScreen({
           <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />
         </div>
       </div>
+
+      {showHistory && (
+        <SolveHistorySidebar
+          solves={solves}
+          stats={stats}
+          onSelectSolve={(s) => { setSelectedSolve(s); setShowHistory(false) }}
+          width={sidebarWidth}
+          onWidthChange={setSidebarWidth}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
 
       {selectedSolve && (
         <SolveDetailModal
