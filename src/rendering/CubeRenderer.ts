@@ -28,7 +28,10 @@ export class CubeRenderer {
   // Separate frame IDs: renderFrameId is always running; animFrameId is only set during an animation tick
   private renderFrameId: number | null = null
   private animFrameId: number | null = null
-  private animationQueue: Array<() => Promise<void>> = []
+  private animationQueue: Array<
+    | { type: 'move'; face: Face; direction: 'CW' | 'CCW'; durationMs: number; resolve: () => void }
+    | { type: 'facelets'; facelets: string }
+  > = []
   private animationRunning = false
 
   constructor(canvas: HTMLCanvasElement) {
@@ -153,16 +156,13 @@ export class CubeRenderer {
   }
 
   queueFaceletsUpdate(facelets: string): void {
-    this.animationQueue.push(() => {
-      this.updateFacelets(facelets)
-      return Promise.resolve()
-    })
+    this.animationQueue.push({ type: 'facelets', facelets })
     if (!this.animationRunning) this._drainAnimationQueue()
   }
 
   animateMove(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
     return new Promise((resolve) => {
-      this.animationQueue.push(() => this._runMoveAnimation(face, direction, durationMs).then(resolve))
+      this.animationQueue.push({ type: 'move', face, direction, durationMs, resolve })
       if (!this.animationRunning) this._drainAnimationQueue()
     })
   }
@@ -174,10 +174,66 @@ export class CubeRenderer {
     }
     this.animationRunning = true
     const next = this.animationQueue.shift()!
-    next().then(() => this._drainAnimationQueue())
+
+    if (next.type === 'facelets') {
+      this.updateFacelets(next.facelets)
+      this._drainAnimationQueue()
+      return
+    }
+
+    // If queue is backed up, snap instead of animate so we don't fall behind
+    const effectiveDuration = this.animationQueue.length > 1 ? 0 : next.durationMs
+    this._runMoveAnimation(next.face, next.direction, effectiveDuration).then(() => {
+      next.resolve()
+      this._drainAnimationQueue()
+    })
+  }
+
+  private _snapMove(face: Face, direction: 'CW' | 'CCW'): void {
+    const axis = LAYER_AXIS[face]
+    const layerVal = LAYER_VALUE[face]
+    const cwAngle = LAYER_CW_ANGLE[face]
+    const totalAngle = direction === 'CW' ? cwAngle : -cwAngle
+
+    const pivot = new THREE.Group()
+    this.pivotGroup.add(pivot)
+    const moving: THREE.Mesh[] = []
+
+    this.cubies.forEach(c => {
+      const pos = c.userData as { x: number; y: number; z: number }
+      if (Math.round(pos[axis]) === layerVal) {
+        moving.push(c)
+        pivot.attach(c)
+      }
+    })
+
+    pivot.rotation.set(
+      axis === 'x' ? totalAngle : 0,
+      axis === 'y' ? totalAngle : 0,
+      axis === 'z' ? totalAngle : 0,
+    )
+    pivot.updateMatrixWorld()
+    moving.forEach(c => {
+      this.pivotGroup.attach(c)
+      c.position.x = Math.round(c.position.x)
+      c.position.y = Math.round(c.position.y)
+      c.position.z = Math.round(c.position.z)
+      c.rotation.set(0, 0, 0)
+      const ud = c.userData as { x: number; y: number; z: number }
+      ud.x = c.position.x
+      ud.y = c.position.y
+      ud.z = c.position.z
+    })
+    this.pivotGroup.remove(pivot)
+    this._syncMaterialVisibility()
   }
 
   private _runMoveAnimation(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
+    if (durationMs <= 0) {
+      this._snapMove(face, direction)
+      return Promise.resolve()
+    }
+
     return new Promise((resolve) => {
       const axis = LAYER_AXIS[face]
       const layerVal = LAYER_VALUE[face]

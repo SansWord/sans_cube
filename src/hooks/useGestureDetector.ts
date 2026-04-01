@@ -4,17 +4,19 @@ import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move, GesturePattern } from '../types/cube'
 
 export function matchGesture(recentMoves: Move[], pattern: GesturePattern): boolean {
-  const matching = recentMoves.filter(
-    (m) => m.face === pattern.face && m.direction === pattern.direction
-  )
-  if (matching.length < pattern.count) return false
-  const last = matching.slice(-pattern.count)
+  if (recentMoves.length < pattern.count) return false
+  const last = recentMoves.slice(-pattern.count)
+  const allMatch = last.every(m => m.face === pattern.face && (pattern.direction == null || m.direction === pattern.direction))
+  if (!allMatch) return false
   return last[last.length - 1].cubeTimestamp - last[0].cubeTimestamp <= pattern.windowMs
 }
 
 const DEFAULT_PATTERNS: Array<{ pattern: GesturePattern; action: string }> = [
-  { pattern: { face: 'U', direction: 'CW', count: 4, windowMs: 2000 }, action: 'resetGyro' },
-  { pattern: { face: 'D', direction: 'CW', count: 4, windowMs: 2000 }, action: 'resetState' },
+  { pattern: { face: 'U', direction: 'CW', count: 4, windowMs: 3000 }, action: 'resetGyro' },
+  { pattern: { face: 'U', direction: 'CCW', count: 4, windowMs: 3000 }, action: 'resetGyro' },
+  { pattern: { face: 'D', direction: 'CW', count: 4, windowMs: 3000 }, action: 'resetState' },
+  { pattern: { face: 'D', direction: 'CCW', count: 4, windowMs: 3000 }, action: 'resetState' },
+
 ]
 
 interface GestureHandlers {
@@ -24,7 +26,8 @@ interface GestureHandlers {
 
 export function useGestureDetector(
   driver: MutableRefObject<CubeDriver | null>,
-  handlers: GestureHandlers
+  handlers: GestureHandlers,
+  isSolvedRef: MutableRefObject<boolean>
 ) {
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
@@ -41,7 +44,7 @@ export function useGestureDetector(
 
       for (const { pattern, action } of DEFAULT_PATTERNS) {
         if (matchGesture(history, pattern)) {
-          if (action === 'resetGyro') handlersRef.current.resetGyro()
+          if (action === 'resetGyro' && isSolvedRef.current) handlersRef.current.resetGyro()
           if (action === 'resetState') handlersRef.current.resetState()
           history.length = 0
         }

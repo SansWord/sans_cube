@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move } from '../types/cube'
@@ -141,8 +141,12 @@ export function isSolvedFacelets(facelets: string): boolean {
 export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
   const [facelets, setFacelets] = useState<string>(SOLVED_FACELETS)
   const [isSolved, setIsSolved] = useState(true)
+  const faceletsRef = useRef(SOLVED_FACELETS)
+  const isSolvedRef = useRef(true)
 
   const resetState = useCallback(() => {
+    faceletsRef.current = SOLVED_FACELETS
+    isSolvedRef.current = true
     setFacelets(SOLVED_FACELETS)
     setIsSolved(true)
   }, [])
@@ -152,11 +156,12 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
     if (!d) return
 
     const onMove = (move: Move) => {
-      setFacelets((prev) => {
-        const next = applyMoveToFacelets(prev, move)
-        setIsSolved(isSolvedFacelets(next))
-        return next
-      })
+      const next = applyMoveToFacelets(faceletsRef.current, move)
+      const solved = isSolvedFacelets(next)
+      faceletsRef.current = next
+      isSolvedRef.current = solved
+      setFacelets(next)
+      setIsSolved(solved)
     }
 
     d.on('move', onMove)
@@ -165,5 +170,5 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>) {
     }
   }, [driver])
 
-  return { facelets, isSolved, resetState }
+  return { facelets, isSolved, isSolvedRef, resetState }
 }

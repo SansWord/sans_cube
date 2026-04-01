@@ -16,7 +16,7 @@ import type { Move } from './types/cube'
 
 export default function App() {
   const { driver, connect, disconnect, status } = useCubeDriver()
-  const { facelets, isSolved, resetState } = useCubeState(driver)
+  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver)
   const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver)
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
   const rendererRef = useRef<CubeRenderer | null>(null)
@@ -42,7 +42,7 @@ export default function App() {
     return () => d.off('move', onMove)
   }, [driver])
 
-  useGestureDetector(driver, { resetGyro, resetState })
+  useGestureDetector(driver, { resetGyro, resetState }, isSolvedRef)
 
   const isConnected = status === 'connected'
 

@@ -32,7 +32,7 @@ export interface OrientationConfig {
 
 export interface GesturePattern {
   face: Face
-  direction: Direction
+  direction?: Direction
   count: number
   windowMs: number
 }
