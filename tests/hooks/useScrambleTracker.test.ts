@@ -68,7 +68,7 @@ describe('applyTrackerMove — single CW step', () => {
     expect(state.trackingState).toBe('warning')
     state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong face → wrong
     expect(state.trackingState).toBe('wrong')
-    expect(state.wrongMoves).toEqual([move('U', 'CW')])
+    expect(state.wrongSegments).toEqual([{ face: 'U', netTurns: 1 }])
     expect(state.warningNetTurns).toBe(-1)  // preserved
     state = applyTrackerMove(state, steps, move('U', 'CCW'))  // undo wrong → back to warning
     expect(state.trackingState).toBe('warning')
@@ -80,7 +80,7 @@ describe('applyTrackerMove — single CW step', () => {
     let state = makeInitialTrackerState(steps)
     state = applyTrackerMove(state, steps, move('U', 'CW'))
     expect(state.trackingState).toBe('wrong')
-    expect(state.wrongMoves).toEqual([move('U', 'CW')])
+    expect(state.wrongSegments).toEqual([{ face: 'U', netTurns: 1 }])
   })
 
   it('from wrong: reverse move → back to scrambling', () => {
@@ -88,23 +88,36 @@ describe('applyTrackerMove — single CW step', () => {
     state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong
     state = applyTrackerMove(state, steps, move('U', 'CCW'))  // undo
     expect(state.trackingState).toBe('scrambling')
-    expect(state.wrongMoves).toEqual([])
+    expect(state.wrongSegments).toEqual([])
     expect(state.currentStepIndex).toBe(0)
   })
 
-  it('multiple wrong moves stack up; reverse sequence clears them', () => {
+  it('same face in wrong mode accumulates net turns: U×4 exits wrong mode', () => {
     let state = makeInitialTrackerState(steps)
-    state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong: stack=[U]
-    state = applyTrackerMove(state, steps, move('F', 'CCW'))  // wrong: stack=[U, F']
+    state = applyTrackerMove(state, steps, move('U', 'CW'))  // net=1
+    expect(state.wrongSegments).toEqual([{ face: 'U', netTurns: 1 }])
+    state = applyTrackerMove(state, steps, move('U', 'CW'))  // net=2
+    expect(state.wrongSegments).toEqual([{ face: 'U', netTurns: 2 }])
+    state = applyTrackerMove(state, steps, move('U', 'CW'))  // net=3
+    expect(state.wrongSegments).toEqual([{ face: 'U', netTurns: 3 }])
     expect(state.trackingState).toBe('wrong')
-    expect(state.wrongMoves).toHaveLength(2)
-    state = applyTrackerMove(state, steps, move('F', 'CW'))   // cancels F': stack=[U]
-    expect(state.trackingState).toBe('wrong')
-    expect(state.wrongMoves).toHaveLength(1)
-    state = applyTrackerMove(state, steps, move('U', 'CCW'))  // cancels U: stack=[]
+    state = applyTrackerMove(state, steps, move('U', 'CW'))  // net=4≡0 → exits
     expect(state.trackingState).toBe('scrambling')
-    expect(state.wrongMoves).toEqual([])
-    expect(state.currentStepIndex).toBe(0)
+    expect(state.wrongSegments).toEqual([])
+  })
+
+  it('multiple wrong faces stack; cancelling in reverse order exits wrong mode', () => {
+    let state = makeInitialTrackerState(steps)
+    state = applyTrackerMove(state, steps, move('U', 'CW'))   // segments=[{U,1}]
+    state = applyTrackerMove(state, steps, move('F', 'CCW'))  // segments=[{U,1},{F,-1}]
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongSegments).toHaveLength(2)
+    state = applyTrackerMove(state, steps, move('F', 'CW'))   // cancels F: segments=[{U,1}]
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongSegments).toHaveLength(1)
+    state = applyTrackerMove(state, steps, move('U', 'CCW'))  // cancels U: segments=[]
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.wrongSegments).toEqual([])
   })
 })
 

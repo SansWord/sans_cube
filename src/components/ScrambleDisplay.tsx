@@ -1,14 +1,13 @@
 import type { ScrambleStep } from '../types/solve'
-import type { StepState, TrackingState } from '../hooks/useScrambleTracker'
+import type { StepState, TrackingState, WrongSegment } from '../hooks/useScrambleTracker'
 import { scrambleStepToString } from '../utils/scramble'
-import type { Move } from '../types/cube'
 
 interface Props {
   scramble: string | null
   steps: ScrambleStep[]
   stepStates: StepState[]
   trackingState: TrackingState
-  wrongMoves: Move[]
+  wrongSegments: WrongSegment[]
   onResetCube: () => void
   onResetGyro: () => void
 }
@@ -20,12 +19,20 @@ const STATE_COLOR: Record<StepState, string> = {
   warning: '#f39c12',
 }
 
+function segmentToCancel(seg: WrongSegment): string {
+  const net4 = ((seg.netTurns % 4) + 4) % 4
+  if (net4 === 1) return seg.face + "'"  // 1 CW → cancel with CCW
+  if (net4 === 2) return seg.face + '2'  // 2 → cancel with double
+  if (net4 === 3) return seg.face        // 3 CW ≡ -1 → cancel with 1 CW
+  return ''
+}
+
 export function ScrambleDisplay({
   scramble,
   steps,
   stepStates,
   trackingState,
-  wrongMoves,
+  wrongSegments,
   onResetCube,
   onResetGyro,
 }: Props) {
@@ -39,11 +46,11 @@ export function ScrambleDisplay({
 
   return (
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
-      {trackingState === 'wrong' && wrongMoves.length > 0 ? (
+      {trackingState === 'wrong' && wrongSegments.length > 0 ? (
         <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 8, letterSpacing: 2 }}>
-          {wrongMoves.slice().reverse().map((m, i) => (
+          {wrongSegments.slice().reverse().map((seg, i) => (
             <span key={i} style={{ marginRight: 6 }}>
-              {m.face}{m.direction === 'CW' ? "'" : ''}
+              {segmentToCancel(seg)}
             </span>
           ))}
         </div>
