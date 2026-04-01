@@ -1,9 +1,47 @@
 import * as THREE from 'three'
 import type { Quaternion, Face } from '../types/cube'
 
+const BG_COLOR = 0x2d3250
+
 const FACE_COLORS: Record<string, number> = {
-  U: 0xffffff, D: 0xffff00, F: 0x00aa00,
-  B: 0x0000cc, R: 0xcc0000, L: 0xff8800,
+  U: 0xe8e8e8, D: 0xeec030, F: 0x50c050,
+  B: 0x4878d0, R: 0xcc3838, L: 0xe89030,
+}
+
+function makeStickerTexture(color: number): THREE.CanvasTexture {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+
+  const bgR = (BG_COLOR >> 16) & 0xff
+  const bgG = (BG_COLOR >> 8) & 0xff
+  const bgB = BG_COLOR & 0xff
+  ctx.fillStyle = `rgb(${bgR},${bgG},${bgB})`
+  ctx.fillRect(0, 0, size, size)
+
+  const cR = (color >> 16) & 0xff
+  const cG = (color >> 8) & 0xff
+  const cB = color & 0xff
+  ctx.fillStyle = `rgb(${cR},${cG},${cB})`
+  const pad = 10
+  const r = 18
+  const x = pad, y = pad, w = size - pad * 2, h = size - pad * 2
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+  ctx.fill()
+
+  return new THREE.CanvasTexture(canvas)
 }
 
 const LAYER_AXIS: Record<Face, 'x' | 'y' | 'z'> = {
@@ -24,6 +62,7 @@ export class CubeRenderer {
   readonly camera: THREE.PerspectiveCamera
   readonly renderer: THREE.WebGLRenderer
   private cubies: THREE.Mesh[] = []
+  private readonly stickerTextures: Map<string, THREE.CanvasTexture>
   private pivotGroup = new THREE.Group()
   // Separate frame IDs: renderFrameId is always running; animFrameId is only set during an animation tick
   private renderFrameId: number | null = null
@@ -35,8 +74,12 @@ export class CubeRenderer {
   private animationRunning = false
 
   constructor(canvas: HTMLCanvasElement) {
+    this.stickerTextures = new Map(
+      Object.entries(FACE_COLORS).map(([face, color]) => [face, makeStickerTexture(color)])
+    )
+
     this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color(0x1a1a2e)
+    this.scene.background = new THREE.Color(BG_COLOR)
 
     this.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100)
     this.camera.position.set(0, 6, 7)
@@ -64,15 +107,19 @@ export class CubeRenderer {
           if (x === 0 && y === 0 && z === 0) continue
           const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95)
           // Material order: [+X=R, -X=L, +Y=U, -Y=D, +Z=F, -Z=B]
-          const face = (color: number, outer: boolean) =>
-            new THREE.MeshLambertMaterial({ color, visible: outer })
+          const face = (faceKey: string, outer: boolean) =>
+            new THREE.MeshLambertMaterial({
+              map: outer ? (this.stickerTextures.get(faceKey) ?? null) : null,
+              color: 0xffffff,
+              visible: outer,
+            })
           const mats = [
-            face(FACE_COLORS['R'], x === 1),
-            face(FACE_COLORS['L'], x === -1),
-            face(FACE_COLORS['U'], y === 1),
-            face(FACE_COLORS['D'], y === -1),
-            face(FACE_COLORS['F'], z === 1),
-            face(FACE_COLORS['B'], z === -1),
+            face('R', x === 1),
+            face('L', x === -1),
+            face('U', y === 1),
+            face('D', y === -1),
+            face('F', z === 1),
+            face('B', z === -1),
           ]
           const mesh = new THREE.Mesh(geo, mats)
           mesh.position.set(x, y, z)
@@ -98,47 +145,40 @@ export class CubeRenderer {
   }
 
   updateFacelets(facelets: string): void {
-    const colorMap = (ch: string): number => FACE_COLORS[ch] ?? 0x111111
+    const texFor = (ch: string) => this.stickerTextures.get(ch) ?? this.stickerTextures.get('U')!
+
+    const setTex = (mat: THREE.MeshLambertMaterial, ch: string) => {
+      mat.map = texFor(ch)
+      mat.needsUpdate = true
+    }
 
     this.cubies.forEach(cubie => {
       const { x, y, z } = cubie.userData as { x: number; y: number; z: number }
       const mats = cubie.material as THREE.MeshLambertMaterial[]
 
-      // +X face (R): x===1, y from 1→-1 (top-bottom), z from 1→-1 (left-right, Kociemba: col=0=front)
       if (x === 1) {
-        const row = 1 - y  // y=1→row=0, y=0→row=1, y=-1→row=2
-        const col = 1 - z  // z=1→col=0, z=0→col=1, z=-1→col=2  (Kociemba: col=0 at z=+1=front)
-        mats[0].color.setHex(colorMap(facelets[9 + row * 3 + col]))
+        const row = 1 - y; const col = 1 - z
+        setTex(mats[0], facelets[9 + row * 3 + col])
       }
-      // -X face (L): x===-1, y from 1→-1, z from 1→-1
       if (x === -1) {
-        const row = 1 - y
-        const col = z + 1  // z=-1→col=0, z=0→col=1, z=1→col=2  (col=0=left=back, col=2=right=front, adjacent to F)
-        mats[1].color.setHex(colorMap(facelets[36 + row * 3 + col]))
+        const row = 1 - y; const col = z + 1
+        setTex(mats[1], facelets[36 + row * 3 + col])
       }
-      // +Y face (U): y===1, z from -1→1 (back to front), x from -1→1
       if (y === 1) {
-        const row = z + 1  // z=-1→row=0, z=0→row=1, z=1→row=2
-        const col = x + 1
-        mats[2].color.setHex(colorMap(facelets[0 + row * 3 + col]))
+        const row = z + 1; const col = x + 1
+        setTex(mats[2], facelets[0 + row * 3 + col])
       }
-      // -Y face (D): y===-1, z from 1→-1, x from -1→1
       if (y === -1) {
-        const row = 1 - z  // z=1→row=0, z=0→row=1, z=-1→row=2
-        const col = x + 1
-        mats[3].color.setHex(colorMap(facelets[27 + row * 3 + col]))
+        const row = 1 - z; const col = x + 1
+        setTex(mats[3], facelets[27 + row * 3 + col])
       }
-      // +Z face (F): z===1, y from 1→-1, x from -1→1
       if (z === 1) {
-        const row = 1 - y
-        const col = x + 1
-        mats[4].color.setHex(colorMap(facelets[18 + row * 3 + col]))
+        const row = 1 - y; const col = x + 1
+        setTex(mats[4], facelets[18 + row * 3 + col])
       }
-      // -Z face (B): z===-1, y from 1→-1, x from 1→-1
       if (z === -1) {
-        const row = 1 - y
-        const col = 1 - x  // x=1→col=0, x=0→col=1, x=-1→col=2
-        mats[5].color.setHex(colorMap(facelets[45 + row * 3 + col]))
+        const row = 1 - y; const col = 1 - x
+        setTex(mats[5], facelets[45 + row * 3 + col])
       }
     })
   }
@@ -315,6 +355,7 @@ export class CubeRenderer {
     this.animationRunning = false
     if (this.renderFrameId !== null) cancelAnimationFrame(this.renderFrameId)
     if (this.animFrameId !== null) cancelAnimationFrame(this.animFrameId)
+    this.stickerTextures.forEach(t => t.dispose())
     this.renderer.dispose()
   }
 }
