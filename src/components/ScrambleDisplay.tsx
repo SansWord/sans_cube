@@ -78,9 +78,19 @@ export function ScrambleDisplay({
               Reset Cube
             </span>
           ) : (
-            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', letterSpacing: 2 }}>
-              {wrongSegments.slice().reverse().map((seg, i) => (
-                <span key={i} style={{ marginRight: 6 }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column-reverse',
+              alignItems: 'center',
+            }}>
+              {wrongSegments.map((seg, i) => (
+                <span key={i} style={{
+                  fontSize: 26,
+                  fontWeight: 'bold',
+                  color: '#e74c3c',
+                  fontFamily: 'monospace',
+                  lineHeight: 1.4,
+                }}>
                   {segmentToCancel(seg)}
                 </span>
               ))}
