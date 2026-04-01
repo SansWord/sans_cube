@@ -22,7 +22,7 @@ export default function App() {
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const [moves, setMoves] = useState<Move[]>([])
-  const [mode, setMode] = useState<'debug' | 'timer'>('debug')
+  const [mode, setMode] = useState<'debug' | 'timer'>('timer')
 
   useEffect(() => {
     const d = driver.current
