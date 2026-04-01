@@ -28,6 +28,7 @@ interface Props {
   onResetGyro: () => void
   onResetState: () => void
   isSolvingRef: MutableRefObject<boolean>
+  gestureResetRef: MutableRefObject<() => void>
 }
 
 export function TimerScreen({
@@ -37,6 +38,7 @@ export function TimerScreen({
   onResetGyro,
   onResetState,
   isSolvingRef,
+  gestureResetRef,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
@@ -63,6 +65,7 @@ export function TimerScreen({
   )
 
   isSolvingRef.current = status === 'solving'
+  gestureResetRef.current = handleResetCube
 
   // Show last solve time while scrambling; reset to 0.0 when armed
   const lastSolveTimeRef = useRef(0)

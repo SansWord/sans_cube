@@ -22,6 +22,7 @@ export default function App() {
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
+  const gestureResetRef = useRef<() => void>(resetState)
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
 
@@ -43,7 +44,7 @@ export default function App() {
     return () => d.off('move', onMove)
   }, [driver])
 
-  useGestureDetector(driver, { resetGyro, resetState }, isSolvedRef, isSolvingRef)
+  useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef)
 
   const isConnected = status === 'connected'
 
@@ -68,6 +69,7 @@ export default function App() {
           onResetGyro={resetGyro}
           onResetState={resetState}
           isSolvingRef={isSolvingRef}
+          gestureResetRef={gestureResetRef}
         />
       ) : (
         <>
