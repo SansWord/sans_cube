@@ -77,13 +77,13 @@ export function ScrambleDisplay({
         )}
         <button
           onClick={onRegenerate}
-          title={regeneratePending ? 'Waiting for solved state…' : 'New scramble'}
+          title={regeneratePending ? 'Waiting for cube to be solved…' : 'Re-generate scramble pattern'}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            fontSize: 18,
-            color: regeneratePending ? '#f39c12' : '#666',
+            fontSize: 22,
+            color: regeneratePending ? '#f39c12' : '#fff',
             padding: '2px 4px',
             lineHeight: 1,
           }}
