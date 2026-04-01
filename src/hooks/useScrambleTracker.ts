@@ -66,11 +66,10 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
     }
     const delta = move.direction === 'CW' ? 1 : -1
     const newNet = state.warningNetTurns + delta
-    const expectedNet = expected.direction === 'CW' ? 1 : -1
     const net4 = ((newNet % 4) + 4) % 4
-    const exp4 = ((expectedNet % 4) + 4) % 4
-    if (net4 === exp4) {
-      // Net turns fulfilled the expected direction → step done
+    // double step: fulfilled at net ≡ 2; single step: fulfilled at net ≡ expected direction
+    const fulfilledNet4 = expected.double ? 2 : (expected.direction === 'CW' ? 1 : 3)
+    if (net4 === fulfilledNet4) {
       const nextIndex = currentStepIndex + 1
       const isArmed = nextIndex >= steps.length
       return {
@@ -108,24 +107,13 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   }
 
   if (expected.double) {
-    if (partialDirection === null) {
-      // First turn on correct face — record direction
-      return { ...state, partialDirection: move.direction }
+    // First turn on correct face → enter warning, track net turns
+    return {
+      ...state,
+      trackingState: 'warning',
+      warningNetTurns: move.direction === 'CW' ? 1 : -1,
+      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
     }
-    if (move.direction === partialDirection) {
-      // Second same-direction turn — step done
-      const nextIndex = currentStepIndex + 1
-      const isArmed = nextIndex >= steps.length
-      return {
-        ...state,
-        trackingState: isArmed ? 'armed' : 'scrambling',
-        stepStates: buildStepStates(steps, nextIndex, nextIndex, null),
-        currentStepIndex: nextIndex,
-        partialDirection: null,
-      }
-    }
-    // Opposite direction — cancel partial progress
-    return { ...state, partialDirection: null }
   }
 
   // Single move

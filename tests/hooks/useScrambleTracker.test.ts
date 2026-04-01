@@ -80,18 +80,17 @@ describe('applyTrackerMove — single CW step', () => {
 })
 
 describe('applyTrackerMove — double step (F2)', () => {
-  // steps[2] is F2 (double)
   const doubleSteps: ScrambleStep[] = [step('F', 'CW', true)]
 
-  it('first CW turn → partial progress, no advance', () => {
+  it('first CW turn → warning, no advance', () => {
     let state = makeInitialTrackerState(doubleSteps)
     state = applyTrackerMove(state, doubleSteps, move('F', 'CW'))
-    expect(state.trackingState).toBe('scrambling')
+    expect(state.trackingState).toBe('warning')
     expect(state.currentStepIndex).toBe(0)
-    expect(state.partialDirection).toBe('CW')
+    expect(state.warningNetTurns).toBe(1)
   })
 
-  it('second same-direction turn → done', () => {
+  it('second same-direction CW turn → done', () => {
     let state = makeInitialTrackerState(doubleSteps)
     state = applyTrackerMove(state, doubleSteps, move('F', 'CW'))
     state = applyTrackerMove(state, doubleSteps, move('F', 'CW'))
@@ -99,20 +98,29 @@ describe('applyTrackerMove — double step (F2)', () => {
     expect(state.currentStepIndex).toBe(1)
   })
 
-  it('CCW first turn then CCW second → also done (both directions valid for double)', () => {
+  it('CCW then CCW → also done (both directions valid for double)', () => {
     let state = makeInitialTrackerState(doubleSteps)
     state = applyTrackerMove(state, doubleSteps, move('F', 'CCW'))
     state = applyTrackerMove(state, doubleSteps, move('F', 'CCW'))
     expect(state.stepStates[0]).toBe('done')
   })
 
-  it('opposite direction second turn → cancels partial progress', () => {
+  it('opposite direction second turn → net 0, back to scrambling', () => {
     let state = makeInitialTrackerState(doubleSteps)
     state = applyTrackerMove(state, doubleSteps, move('F', 'CW'))
     state = applyTrackerMove(state, doubleSteps, move('F', 'CCW'))
-    expect(state.partialDirection).toBeNull()
-    expect(state.currentStepIndex).toBe(0)
     expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(0)
+    expect(state.warningNetTurns).toBe(0)
+  })
+
+  it('CW then CCW → net 0, back to scrambling', () => {
+    let state = makeInitialTrackerState(doubleSteps)
+    state = applyTrackerMove(state, doubleSteps, move('F', 'CW'))   // net=1 → warning
+    state = applyTrackerMove(state, doubleSteps, move('F', 'CCW'))  // net=0 → cancelled
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(0)
+    expect(state.warningNetTurns).toBe(0)
   })
 })
 
