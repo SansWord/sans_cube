@@ -10,6 +10,8 @@ interface Props {
   style?: React.CSSProperties
   interactive?: boolean
   onMove?: (face: Face, direction: 'CW' | 'CCW') => void
+  onResetOrientation?: (resetFn: () => void) => void
+  onOrbit?: (q: { x: number; y: number; z: number; w: number }) => void
 }
 
 interface DragState {
@@ -20,7 +22,7 @@ interface DragState {
 
 const MIN_DRAG_PX = 5
 
-export function CubeCanvas({ facelets, quaternion, onRendererReady, style, interactive, onMove }: Props) {
+export function CubeCanvas({ facelets, quaternion, onRendererReady, style, interactive, onMove, onResetOrientation, onOrbit }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const dragRef = useRef<DragState | null>(null)
@@ -30,6 +32,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
     const renderer = new CubeRenderer(canvasRef.current)
     rendererRef.current = renderer
     onRendererReady?.(renderer)
+    onResetOrientation?.(() => rendererRef.current?.resetOrientation())
 
     const handleResize = () => {
       const canvas = canvasRef.current
@@ -67,6 +70,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
     if (dragRef.current.hit === null) {
       // Background drag: orbit
       rendererRef.current.applyOrbitDelta(e.movementX, e.movementY)
+      onOrbit?.(rendererRef.current.getOrbitQuaternionAsSensorSpace())
     }
   }
 

@@ -5,7 +5,6 @@ import { useGyro } from './hooks/useGyro'
 import { useGestureDetector } from './hooks/useGestureDetector'
 import { useSolveRecorder } from './hooks/useSolveRecorder'
 import { ConnectionBar } from './components/ConnectionBar'
-import { ButtonDriverPanel } from './components/ButtonDriverPanel'
 import { ControlBar } from './components/ControlBar'
 import { CubeCanvas } from './components/CubeCanvas'
 import { OrientationConfig } from './components/OrientationConfig'
@@ -18,7 +17,7 @@ import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 
 export default function App() {
-  const { driver, connect, disconnect, status, driverType, switchDriver, buttonDriver, driverVersion } = useCubeDriver()
+  const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
   const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver, driverVersion)
   const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved, driverVersion)
@@ -80,8 +79,6 @@ export default function App() {
         driverType={driverType}
         onSwitchDriver={switchDriver}
       />
-      {buttonDriver && <ButtonDriverPanel driver={buttonDriver} />}
-
       {mode === 'timer' ? (
         <TimerScreen
           driver={driver}
@@ -95,6 +92,7 @@ export default function App() {
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
           driverVersion={driverVersion}
+          driverType={driverType}
           interactive={driverType === 'mouse'}
           onCubeMove={handleCubeMove}
         />

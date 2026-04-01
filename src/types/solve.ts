@@ -27,6 +27,7 @@ export interface SolveRecord {
   phases: PhaseRecord[]
   date: number          // Unix timestamp (Date.now())
   quaternionSnapshots?: QuaternionSnapshot[]
+  driver?: 'cube' | 'mouse'
 }
 
 export interface Phase {

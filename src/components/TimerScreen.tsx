@@ -17,6 +17,7 @@ import { SolveDetailModal } from './SolveDetailModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
+import { MouseDriver } from '../drivers/MouseDriver'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -30,6 +31,7 @@ interface Props {
   isSolvingRef: MutableRefObject<boolean>
   gestureResetRef: MutableRefObject<() => void>
   driverVersion?: number
+  driverType?: 'cube' | 'mouse'
   interactive?: boolean
   onCubeMove?: (face: Face, direction: 'CW' | 'CCW') => void
 }
@@ -43,10 +45,12 @@ export function TimerScreen({
   isSolvingRef,
   gestureResetRef,
   driverVersion = 0,
+  driverType,
   interactive,
   onCubeMove,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
+  const resetOrientationRef = useRef<(() => void) | null>(null)
   const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
 
   useEffect(() => {
@@ -119,6 +123,7 @@ export function TimerScreen({
       phases: phaseRecords,
       quaternionSnapshots,
       date: Date.now(),
+      driver: driverType,
     })
     // Generate next scramble after short delay
     setTimeout(() => {
@@ -171,6 +176,24 @@ export function TimerScreen({
   }
   gestureResetRef.current = handleResetCube
 
+  const handleAutoScramble = useCallback(() => {
+    onResetState()
+    tracker.reset()
+    setArmed(false)
+    resetTimer()
+    rendererRef.current?.animateOrbitToDefaultView()
+    const d = driver.current as MouseDriver
+    let delay = 50
+    for (const step of steps) {
+      setTimeout(() => d.sendMove(step.face, step.direction), delay)
+      delay += 200
+      if (step.double) {
+        setTimeout(() => d.sendMove(step.face, step.direction), delay)
+        delay += 200
+      }
+    }
+  }, [driver, steps, onResetState, tracker, resetTimer])
+
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: '100vh' }}>
       <SolveHistorySidebar
@@ -200,7 +223,8 @@ export function TimerScreen({
             regeneratePending={regeneratePending}
             onRegenerate={handleRegenerate}
             onResetCube={handleResetCube}
-            onResetGyro={onResetGyro}
+            onResetGyro={() => { onResetGyro(); resetOrientationRef.current?.() }}
+            onAutoScramble={interactive ? handleAutoScramble : undefined}
           />
 
           <TimerDisplay
@@ -213,6 +237,8 @@ export function TimerScreen({
             facelets={facelets}
             quaternion={quaternion}
             onRendererReady={(r) => { rendererRef.current = r }}
+            onResetOrientation={(fn) => { resetOrientationRef.current = fn }}
+            onOrbit={(q) => { driver.current?.emit('gyro', q) }}
             interactive={interactive}
             onMove={onCubeMove}
           />

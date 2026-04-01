@@ -13,6 +13,7 @@ interface Props {
   onRegenerate: () => void
   onResetCube: () => void
   onResetGyro: () => void
+  onAutoScramble?: () => void
 }
 
 const STATE_COLOR: Record<StepState, string> = {
@@ -42,6 +43,7 @@ export function ScrambleDisplay({
   onRegenerate,
   onResetCube,
   onResetGyro,
+  onAutoScramble,
 }: Props) {
   const [showFullSequence, setShowFullSequence] = useState(false)
 
@@ -123,6 +125,9 @@ export function ScrambleDisplay({
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 6 }}>
         <button onClick={onResetCube} style={{ padding: '6px 14px' }}>Reset Cube</button>
         <button onClick={onResetGyro} style={{ padding: '6px 14px' }}>Reset Gyro</button>
+        {onAutoScramble && (
+          <button onClick={onAutoScramble} style={{ padding: '6px 14px' }}>Auto Scramble</button>
+        )}
       </div>
     </div>
   )

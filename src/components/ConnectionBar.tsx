@@ -50,8 +50,7 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
         disabled={status === 'connected'}
         style={{ padding: '4px 6px', background: '#0f3460', border: '1px solid #333', color: '#ccc', borderRadius: 4, fontSize: 12 }}
       >
-        <option value="gan">GAN Cube</option>
-        <option value="button">Button</option>
+        <option value="cube">Cube</option>
         <option value="mouse">Mouse</option>
       </select>
       <span style={{ marginLeft: 'auto', fontSize: 13, ...batteryStyle }}>

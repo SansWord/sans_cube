@@ -11,7 +11,7 @@ export interface FaceHit {
   cubieZ: number
 }
 
-const BG_COLOR = 0x2d3250
+const BG_COLOR = 0x363c65
 
 const FACE_COLORS: Record<string, number> = {
   U: 0xe8e8e8, D: 0xf0d000, F: 0x50c050,
@@ -443,6 +443,48 @@ export class CubeRenderer {
     const direction: 'CW' | 'CCW' = (omegaSign > 0) === positiveMeansCCW ? 'CCW' : 'CW'
 
     return { face, direction }
+  }
+
+  resetOrientation(): void {
+    this.pivotGroup.quaternion.identity()
+  }
+
+  animateQuaternionTo(q: { x: number; y: number; z: number; w: number }, durationMs: number): void {
+    const R = CubeRenderer._GAN_TO_THREE
+    const ganQ = new THREE.Quaternion(q.x, q.y, q.z, q.w)
+    const target = R.clone().multiply(ganQ).multiply(R.clone().invert())
+    const start = this.pivotGroup.quaternion.clone()
+    const startTime = performance.now()
+    const animate = () => {
+      const t = Math.min((performance.now() - startTime) / durationMs, 1)
+      this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
+      if (t < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }
+
+  // Smoothly rotates orbit to a view that shows F, U, R over the given duration
+  animateOrbitToDefaultView(durationMs = 400): void {
+    const target = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6)
+    const start = this.pivotGroup.quaternion.clone()
+    const startTime = performance.now()
+    const animate = () => {
+      const t = Math.min((performance.now() - startTime) / durationMs, 1)
+      this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
+      if (t < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }
+
+  // Returns the current orbit quaternion converted to GAN sensor space,
+  // so it can be emitted as a 'gyro' event and round-trip correctly through setQuaternion().
+  // setQuaternion does: pivotQ = R * q_sensor * R^-1
+  // Inverse:            q_sensor = R^-1 * pivotQ * R
+  getOrbitQuaternionAsSensorSpace(): { x: number; y: number; z: number; w: number } {
+    const R = CubeRenderer._GAN_TO_THREE
+    const Rinv = R.clone().invert()
+    const sensorQ = Rinv.clone().multiply(this.pivotGroup.quaternion).multiply(R.clone())
+    return { x: sensorQ.x, y: sensorQ.y, z: sensorQ.z, w: sensorQ.w }
   }
 
   applyOrbitDelta(dx: number, dy: number): void {
