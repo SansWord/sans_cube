@@ -97,6 +97,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     if (!interactive || !rendererRef.current || !canvasRef.current) return
     const touch = e.touches[0]
+    if (!touch) return
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     const px = touch.clientX - rect.left
@@ -109,6 +110,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
   const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
     if (!interactive || !rendererRef.current || !dragRef.current || !lastTouchPos.current) return
     const touch = e.touches[0]
+    if (!touch) return
     const movementX = touch.clientX - lastTouchPos.current.x
     const movementY = touch.clientY - lastTouchPos.current.y
     lastTouchPos.current = { x: touch.clientX, y: touch.clientY }
@@ -138,7 +140,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
     <canvas
       ref={canvasRef}
       className="cube-canvas"
-      style={{ width: '100%', display: 'block', cursor: interactive ? 'grab' : 'default', touchAction: 'none', ...style }}
+      style={{ width: '100%', display: 'block', cursor: interactive ? 'grab' : 'default', ...style, touchAction: 'none' }}
       onMouseDown={interactive ? handleMouseDown : undefined}
       onMouseMove={interactive ? handleMouseMove : undefined}
       onMouseUp={interactive ? handleMouseUp : undefined}
