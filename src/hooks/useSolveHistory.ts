@@ -80,7 +80,10 @@ export function computeStats(solves: SolveRecord[]): SolveStats {
 
 export function useSolveHistory() {
   const [solves, setSolves] = useState<SolveRecord[]>(() => loadSolves())
-  const nextIdRef = useRef(loadNextId())
+  const nextIdRef = useRef(Math.max(
+    loadNextId(),
+    solves.length > 0 ? Math.max(...solves.map(s => s.id)) + 1 : 1
+  ))
 
   const nextId = useCallback((): number => {
     const id = nextIdRef.current
