@@ -66,7 +66,7 @@ export function TimerScreen({
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
-  const { status, elapsedMs, phaseRecords, recordedMoves, reset: resetTimer } = useTimer(
+  const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer } = useTimer(
     driver,
     CFOP,
     armed,
@@ -95,6 +95,7 @@ export function TimerScreen({
       timeMs: elapsedMs,
       moves: recordedMoves,
       phases: phaseRecords,
+      quaternionSnapshots,
       date: Date.now(),
     })
     // Generate next scramble after short delay

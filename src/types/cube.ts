@@ -6,6 +6,7 @@ export interface Move {
   direction: Direction
   cubeTimestamp: number
   serial: number
+  quaternion?: Quaternion
 }
 
 export interface Quaternion {

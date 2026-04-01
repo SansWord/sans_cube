@@ -6,6 +6,7 @@ interface Props {
   phaseRecords: PhaseRecord[]
   method: SolveMethod
   interactive?: boolean
+  indicatorPct?: number   // 0–100, shows a vertical playhead line
 }
 
 function fmt(ms: number): string {
@@ -17,7 +18,7 @@ function fmtTps(turns: number, ms: number): string {
   return (turns / (ms / 1000)).toFixed(2)
 }
 
-export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
+export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPct }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
@@ -63,6 +64,22 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
         })}
       </div>
 
+      {/* Playhead indicator */}
+      {indicatorPct !== undefined && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: `${indicatorPct}%`,
+          width: 2,
+          height: 24,
+          background: '#fff',
+          borderRadius: 1,
+          pointerEvents: 'none',
+          boxShadow: '0 0 4px rgba(0,0,0,0.6)',
+          transform: 'translateX(-1px)',
+        }} />
+      )}
+
       {/* Labels row */}
       <div style={{ display: 'flex' }}>
         {phaseRecords.map((p, i) => {
@@ -92,14 +109,14 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
         const stepMs = p.recognitionMs + p.executionMs
         const pct = ((stepMs / totalMs) * 100).toFixed(1)
 
-        // F2L group totals
-        const isF2L = p.group === 'F2L'
-        const f2lPhases = isF2L ? phaseRecords.filter((x) => x.group === 'F2L') : []
-        const f2lTotalMs = f2lPhases.reduce((s, x) => s + x.recognitionMs + x.executionMs, 0)
-        const f2lTotalRec = f2lPhases.reduce((s, x) => s + x.recognitionMs, 0)
-        const f2lTotalExec = f2lPhases.reduce((s, x) => s + x.executionMs, 0)
-        const f2lTurns = f2lPhases.reduce((s, x) => s + x.turns, 0)
-        const f2lPct = totalMs > 0 ? ((f2lTotalMs / totalMs) * 100).toFixed(1) : '0'
+        // Group totals (F2L, OLL, PLL)
+        const group = p.group
+        const groupPhases = group ? phaseRecords.filter((x) => x.group === group) : []
+        const groupTotalMs = groupPhases.reduce((s, x) => s + x.recognitionMs + x.executionMs, 0)
+        const groupTotalRec = groupPhases.reduce((s, x) => s + x.recognitionMs, 0)
+        const groupTotalExec = groupPhases.reduce((s, x) => s + x.executionMs, 0)
+        const groupTurns = groupPhases.reduce((s, x) => s + x.turns, 0)
+        const groupPct = totalMs > 0 ? ((groupTotalMs / totalMs) * 100).toFixed(1) : '0'
 
         return (
           <div style={{
@@ -126,17 +143,17 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
             <div>True TPS: {fmtTps(p.turns, p.executionMs)}</div>
             <div>Turns: {p.turns}</div>
             <div>Percentage: {pct}%</div>
-            {isF2L && (
+            {group && groupPhases.length > 1 && (
               <>
                 <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '8px 0' }} />
-                <div style={{ fontWeight: 'bold', marginBottom: 4 }}>F2L Totals</div>
-                <div>Total Time: {fmt(f2lTotalMs)}</div>
-                <div>Total Recognition: {fmt(f2lTotalRec)}</div>
-                <div>Total Execution: {fmt(f2lTotalExec)}</div>
-                <div>Total TPS: {fmtTps(f2lTurns, f2lTotalMs)}</div>
-                <div>Total True TPS: {fmtTps(f2lTurns, f2lTotalExec)}</div>
-                <div>Total Turns: {f2lTurns}</div>
-                <div>Percentage: {f2lPct}%</div>
+                <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{group} Totals</div>
+                <div>Total Time: {fmt(groupTotalMs)}</div>
+                <div>Total Recognition: {fmt(groupTotalRec)}</div>
+                <div>Total Execution: {fmt(groupTotalExec)}</div>
+                <div>Total TPS: {fmtTps(groupTurns, groupTotalMs)}</div>
+                <div>Total True TPS: {fmtTps(groupTurns, groupTotalExec)}</div>
+                <div>Total Turns: {groupTurns}</div>
+                <div>Percentage: {groupPct}%</div>
               </>
             )}
           </div>

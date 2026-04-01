@@ -64,7 +64,7 @@ function exitWrongMode(state: TrackerState, steps: ScrambleStep[]): TrackerState
 }
 
 export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: Move): TrackerState {
-  const { trackingState, currentStepIndex, wrongSegments, partialDirection } = state
+  const { trackingState, currentStepIndex, wrongSegments } = state
 
   // Armed: scramble done, ignore further moves
   if (trackingState === 'armed') return state

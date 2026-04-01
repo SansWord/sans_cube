@@ -344,6 +344,11 @@ export class CubeRenderer {
     this.renderFrameId = requestAnimationFrame(loop)
   }
 
+  setCameraPosition(x: number, y: number, z: number): void {
+    this.camera.position.set(x, y, z)
+    this.camera.lookAt(0, 0, 0)
+  }
+
   resize(width: number, height: number): void {
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()

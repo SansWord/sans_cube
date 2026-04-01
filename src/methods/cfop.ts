@@ -43,21 +43,25 @@ export const CFOP: SolveMethod = {
     },
     {
       label: 'EOLL',
+      group: 'OLL',
       color: '#f39c12',
       isComplete: isEOLLDone,
     },
     {
-      label: 'OLL',
+      label: 'COLL',
+      group: 'OLL',
       color: '#e67e22',
       isComplete: isOLLDone,
     },
     {
       label: 'CPLL',
+      group: 'PLL',
       color: '#27ae60',
       isComplete: isCPLLDone,
     },
     {
-      label: 'PLL',
+      label: 'EPLL',
+      group: 'PLL',
       color: '#2ecc71',
       isComplete: isSolvedFacelets,
     },

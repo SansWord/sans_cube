@@ -6,6 +6,7 @@ import { CubeCanvas } from './CubeCanvas'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import { SOLVED_FACELETS } from '../types/cube'
 import { applyMoveToFacelets } from '../hooks/useCubeState'
+import { parseScramble } from '../utils/scramble'
 import type { Quaternion } from '../types/cube'
 
 interface Props {
@@ -16,6 +17,43 @@ interface Props {
 }
 
 const IDENTITY_QUATERNION: Quaternion = { x: 0, y: 0, z: 0, w: 1 }
+
+function slerpQuaternion(a: Quaternion, b: Quaternion, t: number): Quaternion {
+  let dot = a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w
+  let { x: bx, y: by, z: bz, w: bw } = b
+  if (dot < 0) { bx = -bx; by = -by; bz = -bz; bw = -bw; dot = -dot }
+  if (dot > 0.9995) {
+    // Nearly identical — normalised lerp
+    const rx = a.x + t*(bx-a.x), ry = a.y + t*(by-a.y)
+    const rz = a.z + t*(bz-a.z), rw = a.w + t*(bw-a.w)
+    const len = Math.hypot(rx, ry, rz, rw)
+    return { x: rx/len, y: ry/len, z: rz/len, w: rw/len }
+  }
+  const theta0 = Math.acos(dot)
+  const theta = theta0 * t
+  const sinTheta = Math.sin(theta)
+  const sinTheta0 = Math.sin(theta0)
+  const s0 = Math.cos(theta) - dot * sinTheta / sinTheta0
+  const s1 = sinTheta / sinTheta0
+  return { x: s0*a.x + s1*bx, y: s0*a.y + s1*by, z: s0*a.z + s1*bz, w: s0*a.w + s1*bw }
+}
+
+function findSlerpedQuaternion(snapshots: { quaternion: Quaternion; relativeMs: number }[], solveElapsedMs: number): Quaternion | null {
+  if (snapshots.length === 0) return null
+  if (solveElapsedMs <= snapshots[0].relativeMs) return snapshots[0].quaternion
+  const last = snapshots[snapshots.length - 1]
+  if (solveElapsedMs >= last.relativeMs) return last.quaternion
+  // Binary search for surrounding pair
+  let lo = 0, hi = snapshots.length - 2
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (snapshots[mid + 1].relativeMs <= solveElapsedMs) lo = mid + 1
+    else hi = mid
+  }
+  const prev = snapshots[lo], next = snapshots[lo + 1]
+  const t = (solveElapsedMs - prev.relativeMs) / (next.relativeMs - prev.relativeMs)
+  return slerpQuaternion(prev.quaternion, next.quaternion, t)
+}
 const SPEED_OPTIONS = [0.5, 1, 2]
 
 function formatDate(ts: number): string {
@@ -26,8 +64,18 @@ function formatTime(ms: number): string {
   return (ms / 1000).toFixed(2) + 's'
 }
 
-function computeFaceletsAtIndex(moves: SolveRecord['moves'], index: number): string {
+function computeScrambledFacelets(scramble: string): string {
   let f = SOLVED_FACELETS
+  for (const step of parseScramble(scramble)) {
+    const move = { face: step.face, direction: step.direction }
+    f = applyMoveToFacelets(f, move)
+    if (step.double) f = applyMoveToFacelets(f, move)
+  }
+  return f
+}
+
+function computeFaceletsAtIndex(scrambledFacelets: string, moves: SolveRecord['moves'], index: number): string {
+  let f = scrambledFacelets
   for (let i = 0; i < index; i++) {
     f = applyMoveToFacelets(f, moves[i])
   }
@@ -45,13 +93,20 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
 
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
+  const scrambledFacelets = computeScrambledFacelets(solve.scramble)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [indicatorMs, setIndicatorMs] = useState(0)
+  const [replayQuaternion, setReplayQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
-  const [gyroEnabled, setGyroEnabled] = useState(false)
+  const [gyroEnabled, setGyroEnabled] = useState(true)
+  const gyroEnabledRef = useRef(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set())
+  const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const gyroRafRef = useRef<number | null>(null)
+  const playStartWallRef = useRef(0)
+  const playStartOffsetRef = useRef(0)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -59,35 +114,67 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Sync canvas to currentIndex
   useEffect(() => {
-    const facelets = computeFaceletsAtIndex(solve.moves, currentIndex)
-    rendererRef.current?.queueFaceletsUpdate(facelets)
-  }, [currentIndex, solve.moves])
+    gyroEnabledRef.current = gyroEnabled
+    if (!gyroEnabled) {
+      rendererRef.current?.setQuaternion(IDENTITY_QUATERNION)
+      rendererRef.current?.setCameraPosition(4.5, 5, 5.5)
+    } else {
+      rendererRef.current?.setCameraPosition(0, 6, 7)
+      rendererRef.current?.setQuaternion(replayQuaternion)
+    }
+  }, [gyroEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const cancelScheduled = useCallback(() => {
     timeoutsRef.current.forEach(clearTimeout)
     timeoutsRef.current = []
+    if (gyroRafRef.current !== null) {
+      cancelAnimationFrame(gyroRafRef.current)
+      gyroRafRef.current = null
+    }
   }, [])
 
-  const play = useCallback(() => {
+  const playFrom = useCallback((startIdx: number) => {
+    cancelScheduled()
+    setCurrentIndex(startIdx)
     setIsPlaying(true)
-    const startIdx = currentIndex
     const moves = solve.moves
+    const snapshots = solve.quaternionSnapshots ?? []
 
+    const startOffsetMs = startIdx > 0
+      ? moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp
+      : 0
+
+    let cumulativeDelay = 0
     moves.slice(startIdx).forEach((m, i) => {
       const globalIdx = startIdx + i
-      const prevTs = globalIdx === 0 ? moves[0].cubeTimestamp : moves[globalIdx - 1].cubeTimestamp
-      const currTs = m.cubeTimestamp
-      const delay = globalIdx === 0 ? 0 : (currTs - prevTs) / speed
+      if (globalIdx > 0) {
+        cumulativeDelay += (m.cubeTimestamp - moves[globalIdx - 1].cubeTimestamp) / speed
+      }
       const t = setTimeout(() => {
-        rendererRef.current?.animateMove(m.face, m.direction, Math.max(60, delay * 0.8))
+        rendererRef.current?.animateMove(m.face, m.direction, 150)
         setCurrentIndex(globalIdx + 1)
         if (globalIdx + 1 >= moves.length) setIsPlaying(false)
-      }, delay)
+      }, cumulativeDelay)
       timeoutsRef.current.push(t)
     })
-  }, [currentIndex, solve.moves, speed])
+
+    playStartWallRef.current = performance.now()
+    playStartOffsetRef.current = startOffsetMs
+    const loop = () => {
+      const solveElapsed = playStartOffsetRef.current +
+        (performance.now() - playStartWallRef.current) * speed
+      setIndicatorMs(solveElapsed)
+      if (gyroEnabledRef.current && snapshots.length >= 2) {
+        const q = findSlerpedQuaternion(snapshots, solveElapsed)
+        if (q) rendererRef.current?.setQuaternion(q)
+      }
+      gyroRafRef.current = requestAnimationFrame(loop)
+    }
+    gyroRafRef.current = requestAnimationFrame(loop)
+  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots, speed])
+
+  const play = useCallback(() => playFrom(currentIndex), [playFrom, currentIndex])
 
   const pause = useCallback(() => {
     cancelScheduled()
@@ -98,7 +185,20 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     cancelScheduled()
     setIsPlaying(false)
     setCurrentIndex(idx)
-  }, [cancelScheduled])
+    const moves = solve.moves
+    const newElapsedMs = idx > 0 ? moves[idx - 1].cubeTimestamp - moves[0].cubeTimestamp : 0
+    setIndicatorMs(newElapsedMs)
+    const snapshots = solve.quaternionSnapshots ?? []
+    if (snapshots.length > 0) {
+      const targetMs = idx > 0 ? moves[idx - 1].cubeTimestamp - moves[0].cubeTimestamp : 0
+      // Pick last snapshot at or before target
+      const snap = [...snapshots].reverse().find((s) => s.relativeMs <= targetMs)
+      if (snap) setReplayQuaternion(snap.quaternion)
+    } else {
+      const q = idx > 0 ? moves[idx - 1].quaternion : undefined
+      if (q) setReplayQuaternion(q)
+    }
+  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots])
 
   useEffect(() => {
     if (isPlaying) { cancelScheduled(); setIsPlaying(false) }
@@ -121,8 +221,13 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     cumMs += stepMs
     const moveStart = cumTurns
     cumTurns += p.turns
-    return { ...p, stepMs, cumMs, moves: solve.moves.slice(moveStart, cumTurns) }
+    return { ...p, stepMs, cumMs, moveStart, moves: solve.moves.slice(moveStart, cumTurns) }
   })
+
+  // Which phase and move-within-phase is currently active during replay
+  const activePhaseIndex = currentIndex === 0 ? -1
+    : tableRows.findIndex((r) => currentIndex - 1 >= r.moveStart && currentIndex - 1 < r.moveStart + r.turns)
+  const activeMoveInPhase = activePhaseIndex >= 0 ? (currentIndex - 1) - tableRows[activePhaseIndex].moveStart : -1
   const totalRecMs = solve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
   const execPct = totalMs > 0 ? ((totalExecMs / totalMs) * 100).toFixed(0) : '0'
@@ -202,25 +307,43 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               </select>
             </div>
             <CubeCanvas
-              facelets={computeFaceletsAtIndex(solve.moves, currentIndex)}
-              quaternion={IDENTITY_QUATERNION}
-              onRendererReady={(r) => { rendererRef.current = r }}
+              facelets={computeFaceletsAtIndex(scrambledFacelets, solve.moves, currentIndex)}
+              quaternion={replayQuaternion}
+              onRendererReady={(r) => {
+                rendererRef.current = r
+                if (!solve.moves.some((m) => m.quaternion) || !gyroEnabledRef.current) {
+                  r.setCameraPosition(4.5, 5, 5.5)
+                }
+              }}
             />
-            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 8 }}>
-              <button onClick={() => scrub(0)}>«</button>
-              <button onClick={() => scrub(Math.max(0, currentIndex - 1))}>‹</button>
-              <button onClick={isPlaying ? pause : play}>{isPlaying ? '⏸' : '▶'}</button>
-              <button onClick={() => scrub(Math.min(solve.moves.length, currentIndex + 1))}>›</button>
-              <button onClick={() => scrub(solve.moves.length)}>»</button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8 }}>
+              {[
+                { label: isPlaying ? '⏸' : '▶', title: isPlaying ? 'Pause' : 'Play', onClick: isPlaying ? pause : play },
+                { label: '↺', title: 'Replay from start', onClick: () => playFrom(0) },
+              ].map(({ label, title, onClick }) => (
+                <button
+                  key={title}
+                  onClick={onClick}
+                  title={title}
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    fontSize: label === '↺' ? 22 : 16,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
             <div style={{ fontSize: 11, color: '#666', textAlign: 'center', marginTop: 4 }}>
               {getPhaseLabelAtIndex(solve, currentIndex)} — {formatTime(elapsedMs)} / {formatTime(totalMs)}
             </div>
-            <input
-              type="range" min={0} max={solve.moves.length} value={currentIndex}
-              onChange={(e) => scrub(Number(e.target.value))}
-              style={{ width: '100%', marginTop: 4 }}
-            />
           </div>
 
           {/* Detailed Analysis */}
@@ -250,23 +373,19 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               </thead>
               <tbody>
                 {tableRows.map((row, i) => {
-                  const expanded = expandedPhases.has(i)
-                  const toggle = () => setExpandedPhases((prev) => {
-                    const next = new Set(prev)
-                    next.has(i) ? next.delete(i) : next.add(i)
-                    return next
-                  })
+                  const isActive = i === activePhaseIndex
+                  const isHovered = i === hoveredRowIndex
+                  const rowBg = isActive ? 'rgba(46,204,113,0.1)' : isHovered ? '#161626' : 'transparent'
                   return (
                     <>
                       <tr
                         key={i}
-                        onClick={toggle}
-                        style={{ borderBottom: expanded ? 'none' : '1px solid #1a1a2e', cursor: 'pointer' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#161626')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        style={{ background: rowBg, cursor: 'pointer' }}
+                        onClick={() => playFrom(row.moveStart)}
+                        onMouseEnter={() => setHoveredRowIndex(i)}
+                        onMouseLeave={() => setHoveredRowIndex(null)}
                       >
-                        <td style={{ padding: '4px 4px' }}>
-                          <span style={{ color: '#555', marginRight: 4, fontSize: 10 }}>{expanded ? '▾' : '▸'}</span>
+                        <td style={{ padding: '4px 4px', color: isActive ? '#2ecc71' : undefined }}>
                           {row.label}
                         </td>
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>
@@ -277,17 +396,27 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.cumMs)}</td>
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>{row.turns}</td>
                       </tr>
-                      {expanded && (
-                        <tr key={`${i}-moves`} style={{ borderBottom: '1px solid #1a1a2e' }}>
-                          <td colSpan={6} style={{ padding: '4px 8px 8px 20px' }}>
-                            <span style={{ fontFamily: 'monospace', color: '#aaa', fontSize: 12, letterSpacing: 1 }}>
-                              {row.moves.length > 0
-                                ? row.moves.map((m) => m.face + (m.direction === 'CCW' ? "'" : '')).join(' ')
-                                : '—'}
-                            </span>
+                      <tr key={`${i}-moves`} style={{ borderBottom: '1px solid #1a1a2e', background: isActive ? 'rgba(46,204,113,0.05)' : 'transparent' }}>
+                          <td colSpan={6} style={{ padding: '4px 8px 8px 20px', fontFamily: 'monospace', fontSize: 12, letterSpacing: 1 }}>
+                            {row.moves.length > 0
+                              ? row.moves.map((m, mi) => {
+                                  const isCurrentMove = isActive && mi === activeMoveInPhase
+                                  return (
+                                    <span
+                                      key={mi}
+                                      style={{
+                                        color: isCurrentMove ? '#2ecc71' : '#aaa',
+                                        fontWeight: isCurrentMove ? 'bold' : 'normal',
+                                        marginRight: 4,
+                                      }}
+                                    >
+                                      {m.face + (m.direction === 'CCW' ? "'" : '')}
+                                    </span>
+                                  )
+                                })
+                              : <span style={{ color: '#aaa' }}>—</span>}
                           </td>
                         </tr>
-                      )}
                     </>
                   )
                 })}
@@ -299,7 +428,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
         {/* Time Distribution */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ color: '#666', fontSize: 11, marginBottom: 4 }}>Time Distribution</div>
-          <PhaseBar phaseRecords={solve.phases} method={CFOP} interactive={false} />
+          <PhaseBar
+            phaseRecords={solve.phases}
+            method={CFOP}
+            interactive={false}
+            indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
+          />
         </div>
 
         {/* Actions */}

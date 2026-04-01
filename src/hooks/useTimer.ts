@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move } from '../types/cube'
-import type { PhaseRecord, SolveMethod } from '../types/solve'
+import type { Move, Quaternion } from '../types/cube'
+import type { PhaseRecord, QuaternionSnapshot, SolveMethod } from '../types/solve'
 import { isSolvedFacelets } from './useCubeState'
 import { applyMoveToFacelets } from './useCubeState'
 import { SOLVED_FACELETS } from '../types/cube'
@@ -14,6 +14,7 @@ export interface TimerResult {
   elapsedMs: number
   phaseRecords: PhaseRecord[]
   recordedMoves: Move[]
+  quaternionSnapshots: QuaternionSnapshot[]
   reset: () => void
 }
 
@@ -26,6 +27,7 @@ export function useTimer(
   const [elapsedMs, setElapsedMs] = useState(0)
   const [phaseRecords, setPhaseRecords] = useState<PhaseRecord[]>([])
   const [recordedMoves, setRecordedMoves] = useState<Move[]>([])
+  const [quaternionSnapshots, setQuaternionSnapshots] = useState<QuaternionSnapshot[]>([])
 
   // Internal refs — avoid stale closures
   const statusRef = useRef<TimerStatus>('idle')
@@ -37,7 +39,10 @@ export function useTimer(
   const phaseMoveCountRef = useRef(0)
   const completedPhasesRef = useRef<PhaseRecord[]>([])
   const movesRef = useRef<Move[]>([])
+  const quaternionSnapshotsRef = useRef<QuaternionSnapshot[]>([])
+  const lastGyroMsRef = useRef(-Infinity)
   const faceletsRef = useRef(SOLVED_FACELETS)
+  const latestQuaternionRef = useRef<Quaternion | undefined>(undefined)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const methodRef = useRef(method)
   methodRef.current = method
@@ -83,6 +88,8 @@ export function useTimer(
     faceletsRef.current = SOLVED_FACELETS
     completedPhasesRef.current = []
     movesRef.current = []
+    quaternionSnapshotsRef.current = []
+    lastGyroMsRef.current = -Infinity
     phaseIndexRef.current = 0
     phaseMoveCountRef.current = 0
     phaseFirstMoveTimeRef.current = null
@@ -90,19 +97,37 @@ export function useTimer(
     setElapsedMs(0)
     setPhaseRecords([])
     setRecordedMoves([])
+    setQuaternionSnapshots([])
   }, [stopInterval])
 
   useEffect(() => {
     const d = driver.current
     if (!d) return
 
+    const r5 = (n: number) => Math.round(n * 1e5) / 1e5
+    const onGyro = (q: Quaternion) => {
+      latestQuaternionRef.current = q
+      if (statusRef.current === 'solving') {
+        const relativeMs = Date.now() - startTimeRef.current
+        if (relativeMs - lastGyroMsRef.current >= 100) {   // 10 Hz cap
+          lastGyroMsRef.current = relativeMs
+          quaternionSnapshotsRef.current.push({
+            quaternion: { x: r5(q.x), y: r5(q.y), z: r5(q.z), w: r5(q.w) },
+            relativeMs,
+          })
+        }
+      }
+    }
+    d.on('gyro', onGyro)
+
     const onMove = (move: Move) => {
+      const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
       const now = Date.now()
 
       if (statusRef.current === 'solved') return
 
       // Update facelets
-      faceletsRef.current = applyMoveToFacelets(faceletsRef.current, move)
+      faceletsRef.current = applyMoveToFacelets(faceletsRef.current, moveWithQ)
 
       if (statusRef.current === 'idle') {
         if (!armedRef.current) return
@@ -121,34 +146,53 @@ export function useTimer(
 
       if (statusRef.current !== 'solving') return
 
-      movesRef.current = [...movesRef.current, move]
+      movesRef.current = [...movesRef.current, moveWithQ]
       phaseMoveCountRef.current++
 
       if (phaseFirstMoveTimeRef.current === null) {
         phaseFirstMoveTimeRef.current = now
       }
 
-      // Check if current phase is complete
-      const currentPhase = methodRef.current.phases[phaseIndexRef.current]
-      if (currentPhase && currentPhase.isComplete(faceletsRef.current)) {
-        completePhase(now)
+      // Advance through any phases that became complete on this move
+      while (phaseIndexRef.current < methodRef.current.phases.length) {
+        const ph = methodRef.current.phases[phaseIndexRef.current]
+        if (ph && ph.isComplete(faceletsRef.current)) {
+          completePhase(now)
+        } else {
+          break
+        }
       }
 
       // Check if cube is solved
       if (isSolvedFacelets(faceletsRef.current)) {
-        // Complete any remaining phases
+        // Complete any remaining phases not yet caught by the while loop above
         while (phaseIndexRef.current < methodRef.current.phases.length) {
           completePhase(now)
         }
-        // If CPLL and PLL finished on the same move (PLL has 0 turns), absorb CPLL into PLL
         const phases = completedPhasesRef.current
         const n = phases.length
-        if (n >= 2 && phases[n - 2].label === 'CPLL' && phases[n - 1].label === 'PLL' && phases[n - 1].turns === 0) {
-          const cpll = phases[n - 2]
+
+        // If EOLL completed OLL on the same move (OLL has 0 turns), absorb EOLL into OLL
+        const eollIdx = phases.findIndex((p) => p.label === 'EOLL')
+        if (eollIdx >= 0 && eollIdx + 1 < n && phases[eollIdx + 1].label === 'COLL' && phases[eollIdx + 1].turns === 0) {
+          const eoll = phases[eollIdx]
           completedPhasesRef.current = [
-            ...phases.slice(0, n - 2),
+            ...phases.slice(0, eollIdx),
+            { ...eoll, recognitionMs: 0, executionMs: 0, turns: 0 },
+            { ...phases[eollIdx + 1], recognitionMs: eoll.recognitionMs, executionMs: eoll.executionMs, turns: eoll.turns },
+            ...phases.slice(eollIdx + 2),
+          ]
+        }
+
+        // If CPLL and PLL finished on the same move (PLL has 0 turns), absorb CPLL into PLL
+        const phases2 = completedPhasesRef.current
+        const n2 = phases2.length
+        if (n2 >= 2 && phases2[n2 - 2].label === 'CPLL' && phases2[n2 - 1].label === 'EPLL' && phases2[n2 - 1].turns === 0) {
+          const cpll = phases2[n2 - 2]
+          completedPhasesRef.current = [
+            ...phases2.slice(0, n2 - 2),
             { ...cpll, recognitionMs: 0, executionMs: 0, turns: 0 },
-            { ...phases[n - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
+            { ...phases2[n2 - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
           ]
         }
         stopInterval()
@@ -158,12 +202,13 @@ export function useTimer(
         setElapsedMs(total)
         setPhaseRecords([...completedPhasesRef.current])
         setRecordedMoves([...movesRef.current])
+        setQuaternionSnapshots([...quaternionSnapshotsRef.current])
       }
     }
 
     d.on('move', onMove)
-    return () => d.off('move', onMove)
+    return () => { d.off('move', onMove); d.off('gyro', onGyro) }
   }, [driver, completePhase, startInterval, stopInterval])
 
-  return { status, elapsedMs, phaseRecords, recordedMoves, reset }
+  return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset }
 }

@@ -1,4 +1,9 @@
-import type { Face, Direction, Move } from './cube'
+import type { Face, Direction, Move, Quaternion } from './cube'
+
+export interface QuaternionSnapshot {
+  quaternion: Quaternion
+  relativeMs: number   // ms since first move of the solve
+}
 
 export interface ScrambleStep {
   face: Face
@@ -21,6 +26,7 @@ export interface SolveRecord {
   moves: Move[]         // all moves with cubeTimestamp for replay
   phases: PhaseRecord[]
   date: number          // Unix timestamp (Date.now())
+  quaternionSnapshots?: QuaternionSnapshot[]
 }
 
 export interface Phase {
