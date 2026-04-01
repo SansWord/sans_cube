@@ -35,11 +35,11 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', background: '#16213e' }}>
       <button
-        onClick={onConnect}
-        disabled={status !== 'disconnected'}
+        onClick={isConnected ? onDisconnect : onConnect}
+        disabled={status === 'connecting'}
         style={{ padding: '6px 14px' }}
       >
-        Connect
+        {isConnected ? 'Disconnect' : 'Connect'}
       </button>
       <span style={{ color: isConnected ? '#4caf50' : '#aaa' }}>
         {STATUS_LABEL[status]}
@@ -61,13 +61,6 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
         style={{ padding: '6px 14px' }}
       >
         {mode === 'debug' ? 'Timer' : 'Debug'}
-      </button>
-      <button
-        onClick={onDisconnect}
-        disabled={status !== 'connected'}
-        style={{ padding: '6px 14px' }}
-      >
-        Disconnect
       </button>
     </div>
   )
