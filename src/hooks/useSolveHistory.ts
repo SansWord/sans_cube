@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
+import { EXAMPLE_SOLVES } from '../data/exampleSolves'
 
 const STORAGE_KEY = 'sans_cube_solves'
 const COUNTER_KEY = 'sans_cube_next_id'
+const DISMISSED_EXAMPLES_KEY = 'sans_cube_dismissed_examples'
 
 function loadNextId(): number {
   try {
@@ -28,6 +30,21 @@ function loadSolves(): SolveRecord[] {
 
 function saveSolves(solves: SolveRecord[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(solves))
+}
+
+function loadDismissedExamples(): Set<number> {
+  try {
+    const raw = localStorage.getItem(DISMISSED_EXAMPLES_KEY)
+    return raw ? new Set(JSON.parse(raw) as number[]) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function dismissExample(id: number): void {
+  const dismissed = loadDismissedExamples()
+  dismissed.add(id)
+  localStorage.setItem(DISMISSED_EXAMPLES_KEY, JSON.stringify([...dismissed]))
 }
 
 // Exported for tests
@@ -80,6 +97,7 @@ export function computeStats(solves: SolveRecord[]): SolveStats {
 
 export function useSolveHistory() {
   const [solves, setSolves] = useState<SolveRecord[]>(() => loadSolves())
+  const [dismissedExamples, setDismissedExamples] = useState<Set<number>>(() => loadDismissedExamples())
   const nextIdRef = useRef(Math.max(
     loadNextId(),
     solves.length > 0 ? Math.max(...solves.map(s => s.id)) + 1 : 1
@@ -101,14 +119,21 @@ export function useSolveHistory() {
   }, [])
 
   const deleteSolve = useCallback((id: number) => {
-    setSolves((prev) => {
-      const next = prev.filter((s) => s.id !== id)
-      saveSolves(next)
-      return next
-    })
+    if (id < 0) {
+      dismissExample(id)
+      setDismissedExamples((prev) => new Set([...prev, id]))
+    } else {
+      setSolves((prev) => {
+        const next = prev.filter((s) => s.id !== id)
+        saveSolves(next)
+        return next
+      })
+    }
   }, [])
 
-  const stats = computeStats(solves)
+  const visibleExamples = EXAMPLE_SOLVES.filter((e) => !dismissedExamples.has(e.id))
+  const allSolves = [...visibleExamples, ...solves]
+  const stats = computeStats(solves)  // examples excluded from stats
 
-  return { solves, addSolve, deleteSolve, stats, nextId }
+  return { solves: allSolves, addSolve, deleteSolve, stats, nextId }
 }

@@ -64,7 +64,7 @@ export function TimerScreen({
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(() => {
-    const m = window.location.hash.match(/^#solve-(\d+)$/)
+    const m = window.location.hash.match(/^#solve-(-?\d+)$/)
     if (m) {
       const id = parseInt(m[1], 10)
       return solves.find((s) => s.id === id) ?? null

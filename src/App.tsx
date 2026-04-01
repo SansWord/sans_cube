@@ -112,12 +112,18 @@ export default function App() {
           />
           <FaceletDebug facelets={facelets} />
           <MoveHistory moves={moves} />
-          <div style={{ padding: '12px 0', textAlign: 'center' }}>
+          <div style={{ padding: '12px 0', textAlign: 'center', display: 'flex', gap: 8, justifyContent: 'center' }}>
             <button
               onClick={() => { localStorage.clear(); window.location.reload() }}
               style={{ padding: '6px 14px', color: '#e74c3c', border: '1px solid #e74c3c', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
             >
               Clear localStorage
+            </button>
+            <button
+              onClick={() => { localStorage.removeItem('sans_cube_dismissed_examples'); window.location.reload() }}
+              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Restore example solves
             </button>
           </div>
           {lastSession && (

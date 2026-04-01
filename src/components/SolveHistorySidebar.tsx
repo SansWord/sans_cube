@@ -129,7 +129,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <td style={{ padding: '3px 8px', color: '#555' }}>{s.id}</td>
+                  <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
                   <td style={{ textAlign: 'right', padding: '3px 4px' }}>{fmtTime(s.timeMs)}</td>
                   <td style={{ textAlign: 'right', padding: '3px 8px', color: '#888' }}>{fmtTps(s)}</td>
                 </tr>
