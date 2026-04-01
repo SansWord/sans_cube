@@ -50,6 +50,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const [speed, setSpeed] = useState(1)
   const [gyroEnabled, setGyroEnabled] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set())
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
@@ -112,12 +113,15 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const tps = totalTurns / (totalMs / 1000)
   const totalExecMs = solve.phases.reduce((s, p) => s + p.executionMs, 0)
 
-  // Cumulative totals for analysis table
+  // Cumulative totals for analysis table, with move slice per phase
   let cumMs = 0
+  let cumTurns = 0
   const tableRows = solve.phases.map((p) => {
     const stepMs = p.recognitionMs + p.executionMs
     cumMs += stepMs
-    return { ...p, stepMs, cumMs }
+    const moveStart = cumTurns
+    cumTurns += p.turns
+    return { ...p, stepMs, cumMs, moves: solve.moves.slice(moveStart, cumTurns) }
   })
   const totalRecMs = solve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
@@ -245,18 +249,48 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
                 </tr>
               </thead>
               <tbody>
-                {tableRows.map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #1a1a2e' }}>
-                    <td style={{ padding: '4px 4px' }}>{row.label}</td>
-                    <td style={{ textAlign: 'right', padding: '4px 4px' }}>
-                      {row.label === 'Cross' ? '—' : formatTime(row.recognitionMs)}
-                    </td>
-                    <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.executionMs)}</td>
-                    <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.stepMs)}</td>
-                    <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.cumMs)}</td>
-                    <td style={{ textAlign: 'right', padding: '4px 4px' }}>{row.turns}</td>
-                  </tr>
-                ))}
+                {tableRows.map((row, i) => {
+                  const expanded = expandedPhases.has(i)
+                  const toggle = () => setExpandedPhases((prev) => {
+                    const next = new Set(prev)
+                    next.has(i) ? next.delete(i) : next.add(i)
+                    return next
+                  })
+                  return (
+                    <>
+                      <tr
+                        key={i}
+                        onClick={toggle}
+                        style={{ borderBottom: expanded ? 'none' : '1px solid #1a1a2e', cursor: 'pointer' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#161626')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <td style={{ padding: '4px 4px' }}>
+                          <span style={{ color: '#555', marginRight: 4, fontSize: 10 }}>{expanded ? '▾' : '▸'}</span>
+                          {row.label}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '4px 4px' }}>
+                          {row.label === 'Cross' ? '—' : formatTime(row.recognitionMs)}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.executionMs)}</td>
+                        <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.stepMs)}</td>
+                        <td style={{ textAlign: 'right', padding: '4px 4px' }}>{formatTime(row.cumMs)}</td>
+                        <td style={{ textAlign: 'right', padding: '4px 4px' }}>{row.turns}</td>
+                      </tr>
+                      {expanded && (
+                        <tr key={`${i}-moves`} style={{ borderBottom: '1px solid #1a1a2e' }}>
+                          <td colSpan={6} style={{ padding: '4px 8px 8px 20px' }}>
+                            <span style={{ fontFamily: 'monospace', color: '#aaa', fontSize: 12, letterSpacing: 1 }}>
+                              {row.moves.length > 0
+                                ? row.moves.map((m) => m.face + (m.direction === 'CCW' ? "'" : '')).join(' ')
+                                : '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })}
               </tbody>
             </table>
           </div>
