@@ -11,6 +11,7 @@ import { OrientationConfig } from './components/OrientationConfig'
 import { MoveHistory } from './components/MoveHistory'
 import { FaceletDebug } from './components/FaceletDebug'
 import { SolveReplayer } from './components/SolveReplayer'
+import { TimerScreen } from './components/TimerScreen'
 import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move } from './types/cube'
 
@@ -21,8 +22,8 @@ export default function App() {
   const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const [moves, setMoves] = useState<Move[]>([])
+  const [mode, setMode] = useState<'debug' | 'timer'>('debug')
 
-  // Collect moves for MoveHistory
   useEffect(() => {
     const d = driver.current
     if (!d) return
@@ -31,7 +32,6 @@ export default function App() {
     return () => d.off('move', onMove)
   }, [driver])
 
-  // Trigger layer animation on each live move
   useEffect(() => {
     const d = driver.current
     if (!d) return
@@ -47,28 +47,50 @@ export default function App() {
   const isConnected = status === 'connected'
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', minHeight: '100vh' }}>
-      <ConnectionBar status={status} onConnect={connect} onDisconnect={disconnect} />
-      <ControlBar onResetGyro={resetGyro} onResetState={resetState} disabled={!isConnected} />
-      <CubeCanvas
-        facelets={facelets}
-        quaternion={quaternion}
-        onRendererReady={(r) => { rendererRef.current = r }}
+    <div style={{ maxWidth: mode === 'timer' ? '100%' : '600px', margin: '0 auto', minHeight: '100vh' }}>
+      <ConnectionBar
+        status={status}
+        onConnect={connect}
+        onDisconnect={disconnect}
+        mode={mode}
+        onToggleMode={() => setMode((m) => (m === 'debug' ? 'timer' : 'debug'))}
       />
-      <OrientationConfig
-        config={config}
-        onSave={saveOrientationConfig}
-        onUseCurrentOrientation={resetGyro}
-        disabled={!isConnected}
-      />
-      <FaceletDebug facelets={facelets} />
-      <MoveHistory moves={moves} />
-      {lastSession && (
-        <SolveReplayer
-          session={lastSession}
-          renderer={rendererRef.current}
-          onClose={clearSession}
+
+      {mode === 'timer' ? (
+        <TimerScreen
+          driver={driver}
+          status={status}
+          facelets={facelets}
+          quaternion={quaternion}
+          onConnect={connect}
+          onDisconnect={disconnect}
+          onResetGyro={resetGyro}
+          onResetState={resetState}
         />
+      ) : (
+        <>
+          <ControlBar onResetGyro={resetGyro} onResetState={resetState} disabled={!isConnected} />
+          <CubeCanvas
+            facelets={facelets}
+            quaternion={quaternion}
+            onRendererReady={(r) => { rendererRef.current = r }}
+          />
+          <OrientationConfig
+            config={config}
+            onSave={saveOrientationConfig}
+            onUseCurrentOrientation={resetGyro}
+            disabled={!isConnected}
+          />
+          <FaceletDebug facelets={facelets} />
+          <MoveHistory moves={moves} />
+          {lastSession && (
+            <SolveReplayer
+              session={lastSession}
+              renderer={rendererRef.current}
+              onClose={clearSession}
+            />
+          )}
+        </>
       )}
     </div>
   )
