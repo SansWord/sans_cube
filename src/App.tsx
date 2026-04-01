@@ -25,6 +25,19 @@ export default function App() {
   const gestureResetRef = useRef<() => void>(resetState)
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
+  const [battery, setBattery] = useState<number | null>(null)
+
+  useEffect(() => {
+    const d = driver.current
+    if (!d) return
+    const onBattery = (pct: number) => setBattery(pct)
+    d.on('battery', onBattery)
+    return () => d.off('battery', onBattery)
+  }, [driver])
+
+  useEffect(() => {
+    if (status === 'disconnected') setBattery(null)
+  }, [status])
 
   useEffect(() => {
     const d = driver.current
@@ -56,6 +69,7 @@ export default function App() {
         onDisconnect={disconnect}
         mode={mode}
         onToggleMode={() => setMode((m) => (m === 'debug' ? 'timer' : 'debug'))}
+        battery={battery}
       />
 
       {mode === 'timer' ? (

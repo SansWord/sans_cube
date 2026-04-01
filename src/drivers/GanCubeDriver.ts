@@ -49,6 +49,8 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
       const q = event.quaternion as { x: number; y: number; z: number; w: number }
       const quaternion: Quaternion = { x: q.x, y: q.y, z: q.z, w: q.w }
       this.emit('gyro', quaternion)
+    } else if (event.type === 'BATTERY') {
+      this.emit('battery', event.percent as number)
     } else if (event.type === 'DISCONNECT') {
       this.emit('connection', 'disconnected')
     }

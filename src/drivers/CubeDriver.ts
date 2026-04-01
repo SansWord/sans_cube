@@ -6,6 +6,7 @@ type EventMap = {
   move: Move
   gyro: Quaternion
   connection: ConnectionStatus
+  battery: number   // 0–100 percent
 }
 
 type EventHandler<T> = (payload: T) => void

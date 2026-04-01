@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { PhaseRecord } from '../types/solve'
 import type { SolveMethod } from '../types/solve'
 
@@ -118,19 +119,23 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
         const groupTurns = groupPhases.reduce((s, x) => s + x.turns, 0)
         const groupPct = totalMs > 0 ? ((groupTotalMs / totalMs) * 100).toFixed(1) : '0'
 
-        return (
+        const tooltipWidth = 220
+        const flipLeft = mousePos.x + 12 + tooltipWidth > window.innerWidth
+        const tooltipLeft = flipLeft ? mousePos.x - 12 - tooltipWidth : mousePos.x + 12
+
+        return createPortal(
           <div style={{
             position: 'fixed',
             top: mousePos.y - 12,
             transform: 'translateY(-100%)',
-            left: Math.min(mousePos.x + 12, window.innerWidth - 224),
+            left: tooltipLeft,
             background: 'rgba(26, 26, 46, 0.75)',
             backdropFilter: 'blur(4px)',
             border: '1px solid #333',
             borderRadius: 6,
             padding: '10px 14px',
             zIndex: 10,
-            minWidth: 200,
+            width: tooltipWidth,
             fontSize: 12,
             color: '#ccc',
             pointerEvents: 'none',
@@ -156,7 +161,8 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
                 <div>Percentage: {groupPct}%</div>
               </>
             )}
-          </div>
+          </div>,
+          document.body
         )
       })()}
     </div>
