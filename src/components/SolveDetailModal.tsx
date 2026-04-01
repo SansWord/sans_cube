@@ -67,7 +67,7 @@ function formatTime(ms: number): string {
 function computeScrambledFacelets(scramble: string): string {
   let f = SOLVED_FACELETS
   for (const step of parseScramble(scramble)) {
-    const move = { face: step.face, direction: step.direction }
+    const move = { face: step.face, direction: step.direction, cubeTimestamp: 0, serial: 0 }
     f = applyMoveToFacelets(f, move)
     if (step.double) f = applyMoveToFacelets(f, move)
   }
@@ -96,7 +96,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [indicatorMs, setIndicatorMs] = useState(0)
-  const [replayQuaternion, setReplayQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
+  const [replayQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [gyroEnabled, setGyroEnabled] = useState(true)
@@ -181,26 +181,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     setIsPlaying(false)
   }, [cancelScheduled])
 
-  const scrub = useCallback((idx: number) => {
-    cancelScheduled()
-    setIsPlaying(false)
-    setCurrentIndex(idx)
-    const moves = solve.moves
-    const newElapsedMs = idx > 0 ? moves[idx - 1].cubeTimestamp - moves[0].cubeTimestamp : 0
-    setIndicatorMs(newElapsedMs)
-    const snapshots = solve.quaternionSnapshots ?? []
-    if (snapshots.length > 0) {
-      const targetMs = idx > 0 ? moves[idx - 1].cubeTimestamp - moves[0].cubeTimestamp : 0
-      // Pick last snapshot at or before target
-      const snap = [...snapshots].reverse().find((s) => s.relativeMs <= targetMs)
-      if (snap) setReplayQuaternion(snap.quaternion)
-    } else {
-      const q = idx > 0 ? moves[idx - 1].quaternion : undefined
-      if (q) setReplayQuaternion(q)
-    }
-  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots])
-
-  useEffect(() => {
+useEffect(() => {
     if (isPlaying) { cancelScheduled(); setIsPlaying(false) }
   }, [speed]) // eslint-disable-line react-hooks/exhaustive-deps
 
