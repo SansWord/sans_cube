@@ -45,10 +45,14 @@ export function ScrambleDisplay({
 }: Props) {
   const [showFullSequence, setShowFullSequence] = useState(false)
 
-  // Reset the toggle whenever we exit wrong mode
+  // Reset the toggle whenever we exit wrong mode or the sequence drops back within the limit
   useEffect(() => {
     if (trackingState !== 'wrong') setShowFullSequence(false)
   }, [trackingState])
+
+  useEffect(() => {
+    if (wrongSegments.length <= WRONG_SEQUENCE_LIMIT) setShowFullSequence(false)
+  }, [wrongSegments.length])
 
   if (scramble === null) {
     return (
