@@ -8,6 +8,7 @@ const GAN_FACE_MAP: Face[] = ['U', 'R', 'F', 'D', 'L', 'B']
 
 export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   private connection: Awaited<ReturnType<typeof connectGanCube>> | null = null
+  private batteryPollInterval: ReturnType<typeof setInterval> | null = null
 
   async connect(): Promise<void> {
     this.emit('connection', 'connecting')
@@ -21,6 +22,9 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
       })
       this.emit('connection', 'connected')
       this.connection.sendCubeCommand({ type: 'REQUEST_BATTERY' }).catch(() => {})
+      this.batteryPollInterval = setInterval(() => {
+        this.connection?.sendCubeCommand({ type: 'REQUEST_BATTERY' }).catch(() => {})
+      }, 60_000)
     } catch (err) {
       this.emit('connection', 'disconnected')
       throw err
@@ -28,6 +32,10 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   }
 
   async disconnect(): Promise<void> {
+    if (this.batteryPollInterval !== null) {
+      clearInterval(this.batteryPollInterval)
+      this.batteryPollInterval = null
+    }
     const conn = this.connection
     this.connection = null
     this.emit('connection', 'disconnected')
