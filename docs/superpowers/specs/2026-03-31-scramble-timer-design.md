@@ -38,19 +38,78 @@ In timer mode, OrientationConfig, MoveHistory, and FaceletDebug are hidden. The 
 
 - Library: `cubing.js` (`randomScrambleForEvent("333")`)
 - A new scramble is generated after each solve completes and on first entering timer mode
-- The scramble is applied to the 3D cube state so the canvas shows the scrambled cube
+- The scramble is **displayed only** — the user performs it physically on the hardware cube
+- The 3D canvas always reflects the live hardware state (no software-applied scramble)
 - "New Scramble" button available to regenerate manually
+
+---
+
+## Scramble Tracking
+
+The app monitors hardware moves against the expected scramble sequence and provides live feedback. The cube must be in a solved state before scramble tracking begins.
+
+### `ScrambleStep` shape
+
+```ts
+interface ScrambleStep {
+  face: Face          // U R F D L B
+  direction: 'CW' | 'CCW'
+  double: boolean     // true for R2-style moves
+}
+```
+
+### Step states (rendered inline in `ScrambleDisplay`)
+
+| State | Color | Meaning |
+|---|---|---|
+| `done` | Green | Step completed correctly |
+| `current` | White | Next step to perform |
+| `pending` | Dim white | Not yet reached |
+| `warning` | Yellow | Right face, wrong execution |
+| `wrong` | — | Wrong face moved (sequence hidden) |
+
+### Move matching logic (per hardware move event)
+
+**Expected step is non-double (R or R'):**
+- Correct face + correct direction → `done`, advance to next step
+- Correct face + wrong direction → `warning`; monitor same face for correction
+- Wrong face → `wrong`
+
+**Expected step is double (R2):**
+- First turn on correct face (CW or CCW) → partial progress, remember direction
+- Second turn on same face, same direction → `done`, advance
+- Second turn on same face, opposite direction → cancels; reset partial progress (no warning)
+- Turn on wrong face → `wrong`
+
+### Warning state
+
+- Current step highlighted yellow in the scramble sequence
+- Two recovery buttons appear: **Reset Cube** (abandon scramble, return to idle) and **Reset Gyro**
+- If user performs the correct move on the warned face, warning clears and step completes normally
+
+### Wrong move state
+
+- Scramble sequence is hidden
+- Wrong move displayed large in red (e.g. `U`) so user knows exactly what to undo
+- App monitors for the reverse move (e.g. `U'`); on receipt, returns to scramble tracking at last good position
+- **Reset Cube** button also available to abandon and restart
+
+### Timer arm
+
+- Timer arms automatically when all scramble steps are `done`
+- First hardware move after arm starts the timer
+- This ensures the cube is in the correct scrambled state before timing begins
 
 ---
 
 ## Timer Flow
 
-1. **Idle** — scramble displayed, cube showing scrambled state, timer shows `0.00`
-2. **Solving** — first move after scramble starts the timer automatically
-3. **Solved** — cube reaches solved state, timer stops, phase bar populates, solve saved to history
-4. **Ready for next** — new scramble generated after a short delay (1s)
-
-Timer does not start on moves made during scramble application.
+1. **Idle** — scramble displayed, cube at solved state, timer shows `0.00`
+2. **Scrambling** — user performs scramble physically; `ScrambleDisplay` highlights progress
+3. **Armed** — all scramble steps done; timer ready; display shows "Ready"
+4. **Solving** — first move starts the timer
+5. **Solved** — cube reaches solved state, timer stops, phase bar populates, solve saved to history
+6. **Ready for next** — new scramble generated after a short delay (1s)
 
 ---
 
@@ -139,7 +198,7 @@ TPS variants:
 ## Components
 
 ### `ScrambleDisplay`
-Shows the scramble string in a large monospace font above the timer. Move count shown in smaller text below.
+Shows the scramble sequence inline with per-step color coding (`done`=green, `current`=white, `pending`=dim, `warning`=yellow). In `wrong` state, hides the sequence and shows the offending move large in red. Reset Cube and Reset Gyro buttons appear during `warning` and `wrong` states.
 
 ### `TimerDisplay`
 Large centered `XX.XX` seconds. Color changes: white during solving, green on solved.
@@ -214,9 +273,19 @@ Right — **Detailed Analysis:**
 ## `useScramble` Hook
 
 - Calls `cubing.js` `randomScrambleForEvent("333")` asynchronously
-- Returns `{ scramble: string | null, regenerate: () => void }`
-- Applies scramble moves directly to facelets using the existing `applyMoveToFacelets` function (bypasses BLE driver — works whether or not a cube is connected)
-- `useCubeState` gains a new `overrideFacelets(facelets: string)` method so the timer screen can set the canvas to the scrambled state directly
+- Parses the scramble string into `ScrambleStep[]`
+- Returns `{ scramble: string, steps: ScrambleStep[], regenerate: () => void }`
+- No facelets manipulation — the 3D canvas always shows live hardware state
+
+## `useScrambleTracker` Hook
+
+- Accepts `steps: ScrambleStep[]` and subscribes to `driver.on('move')`
+- Tracks current step index and partial progress on double moves
+- Returns `{ stepStates, trackingState, reset }` where:
+  - `stepStates: Array<'done' | 'current' | 'pending' | 'warning'>` — one per step
+  - `trackingState: 'scrambling' | 'warning' | 'wrong' | 'armed'`
+  - `wrongMove: Move | null` — the offending move when in `wrong` state
+- Emits `onArmed` callback when all steps complete (timer can arm)
 
 ---
 
