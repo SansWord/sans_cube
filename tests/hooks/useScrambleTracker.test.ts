@@ -62,6 +62,19 @@ describe('applyTrackerMove — single CW step', () => {
     expect(state.currentStepIndex).toBe(0)
   })
 
+  it('from warning: wrong face → wrong, then undo → back to warning', () => {
+    let state = makeInitialTrackerState(steps)
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // warning, net=-1
+    expect(state.trackingState).toBe('warning')
+    state = applyTrackerMove(state, steps, move('U', 'CW'))   // wrong face → wrong
+    expect(state.trackingState).toBe('wrong')
+    expect(state.warningNetTurns).toBe(-1)  // preserved
+    state = applyTrackerMove(state, steps, move('U', 'CCW'))  // undo wrong → back to warning
+    expect(state.trackingState).toBe('warning')
+    expect(state.warningNetTurns).toBe(-1)  // still preserved
+    expect(state.currentStepIndex).toBe(0)
+  })
+
   it('wrong face → wrong state', () => {
     let state = makeInitialTrackerState(steps)
     state = applyTrackerMove(state, steps, move('U', 'CW'))

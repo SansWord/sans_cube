@@ -14,6 +14,7 @@ export interface TrackerState {
   partialDirection: Direction | null
   currentStepIndex: number
   warningNetTurns: number  // net CW(+1)/CCW(-1) count while in warning state
+  wrongFromWarning: boolean  // whether wrong state was entered from warning
 }
 
 export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
@@ -24,6 +25,7 @@ export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
     partialDirection: null,
     currentStepIndex: 0,
     warningNetTurns: 0,
+    wrongFromWarning: false,
   }
 }
 
@@ -45,11 +47,21 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   // Wrong state: wait for undo
   if (trackingState === 'wrong') {
     if (wrongMove && move.face === wrongMove.face && move.direction !== wrongMove.direction) {
-      // Undone — back to scrambling
+      // Undone — return to warning if we came from there, otherwise scrambling
+      if (state.wrongFromWarning) {
+        return {
+          ...state,
+          trackingState: 'warning',
+          wrongMove: null,
+          wrongFromWarning: false,
+          stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+        }
+      }
       return {
         ...state,
         trackingState: 'scrambling',
         wrongMove: null,
+        wrongFromWarning: false,
         stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
       }
     }
@@ -62,7 +74,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   // Warning state: track net turns on the expected face (mod 4)
   if (trackingState === 'warning') {
     if (move.face !== expected.face) {
-      return { ...state, trackingState: 'wrong', wrongMove: move, warningNetTurns: 0 }
+      return { ...state, trackingState: 'wrong', wrongMove: move, wrongFromWarning: true }
     }
     const delta = move.direction === 'CW' ? 1 : -1
     const newNet = state.warningNetTurns + delta
