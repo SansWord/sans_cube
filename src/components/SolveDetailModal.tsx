@@ -259,9 +259,6 @@ useEffect(() => {
   }, [speed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalMs = solve.timeMs
-  const elapsedMs = currentIndex > 0
-    ? solve.moves[currentIndex - 1].cubeTimestamp - solve.moves[0].cubeTimestamp
-    : 0
 
   const totalTurns = solve.moves.length
   const tps = totalTurns / (totalMs / 1000)
