@@ -22,6 +22,7 @@ export function useTimer(
   driver: MutableRefObject<CubeDriver | null>,
   method: SolveMethod,
   armed: boolean,
+  driverVersion = 0,
 ): TimerResult {
   const [status, setStatus] = useState<TimerStatus>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
@@ -208,7 +209,7 @@ export function useTimer(
 
     d.on('move', onMove)
     return () => { d.off('move', onMove); d.off('gyro', onGyro) }
-  }, [driver, completePhase, startInterval, stopInterval])
+  }, [driver, driverVersion, completePhase, startInterval, stopInterval])
 
   return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset }
 }

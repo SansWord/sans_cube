@@ -8,6 +8,7 @@ export type DriverType = 'gan' | 'button'
 export function useCubeDriver() {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
   const [driverType, setDriverType] = useState<DriverType>('gan')
+  const [driverVersion, setDriverVersion] = useState(0)
 
   const driverRef = useRef<CubeDriver | null>(null)
   if (driverRef.current === null) {
@@ -26,6 +27,7 @@ export function useCubeDriver() {
     driverRef.current = next
     setDriverType(type)
     setStatus('disconnected')
+    setDriverVersion((v) => v + 1)
   }, [])
 
   const connect = useCallback(async () => {
@@ -38,5 +40,5 @@ export function useCubeDriver() {
 
   const buttonDriver = driverType === 'button' ? (driverRef.current as ButtonDriver) : null
 
-  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, buttonDriver }
+  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, buttonDriver, driverVersion }
 }

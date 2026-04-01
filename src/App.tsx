@@ -17,10 +17,10 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move } from './types/cube'
 
 export default function App() {
-  const { driver, connect, disconnect, status, driverType, switchDriver, buttonDriver } = useCubeDriver()
-  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver)
-  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver)
-  const { lastSession, clearSession } = useSolveRecorder(driver, isSolved)
+  const { driver, connect, disconnect, status, driverType, switchDriver, buttonDriver, driverVersion } = useCubeDriver()
+  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver, driverVersion)
+  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
+  const { lastSession, clearSession } = useSolveRecorder(driver, isSolved, driverVersion)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
   const gestureResetRef = useRef<() => void>(resetState)
@@ -34,7 +34,7 @@ export default function App() {
     const onBattery = (pct: number) => setBattery(pct)
     d.on('battery', onBattery)
     return () => d.off('battery', onBattery)
-  }, [driver])
+  }, [driver, driverVersion])
 
   useEffect(() => {
     if (status === 'disconnected') setBattery(null)
@@ -46,7 +46,7 @@ export default function App() {
     const onMove = (m: Move) => setMoves((prev) => [...prev.slice(-100), m])
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
   useEffect(() => {
     const d = driver.current
@@ -56,9 +56,9 @@ export default function App() {
     }
     d.on('move', onMove)
     return () => d.off('move', onMove)
-  }, [driver])
+  }, [driver, driverVersion])
 
-  useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef)
+  useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef, driverVersion)
 
   const isConnected = status === 'connected'
 
@@ -88,6 +88,7 @@ export default function App() {
           onResetState={resetState}
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
+          driverVersion={driverVersion}
         />
       ) : (
         <>

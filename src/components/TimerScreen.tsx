@@ -29,6 +29,7 @@ interface Props {
   onResetState: () => void
   isSolvingRef: MutableRefObject<boolean>
   gestureResetRef: MutableRefObject<() => void>
+  driverVersion?: number
 }
 
 export function TimerScreen({
@@ -39,6 +40,7 @@ export function TimerScreen({
   onResetState,
   isSolvingRef,
   gestureResetRef,
+  driverVersion = 0,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
@@ -79,12 +81,13 @@ export function TimerScreen({
     }
   }, [selectedSolve])
 
-  const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
+  const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
   const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer } = useTimer(
     driver,
     CFOP,
     armed,
+    driverVersion,
   )
 
   isSolvingRef.current = status === 'solving'
