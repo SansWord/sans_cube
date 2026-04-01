@@ -1,7 +1,21 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 
 const STORAGE_KEY = 'sans_cube_solves'
+const COUNTER_KEY = 'sans_cube_next_id'
+
+function loadNextId(): number {
+  try {
+    const raw = localStorage.getItem(COUNTER_KEY)
+    return raw ? Math.max(1, parseInt(raw, 10)) : 1
+  } catch {
+    return 1
+  }
+}
+
+function saveNextId(id: number): void {
+  localStorage.setItem(COUNTER_KEY, String(id))
+}
 
 function loadSolves(): SolveRecord[] {
   try {
@@ -66,6 +80,14 @@ export function computeStats(solves: SolveRecord[]): SolveStats {
 
 export function useSolveHistory() {
   const [solves, setSolves] = useState<SolveRecord[]>(() => loadSolves())
+  const nextIdRef = useRef(loadNextId())
+
+  const nextId = useCallback((): number => {
+    const id = nextIdRef.current
+    nextIdRef.current = id + 1
+    saveNextId(nextIdRef.current)
+    return id
+  }, [])
 
   const addSolve = useCallback((solve: SolveRecord) => {
     setSolves((prev) => {
@@ -85,5 +107,5 @@ export function useSolveHistory() {
 
   const stats = computeStats(solves)
 
-  return { solves, addSolve, deleteSolve, stats }
+  return { solves, addSolve, deleteSolve, stats, nextId }
 }

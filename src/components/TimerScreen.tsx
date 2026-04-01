@@ -36,8 +36,7 @@ export function TimerScreen({
   onResetState,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
-  const { solves, addSolve, deleteSolve, stats } = useSolveHistory()
-  const idCounterRef = useRef(solves.length > 0 ? Math.max(...solves.map(s => s.id)) + 1 : 1)
+  const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
 
   useEffect(() => {
     const d = driver.current
@@ -73,7 +72,7 @@ export function TimerScreen({
   // Save solve when timer reaches solved
   const prevStatusRef = useRef(status)
   if (status === 'solved' && prevStatusRef.current !== 'solved') {
-    const id = idCounterRef.current++
+    const id = nextId()
     addSolve({
       id,
       scramble: scramble ?? '',
