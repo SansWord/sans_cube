@@ -61,13 +61,15 @@ export class CubeRenderer {
           if (x === 0 && y === 0 && z === 0) continue
           const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95)
           // Material order: [+X=R, -X=L, +Y=U, -Y=D, +Z=F, -Z=B]
+          const face = (color: number, outer: boolean) =>
+            new THREE.MeshLambertMaterial({ color, visible: outer })
           const mats = [
-            new THREE.MeshLambertMaterial({ color: x === 1 ? FACE_COLORS['R'] : 0x111111 }),
-            new THREE.MeshLambertMaterial({ color: x === -1 ? FACE_COLORS['L'] : 0x111111 }),
-            new THREE.MeshLambertMaterial({ color: y === 1 ? FACE_COLORS['U'] : 0x111111 }),
-            new THREE.MeshLambertMaterial({ color: y === -1 ? FACE_COLORS['D'] : 0x111111 }),
-            new THREE.MeshLambertMaterial({ color: z === 1 ? FACE_COLORS['F'] : 0x111111 }),
-            new THREE.MeshLambertMaterial({ color: z === -1 ? FACE_COLORS['B'] : 0x111111 }),
+            face(FACE_COLORS['R'], x === 1),
+            face(FACE_COLORS['L'], x === -1),
+            face(FACE_COLORS['U'], y === 1),
+            face(FACE_COLORS['D'], y === -1),
+            face(FACE_COLORS['F'], z === 1),
+            face(FACE_COLORS['B'], z === -1),
           ]
           const mesh = new THREE.Mesh(geo, mats)
           mesh.position.set(x, y, z)
@@ -77,6 +79,19 @@ export class CubeRenderer {
         }
       }
     }
+  }
+
+  private _syncMaterialVisibility(): void {
+    this.cubies.forEach(cubie => {
+      const { x, y, z } = cubie.userData as { x: number; y: number; z: number }
+      const mats = cubie.material as THREE.MeshLambertMaterial[]
+      mats[0].visible = x === 1
+      mats[1].visible = x === -1
+      mats[2].visible = y === 1
+      mats[3].visible = y === -1
+      mats[4].visible = z === 1
+      mats[5].visible = z === -1
+    })
   }
 
   updateFacelets(facelets: string): void {
@@ -212,6 +227,7 @@ export class CubeRenderer {
             ud.z = c.position.z
           })
           this.pivotGroup.remove(pivot)
+          this._syncMaterialVisibility()
           this.animFrameId = null
           resolve()
           return
