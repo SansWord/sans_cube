@@ -65,7 +65,6 @@ export function TimerScreen({
   )
 
   isSolvingRef.current = status === 'solving'
-  gestureResetRef.current = handleResetCube
 
   // Show last solve time while scrambling; reset to 0.0 when armed
   const lastSolveTimeRef = useRef(0)
@@ -139,6 +138,7 @@ export function TimerScreen({
     resetTimer()
     regenerate()
   }
+  gestureResetRef.current = handleResetCube
 
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: '100vh' }}>
