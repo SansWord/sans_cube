@@ -55,6 +55,7 @@ export function TimerScreen({
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
   const [regeneratePending, setRegeneratePending] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(160)
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
@@ -146,6 +147,8 @@ export function TimerScreen({
         solves={solves}
         stats={stats}
         onSelectSolve={setSelectedSolve}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '8px 16px' }}>
@@ -168,6 +171,7 @@ export function TimerScreen({
         />
 
         <CubeCanvas
+          style={{ transform: `translateX(${-sidebarWidth / 2}px)` }}
           facelets={facelets}
           quaternion={quaternion}
           onRendererReady={(r) => { rendererRef.current = r }}

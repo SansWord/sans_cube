@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion } from '../types/cube'
 
@@ -6,9 +6,10 @@ interface Props {
   facelets: string
   quaternion: Quaternion
   onRendererReady?: (renderer: CubeRenderer) => void
+  style?: React.CSSProperties
 }
 
-export function CubeCanvas({ facelets, quaternion, onRendererReady }: Props) {
+export function CubeCanvas({ facelets, quaternion, onRendererReady, style }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<CubeRenderer | null>(null)
 
@@ -42,7 +43,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady }: Props) {
   return (
     <canvas
       ref={canvasRef}
-      style={{ width: '100%', height: '480px', display: 'block' }}
+      style={{ width: '100%', height: '480px', display: 'block', ...style }}
     />
   )
 }

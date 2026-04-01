@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 
 interface StatEntry {
@@ -17,6 +17,8 @@ interface Props {
   solves: SolveRecord[]
   stats: SolveStats
   onSelectSolve: (solve: SolveRecord) => void
+  width: number
+  onWidthChange: (w: number) => void
 }
 
 const MIN_WIDTH = 120
@@ -39,8 +41,7 @@ function fmtTps(solve: SolveRecord): string {
   return (solve.moves.length / secs).toFixed(2)
 }
 
-export function SolveHistorySidebar({ solves, stats, onSelectSolve }: Props) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH)
+export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -54,7 +55,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve }: Props) {
     const onMouseMove = (ev: MouseEvent) => {
       if (!dragging.current) return
       const delta = ev.clientX - startX.current
-      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)))
+      onWidthChange(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)))
     }
     const onMouseUp = () => {
       dragging.current = false
