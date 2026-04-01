@@ -3,6 +3,8 @@
 //          [L] [F] [R] [B]
 //               [D]
 
+import { useState } from 'react'
+
 const FACE_BG: Record<string, string> = {
   U: '#ffffff', R: '#cc0000', F: '#00aa00',
   D: '#ffff00', L: '#ff8800', B: '#0000cc',
@@ -49,6 +51,7 @@ function FaceGrid({ facelets, face }: { facelets: string; face: string }) {
 }
 
 export function FaceletDebug({ facelets }: { facelets: string }) {
+  const [show, setShow] = useState(false)
   const cell = (face: string) => <FaceGrid facelets={facelets} face={face} />
   const blank = <div style={{ display: 'inline-block', width: 38 }} />
 
@@ -62,22 +65,29 @@ export function FaceletDebug({ facelets }: { facelets: string }) {
       borderRadius: 6,
       marginTop: 8,
     }}>
-      <div style={{ marginBottom: 4, color: '#888' }}>Facelet state</div>
-      {/* Row 1: U */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
-        {blank}{cell('U')}
+      <div
+        onClick={() => setShow(s => !s)}
+        style={{ marginBottom: show ? 4 : 0, color: '#888', cursor: 'pointer', userSelect: 'none' }}
+      >
+        {show ? '▼' : '▶'} Facelet state
       </div>
-      {/* Row 2: L F R B */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
-        {cell('L')}{cell('F')}{cell('R')}{cell('B')}
-      </div>
-      {/* Row 3: D */}
-      <div style={{ display: 'flex', gap: 2 }}>
-        {blank}{cell('D')}
-      </div>
-      <div style={{ marginTop: 6, color: '#666', fontSize: 10 }}>
-        {facelets}
-      </div>
+      {show && <>
+        {/* Row 1: U */}
+        <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+          {blank}{cell('U')}
+        </div>
+        {/* Row 2: L F R B */}
+        <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+          {cell('L')}{cell('F')}{cell('R')}{cell('B')}
+        </div>
+        {/* Row 3: D */}
+        <div style={{ display: 'flex', gap: 2 }}>
+          {blank}{cell('D')}
+        </div>
+        <div style={{ marginTop: 6, color: '#666', fontSize: 10 }}>
+          {facelets}
+        </div>
+      </>}
     </div>
   )
 }
