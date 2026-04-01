@@ -19,12 +19,13 @@ interface Props {
   onSelectSolve: (solve: SolveRecord) => void
   width: number
   onWidthChange: (w: number) => void
+  onClose?: () => void
 }
 
 const MIN_WIDTH = 120
 const MAX_WIDTH = 320
 const DEFAULT_WIDTH = 160
-// Font scales linearly from base 11px at min width to 16px at max width
+
 function calcFontSize(width: number): number {
   const t = (width - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH)
   return Math.round(11 + t * 5)
@@ -41,7 +42,7 @@ function fmtTps(solve: SolveRecord): string {
   return (solve.moves.length / secs).toFixed(2)
 }
 
-export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange }: Props) {
+export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange, onClose }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -64,9 +65,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
     }
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
-  }, [width])
+  }, [width, onWidthChange])
 
-  const fontSize = calcFontSize(width)
   const rows: Array<{ label: string; entry: StatEntry }> = [
     { label: 'Single', entry: stats.single },
     { label: 'Ao5', entry: stats.ao5 },
@@ -75,8 +75,71 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
   ]
   const reversedSolves = [...solves].reverse()
 
+  // Overlay mode (mobile): full-screen fixed panel
+  if (onClose) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#0a0a1a', display: 'flex', flexDirection: 'column', fontSize: 13, color: '#ccc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
+          <span style={{ fontWeight: 'bold', color: '#888' }}>Solves</span>
+          <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
+        </div>
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#888' }}>Statistics</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ color: '#555', fontSize: 11 }}>
+                <td></td>
+                <td style={{ textAlign: 'right' }}>Current</td>
+                <td style={{ textAlign: 'right' }}>Best</td>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ label, entry }) => (
+                <tr key={label}>
+                  <td style={{ color: '#888' }}>{label}</td>
+                  <td style={{ textAlign: 'right' }}>{fmtTime(entry.current)}</td>
+                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{fmtTime(entry.best)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+          <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ color: '#555', fontSize: 11 }}>
+                <td style={{ padding: '2px 12px' }}>#</td>
+                <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
+                <td style={{ textAlign: 'right', padding: '2px 12px' }}>TPS</td>
+              </tr>
+            </thead>
+            <tbody>
+              {reversedSolves.map((s) => (
+                <tr
+                  key={s.id}
+                  onClick={() => onSelectSolve(s)}
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{fmtTime(s.timeMs)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 12px', color: '#888' }}>{fmtTps(s)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  // Sidebar mode (desktop): existing layout
+  const fontSize = calcFontSize(width)
+
   return (
-    <div style={{ display: 'flex', flexShrink: 0, position: 'relative' }}>
+    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative' }}>
       <div style={{
         width,
         background: '#0a0a1a',
@@ -86,7 +149,6 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
         fontSize,
         color: '#ccc',
       }}>
-        {/* Statistics */}
         <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
           <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#888' }}>Statistics</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -108,8 +170,6 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
             </tbody>
           </table>
         </div>
-
-        {/* Solve list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -138,8 +198,6 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
           </table>
         </div>
       </div>
-
-      {/* Drag handle */}
       <div
         onMouseDown={onMouseDown}
         style={{
