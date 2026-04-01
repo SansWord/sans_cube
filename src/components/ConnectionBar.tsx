@@ -1,3 +1,4 @@
+import type React from 'react'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
 
 interface Props {
@@ -22,6 +23,12 @@ function batteryColor(pct: number): string {
 }
 
 export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleMode, battery }: Props) {
+  const isConnected = status === 'connected'
+  const batteryLabel = battery !== null ? `${battery}%` : 'NA%'
+  const batteryStyle: React.CSSProperties = isConnected
+    ? { color: battery !== null ? batteryColor(battery) : '#4caf50' }
+    : { color: '#555', filter: 'grayscale(1)' }
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', background: '#16213e' }}>
       <button
@@ -31,17 +38,15 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
       >
         Connect
       </button>
-      <span style={{ color: status === 'connected' ? '#4caf50' : '#aaa' }}>
+      <span style={{ color: isConnected ? '#4caf50' : '#aaa' }}>
         {STATUS_LABEL[status]}
       </span>
-      {battery !== null && (
-        <span style={{ marginLeft: 'auto', fontSize: 13, color: batteryColor(battery) }}>
-          🔋 {battery}%
-        </span>
-      )}
+      <span style={{ marginLeft: 'auto', fontSize: 13, ...batteryStyle }}>
+        🔋 {batteryLabel}
+      </span>
       <button
         onClick={onToggleMode}
-        style={{ padding: '6px 14px', marginLeft: battery !== null ? 0 : 'auto' }}
+        style={{ padding: '6px 14px' }}
       >
         {mode === 'debug' ? 'Timer' : 'Debug'}
       </button>
