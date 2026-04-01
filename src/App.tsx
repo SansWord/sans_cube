@@ -83,6 +83,14 @@ export default function App() {
           />
           <FaceletDebug facelets={facelets} />
           <MoveHistory moves={moves} />
+          <div style={{ padding: '12px 0', textAlign: 'center' }}>
+            <button
+              onClick={() => { localStorage.clear(); window.location.reload() }}
+              style={{ padding: '6px 14px', color: '#e74c3c', border: '1px solid #e74c3c', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Clear localStorage
+            </button>
+          </div>
           {lastSession && (
             <SolveReplayer
               session={lastSession}
