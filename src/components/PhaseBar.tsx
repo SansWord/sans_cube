@@ -31,7 +31,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true }: Props) {
   const totalMs = phaseRecords.reduce((s, p) => s + p.recognitionMs + p.executionMs, 0)
 
   return (
-    <div style={{ position: 'relative', marginTop: 8, maxWidth: 480, margin: '8px auto 0' }}>
+    <div style={{ position: 'relative', marginTop: 8, maxWidth: 720, margin: '8px auto 0' }}>
       {/* Bar */}
       <div style={{ display: 'flex', height: 24, borderRadius: 4, overflow: 'hidden' }}>
         {phaseRecords.map((p, i) => {

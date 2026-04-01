@@ -42,7 +42,7 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady }: Props) {
   return (
     <canvas
       ref={canvasRef}
-      style={{ width: '100%', height: '520px', display: 'block' }}
+      style={{ width: '100%', height: '480px', display: 'block' }}
     />
   )
 }
