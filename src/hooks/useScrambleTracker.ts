@@ -13,6 +13,7 @@ export interface TrackerState {
   wrongMove: Move | null
   partialDirection: Direction | null
   currentStepIndex: number
+  warningNetTurns: number  // net CW(+1)/CCW(-1) count while in warning state
 }
 
 export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
@@ -22,6 +23,7 @@ export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
     wrongMove: null,
     partialDirection: null,
     currentStepIndex: 0,
+    warningNetTurns: 0,
   }
 }
 
@@ -57,13 +59,18 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
 
   const expected = steps[currentStepIndex]
 
-  // Warning state: only accept correct face moves
+  // Warning state: track net turns on the expected face (mod 4)
   if (trackingState === 'warning') {
     if (move.face !== expected.face) {
-      return { ...state, trackingState: 'wrong', wrongMove: move }
+      return { ...state, trackingState: 'wrong', wrongMove: move, warningNetTurns: 0 }
     }
-    if (move.direction === expected.direction) {
-      // Corrected — step done
+    const delta = move.direction === 'CW' ? 1 : -1
+    const newNet = state.warningNetTurns + delta
+    const expectedNet = expected.direction === 'CW' ? 1 : -1
+    const net4 = ((newNet % 4) + 4) % 4
+    const exp4 = ((expectedNet % 4) + 4) % 4
+    if (net4 === exp4) {
+      // Net turns fulfilled the expected direction → step done
       const nextIndex = currentStepIndex + 1
       const isArmed = nextIndex >= steps.length
       return {
@@ -72,10 +79,20 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
         stepStates: buildStepStates(steps, nextIndex, nextIndex, null),
         currentStepIndex: nextIndex,
         wrongMove: null,
+        warningNetTurns: 0,
       }
     }
-    // Still wrong direction — stay in warning
-    return state
+    if (net4 === 0) {
+      // Net zero → moves cancelled out, back to waiting for this step
+      return {
+        ...state,
+        trackingState: 'scrambling',
+        stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
+        warningNetTurns: 0,
+      }
+    }
+    // Still in warning
+    return { ...state, warningNetTurns: newNet }
   }
 
   // Normal scrambling state
@@ -123,10 +140,11 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
     }
   }
 
-  // Wrong direction for single move
+  // Wrong direction for single move → enter warning, seed net turns
   return {
     ...state,
     trackingState: 'warning',
+    warningNetTurns: move.direction === 'CW' ? 1 : -1,
     stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
   }
 }

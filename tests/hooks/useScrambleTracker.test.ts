@@ -30,13 +30,36 @@ describe('applyTrackerMove — single CW step', () => {
     expect(state.currentStepIndex).toBe(0)
   })
 
-  it('from warning: correct move clears warning and advances', () => {
+  it('from warning: correct direction cancels wrong move, then correct again advances', () => {
     let state = makeInitialTrackerState(steps)
-    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // warning
-    state = applyTrackerMove(state, steps, move('R', 'CW'))   // correct
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // warning, net=-1
+    state = applyTrackerMove(state, steps, move('R', 'CW'))   // net=0 → cancelled, back to scrambling
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(0)
+    state = applyTrackerMove(state, steps, move('R', 'CW'))   // correct in scrambling → done
     expect(state.stepStates[0]).toBe('done')
     expect(state.trackingState).toBe('scrambling')
     expect(state.currentStepIndex).toBe(1)
+  })
+
+  it('3x wrong direction = net correct rotation → advance', () => {
+    let state = makeInitialTrackerState(steps)
+    // Expecting R CW. 3x CCW = net -3 ≡ +1 mod 4 → fulfilled
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // net=-1
+    expect(state.trackingState).toBe('warning')
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // net=-2
+    expect(state.trackingState).toBe('warning')
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // net=-3 ≡ +1 → done
+    expect(state.stepStates[0]).toBe('done')
+    expect(state.currentStepIndex).toBe(1)
+  })
+
+  it('2x wrong direction stays in warning', () => {
+    let state = makeInitialTrackerState(steps)
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // net=-1
+    state = applyTrackerMove(state, steps, move('R', 'CCW'))  // net=-2
+    expect(state.trackingState).toBe('warning')
+    expect(state.currentStepIndex).toBe(0)
   })
 
   it('wrong face → wrong state', () => {
