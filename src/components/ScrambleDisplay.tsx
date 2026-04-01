@@ -41,7 +41,7 @@ export function ScrambleDisplay({
     <div style={{ textAlign: 'center', padding: '8px 0' }}>
       {trackingState === 'wrong' && wrongMove ? (
         <div style={{ fontSize: 36, fontWeight: 'bold', color: '#e74c3c', fontFamily: 'monospace', marginBottom: 8 }}>
-          {wrongMove.face}{wrongMove.direction === 'CCW' ? "'" : ''}
+          {wrongMove.face}{wrongMove.direction === 'CW' ? "'" : ''}
         </div>
       ) : (
         <div style={{ fontFamily: 'monospace', fontSize: 18, letterSpacing: 2, lineHeight: 2 }}>
