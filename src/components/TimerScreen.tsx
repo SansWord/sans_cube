@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
@@ -16,6 +16,7 @@ import { SolveHistorySidebar } from './SolveHistorySidebar'
 import { SolveDetailModal } from './SolveDetailModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Move } from '../types/cube'
+import { SOLVED_FACELETS } from '../types/cube'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -49,6 +50,7 @@ export function TimerScreen({
   const { scramble, steps, regenerate } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
+  const [regeneratePending, setRegeneratePending] = useState(false)
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true))
 
@@ -90,6 +92,28 @@ export function TimerScreen({
   }
   prevStatusRef.current = status
 
+  const handleRegenerate = useCallback(() => {
+    if (facelets === SOLVED_FACELETS) {
+      regenerate()
+      tracker.reset()
+      setArmed(false)
+      resetTimer()
+    } else {
+      setRegeneratePending(true)
+    }
+  }, [facelets, regenerate, resetTimer, tracker])
+
+  // Apply pending regenerate as soon as the cube reaches solved state
+  useEffect(() => {
+    if (regeneratePending && facelets === SOLVED_FACELETS && status === 'idle') {
+      regenerate()
+      tracker.reset()
+      setArmed(false)
+      resetTimer()
+      setRegeneratePending(false)
+    }
+  }, [facelets, regeneratePending, status]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleResetCube = () => {
     onResetState()
     tracker.reset()
@@ -113,6 +137,8 @@ export function TimerScreen({
           stepStates={tracker.stepStates}
           trackingState={tracker.trackingState}
           wrongSegments={tracker.wrongSegments}
+          regeneratePending={regeneratePending}
+          onRegenerate={handleRegenerate}
           onResetCube={handleResetCube}
           onResetGyro={onResetGyro}
         />
