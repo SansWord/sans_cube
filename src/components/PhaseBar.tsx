@@ -24,6 +24,16 @@ function calcPct(clientX: number, el: HTMLElement): number {
   return Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
 }
 
+function pctToPhaseIndex(pct: number, phaseRecords: PhaseRecord[], totalMs: number): number {
+  let cumPct = 0
+  for (let i = 0; i < phaseRecords.length; i++) {
+    const stepMs = phaseRecords[i].recognitionMs + phaseRecords[i].executionMs
+    cumPct += totalMs > 0 ? (stepMs / totalMs) * 100 : 0
+    if (pct <= cumPct) return i
+  }
+  return phaseRecords.length - 1
+}
+
 export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPct }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -44,8 +54,21 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
       style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '8px auto 0' }}
       onMouseMove={(e) => interactive && setHoverPct(calcPct(e.clientX, e.currentTarget))}
       onMouseLeave={() => interactive && setHoverPct(null)}
-      onTouchMove={(e) => interactive && setHoverPct(calcPct(e.touches[0].clientX, e.currentTarget))}
-      onTouchEnd={() => interactive && setHoverPct(null)}
+      onTouchMove={(e) => {
+        if (!interactive) return
+        const touch = e.touches[0]
+        const pct = calcPct(touch.clientX, e.currentTarget)
+        setHoverPct(pct)
+        setHoveredIndex(pctToPhaseIndex(pct, phaseRecords, totalMs))
+        setMousePos({ x: touch.clientX, y: touch.clientY })
+      }}
+      onTouchEnd={(e) => {
+        if (!interactive) return
+        // keep indicator at last position; dismiss tooltip cleanly
+        const touch = e.changedTouches[0]
+        if (touch) setMousePos({ x: touch.clientX, y: touch.clientY })
+        setHoveredIndex(null)
+      }}
     >
       {/* Bar */}
       <div style={{ display: 'flex', height: 24, borderRadius: 4, overflow: 'hidden' }}>
