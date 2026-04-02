@@ -69,7 +69,11 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
 
   return (
     <div style={{ background: '#16213e', padding: '8px 16px' }}>
-      {/* Row 1: Connect, status, driver, attribution */}
+      {/* Row 1: Attribution centered */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+        {attribution}
+      </div>
+      {/* Row 2: All controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           onClick={isConnected ? onDisconnect : onConnect}
@@ -90,14 +94,10 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
           <option value="cube">Cube</option>
           <option value="mouse">Mouse</option>
         </select>
-        <div style={{ marginLeft: 'auto' }}>{attribution}</div>
-      </div>
-      {/* Row 2: Debug/Timer toggle, battery */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+        <span style={{ marginLeft: 'auto', fontSize: 13, ...batteryStyle }}>🔋 {batteryLabel}</span>
         <button onClick={onToggleMode} style={{ padding: '6px 14px' }}>
           {mode === 'debug' ? 'Timer' : 'Debug'}
         </button>
-        <span style={{ fontSize: 13, ...batteryStyle }}>🔋 {batteryLabel}</span>
       </div>
     </div>
   )
