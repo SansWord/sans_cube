@@ -35,7 +35,7 @@ describe('PhaseBar hover indicator', () => {
     expect(screen.queryByTestId('hover-indicator')).not.toBeInTheDocument()
   })
 
-  it('shows indicator on touchmove and keeps it after touchend', () => {
+  it('shows indicator and tooltip on touchmove, keeps both after touchend', () => {
     render(<PhaseBar phaseRecords={phases} method={CFOP} />)
     const bar = screen.getByTestId('phase-bar-track')
     mockRect(bar)
@@ -47,7 +47,7 @@ describe('PhaseBar hover indicator', () => {
     expect(indicator).toBeInTheDocument()
     expect(indicator.style.left).toBe('25%')
 
-    // indicator stays at last touch position after lift
+    // indicator and tooltip stay after lift; dismissed only by touch outside the bar
     fireEvent.touchEnd(bar)
     expect(screen.getByTestId('hover-indicator').style.left).toBe('25%')
   })

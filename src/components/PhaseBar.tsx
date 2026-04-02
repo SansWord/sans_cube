@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { PhaseRecord } from '../types/solve'
 import type { SolveMethod } from '../types/solve'
@@ -38,6 +38,19 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [hoverPct, setHoverPct] = useState<number | null>(null)
+  const barRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!interactive) return
+    const handler = (e: TouchEvent) => {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        setHoveredIndex(null)
+        setHoverPct(null)
+      }
+    }
+    document.addEventListener('touchstart', handler, { passive: true })
+    return () => document.removeEventListener('touchstart', handler)
+  }, [interactive])
 
   if (phaseRecords.length === 0) {
     // Show empty placeholder bar
@@ -50,6 +63,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
 
   return (
     <div
+      ref={barRef}
       data-testid="phase-bar-track"
       style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '8px auto 0' }}
       onMouseMove={(e) => interactive && setHoverPct(calcPct(e.clientX, e.currentTarget))}
@@ -64,10 +78,9 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
       }}
       onTouchEnd={(e) => {
         if (!interactive) return
-        // keep indicator at last position; dismiss tooltip cleanly
+        // keep indicator and tooltip; update mousePos to final touch position
         const touch = e.changedTouches[0]
         if (touch) setMousePos({ x: touch.clientX, y: touch.clientY })
-        setHoveredIndex(null)
       }}
     >
       {/* Bar */}
