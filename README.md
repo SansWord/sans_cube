@@ -2,7 +2,7 @@
 
 A Rubik's cube solve analyzer for speedcubers. Connects to your smart cube via Bluetooth, tracks your solve in real time, and breaks it down phase by phase.
 
-Built by [![LinkedIn](https://img.shields.io/badge/-SansWord-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sansword/)
+Built by SansWord [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sansword/)
 
 ---
 
