@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# sans_cube
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Rubik's cube solve analyzer for speedcubers. Connects to your smart cube via Bluetooth, tracks your solve in real time, and breaks it down phase by phase.
 
-Currently, two official plugins are available:
+Built by [![LinkedIn](https://img.shields.io/badge/-SansWord-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sansword/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Bluetooth connection** — pairs directly with GAN 12 UI via Web Bluetooth, no app required
+- **CFOP phase breakdown** — Cross, F2L (4 slots), OLL, PLL with individual recognition and execution times
+- **TPS per phase** — see exactly where you're fast and where you're slow
+- **3D solve replay** — replay your solve with gyroscope orientation playback
+- **Phase bar** — hover or drag to scrub through your solve timeline
+- **Mouse mode** — simulate solves in the browser without a physical cube
+- **Mobile support** — works on desktop and mobile with touch-native interactions
 
-## Expanding the ESLint configuration
+## Supported Hardware
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Cube | Status |
+|---|---|
+| GAN 12 UI | ✅ Supported |
+| Other brands | 🔜 Planned |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Supported Methods
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Method | Status |
+|---|---|
+| CFOP | ✅ Supported |
+| ROUX | 🔜 Planned |
+| ZZ | 🔜 Planned |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the app in a Chromium-based browser (Web Bluetooth requires Chrome/Edge).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tech Stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- React 19 + TypeScript
+- Vite
+- Three.js (3D cube rendering)
+- Web Bluetooth API
+- Vitest + Testing Library
