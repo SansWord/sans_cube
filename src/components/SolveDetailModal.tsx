@@ -272,6 +272,7 @@ useEffect(() => {
       if (moves[i].face === moves[i + 1].face && moves[i].direction !== moves[i + 1].direction) {
         set.add(i)
         set.add(i + 1)
+        i++ // consume i+1 so it can't start another pair (e.g. U U' U: only first two marked)
       }
     }
     return set
