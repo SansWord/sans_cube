@@ -33,9 +33,14 @@ export function useScramble() {
     setSteps(parseScramble(s))
   }, [])
 
+  const load = useCallback((s: string) => {
+    setScramble(s)
+    setSteps(parseScramble(s))
+  }, [])
+
   useEffect(() => {
     regenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { scramble, steps, regenerate }
+  return { scramble, steps, regenerate, load }
 }

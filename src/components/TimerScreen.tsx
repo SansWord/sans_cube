@@ -62,7 +62,7 @@ export function TimerScreen({
     return () => d.off('move', onMove)
   }, [driver, driverVersion])
 
-  const { scramble, steps, regenerate } = useScramble()
+  const { scramble, steps, regenerate, load: loadScramble } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(() => {
     const m = window.location.hash.match(/^#solve-(-?\d+)$/)
@@ -275,6 +275,7 @@ export function TimerScreen({
           solve={selectedSolve}
           onClose={() => setSelectedSolve(null)}
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
+          onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
         />
       )}
     </div>
