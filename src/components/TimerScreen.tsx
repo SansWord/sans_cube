@@ -275,11 +275,6 @@ export function TimerScreen({
           solve={selectedSolve}
           onClose={() => setSelectedSolve(null)}
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
-          onUseScramble={(_s) => {
-            // Load this scramble into the tracker by regenerating with it
-            // For now: close modal; full "use this scramble" feature requires useScramble to accept override
-            setSelectedSolve(null)
-          }}
         />
       )}
     </div>

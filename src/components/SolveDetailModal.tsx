@@ -15,7 +15,6 @@ interface Props {
   solve: SolveRecord
   onClose: () => void
   onDelete: (id: number) => void
-  onUseScramble: (scramble: string) => void
 }
 
 const SPEED_OPTIONS = [0.5, 1, 2, 3, 5]
@@ -51,7 +50,7 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
   return 'Solved'
 }
 
-export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
+export function SolveDetailModal({ solve, onClose, onDelete }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -360,12 +359,6 @@ useEffect(() => {
             style={{ padding: '4px 8px', fontSize: 11 }}
             title="Copy scramble"
           >📋</button>
-          <button
-            onClick={() => onUseScramble(solve.scramble)}
-            style={{ padding: '4px 10px', fontSize: 11, background: '#2ecc71', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-          >
-            Use this scramble
-          </button>
         </div>
 
         {/* Body: Replay + Analysis */}

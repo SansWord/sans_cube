@@ -44,7 +44,5 @@ export function useCubeDriver() {
     await driverRef.current!.disconnect()
   }, [])
 
-  const mouseDriver = driverType === 'mouse' ? (driverRef.current as MouseDriver) : null
-
-  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, mouseDriver, driverVersion }
+  return { driver: driverRef, connect, disconnect, status, driverType, switchDriver, driverVersion }
 }
