@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { PhaseBar } from '../../src/components/PhaseBar'
 import { CFOP } from '../../src/methods/cfop'
 import type { PhaseRecord } from '../../src/types/solve'
@@ -17,6 +17,8 @@ function mockRect(el: HTMLElement) {
 }
 
 describe('PhaseBar hover indicator', () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it('shows indicator on mousemove and hides on mouseleave', () => {
     render(<PhaseBar phaseRecords={phases} method={CFOP} />)
     const bar = screen.getByTestId('phase-bar-track')
