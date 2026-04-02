@@ -38,7 +38,8 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
         href="https://www.linkedin.com/in/sansword/"
         target="_blank"
         rel="noopener noreferrer"
-        style={{ color: '#ccc', textDecoration: 'none', fontSize: 12 }}
+        className="attribution-text"
+        style={{ color: '#ccc', textDecoration: 'none' }}
       >
         Built by SansWord
       </a>
