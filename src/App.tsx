@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { STORAGE_KEYS } from './utils/storageKeys'
 import { useCubeDriver } from './hooks/useCubeDriver'
 import { useCubeState } from './hooks/useCubeState'
 import { useGyro } from './hooks/useGyro'
@@ -120,7 +121,7 @@ export default function App() {
               Clear localStorage
             </button>
             <button
-              onClick={() => { localStorage.removeItem('sans_cube_dismissed_examples'); window.location.reload() }}
+              onClick={() => { localStorage.removeItem(STORAGE_KEYS.DISMISSED_EXAMPLES); window.location.reload() }}
               style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
             >
               Restore example solves

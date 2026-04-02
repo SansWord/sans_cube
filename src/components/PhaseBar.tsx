@@ -2,21 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { PhaseRecord } from '../types/solve'
 import type { SolveMethod } from '../types/solve'
+import { formatTime, formatTps } from '../utils/formatting'
 
 interface Props {
   phaseRecords: PhaseRecord[]
   method: SolveMethod
   interactive?: boolean
   indicatorPct?: number   // 0–100, shows a vertical playhead line
-}
-
-function fmt(ms: number): string {
-  return (ms / 1000).toFixed(2) + 's'
-}
-
-function fmtTps(turns: number, ms: number): string {
-  if (ms === 0) return '—'
-  return (turns / (ms / 1000)).toFixed(2)
 }
 
 function calcPct(clientX: number, el: HTMLElement): number {
@@ -166,7 +158,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
                 whiteSpace: 'nowrap',
               }}
             >
-              {fmt(stepMs)}
+              {formatTime(stepMs)}
             </div>
           )
         })}
@@ -209,22 +201,22 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
             pointerEvents: 'none',
           }}>
             <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{p.label}</div>
-            <div>Total Time: {fmt(stepMs)}</div>
-            <div>Recognition: {p.label === 'Cross' ? '—' : fmt(p.recognitionMs)}</div>
-            <div>Execution: {fmt(p.executionMs)}</div>
-            <div>TPS: {fmtTps(p.turns, stepMs)}</div>
-            <div>True TPS: {fmtTps(p.turns, p.executionMs)}</div>
+            <div>Total Time: {formatTime(stepMs)}</div>
+            <div>Recognition: {p.label === 'Cross' ? '—' : formatTime(p.recognitionMs)}</div>
+            <div>Execution: {formatTime(p.executionMs)}</div>
+            <div>TPS: {formatTps(p.turns, stepMs)}</div>
+            <div>True TPS: {formatTps(p.turns, p.executionMs)}</div>
             <div>Turns: {p.turns}</div>
             <div>Percentage: {pct}%</div>
             {group && groupPhases.length > 1 && (
               <>
                 <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '8px 0' }} />
                 <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{group} Totals</div>
-                <div>Total Time: {fmt(groupTotalMs)}</div>
-                <div>Total Recognition: {fmt(groupTotalRec)}</div>
-                <div>Total Execution: {fmt(groupTotalExec)}</div>
-                <div>Total TPS: {fmtTps(groupTurns, groupTotalMs)}</div>
-                <div>Total True TPS: {fmtTps(groupTurns, groupTotalExec)}</div>
+                <div>Total Time: {formatTime(groupTotalMs)}</div>
+                <div>Total Recognition: {formatTime(groupTotalRec)}</div>
+                <div>Total Execution: {formatTime(groupTotalExec)}</div>
+                <div>Total TPS: {formatTps(groupTurns, groupTotalMs)}</div>
+                <div>Total True TPS: {formatTps(groupTurns, groupTotalExec)}</div>
                 <div>Total Turns: {groupTurns}</div>
                 <div>Percentage: {groupPct}%</div>
               </>

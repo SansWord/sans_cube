@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { multiplyQuaternions, invertQuaternion, applyReference } from '../../src/hooks/useGyro'
+import { multiplyQuaternions, invertQuaternion, applyReference } from '../../src/utils/quaternion'
 
 describe('quaternion helpers', () => {
   it('invertQuaternion negates x, y, z', () => {

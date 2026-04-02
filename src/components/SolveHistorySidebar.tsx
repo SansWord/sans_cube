@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
+import { formatSeconds } from '../utils/formatting'
 
 interface StatEntry {
   current: number | null
@@ -31,10 +32,6 @@ function calcFontSize(width: number): number {
   return Math.round(11 + t * 5)
 }
 
-function fmtTime(ms: number | null): string {
-  if (ms === null) return '—'
-  return (ms / 1000).toFixed(2)
-}
 
 function fmtTps(solve: SolveRecord): string {
   const secs = solve.timeMs / 1000
@@ -97,8 +94,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
               {rows.map(({ label, entry }) => (
                 <tr key={label}>
                   <td style={{ color: '#888' }}>{label}</td>
-                  <td style={{ textAlign: 'right' }}>{fmtTime(entry.current)}</td>
-                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{fmtTime(entry.best)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
+                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
                 </tr>
               ))}
             </tbody>
@@ -122,7 +119,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
                   style={{ cursor: 'pointer' }}
                 >
                   <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{fmtTime(s.timeMs)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
                   <td style={{ textAlign: 'right', padding: '3px 12px', color: '#888' }}>{fmtTps(s)}</td>
                 </tr>
               ))}
@@ -161,8 +158,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
               {rows.map(({ label, entry }) => (
                 <tr key={label}>
                   <td style={{ color: '#888' }}>{label}</td>
-                  <td style={{ textAlign: 'right' }}>{fmtTime(entry.current)}</td>
-                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{fmtTime(entry.best)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
+                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
                 </tr>
               ))}
             </tbody>
@@ -188,7 +185,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{fmtTime(s.timeMs)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
                   <td style={{ textAlign: 'right', padding: '3px 8px', color: '#888' }}>{fmtTps(s)}</td>
                 </tr>
               ))}

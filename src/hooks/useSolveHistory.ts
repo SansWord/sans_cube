@@ -1,14 +1,12 @@
 import { useState, useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { EXAMPLE_SOLVES } from '../data/exampleSolves'
-
-const STORAGE_KEY = 'sans_cube_solves'
-const COUNTER_KEY = 'sans_cube_next_id'
-const DISMISSED_EXAMPLES_KEY = 'sans_cube_dismissed_examples'
+import { loadFromStorage, saveToStorage } from '../utils/storage'
+import { STORAGE_KEYS } from '../utils/storageKeys'
 
 function loadNextId(): number {
   try {
-    const raw = localStorage.getItem(COUNTER_KEY)
+    const raw = localStorage.getItem(STORAGE_KEYS.NEXT_ID)
     return raw ? Math.max(1, parseInt(raw, 10)) : 1
   } catch {
     return 1
@@ -16,35 +14,25 @@ function loadNextId(): number {
 }
 
 function saveNextId(id: number): void {
-  localStorage.setItem(COUNTER_KEY, String(id))
+  localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(id))
 }
 
 function loadSolves(): SolveRecord[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as SolveRecord[]) : []
-  } catch {
-    return []
-  }
+  return loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
 }
 
 function saveSolves(solves: SolveRecord[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(solves))
+  saveToStorage(STORAGE_KEYS.SOLVES, solves)
 }
 
 function loadDismissedExamples(): Set<number> {
-  try {
-    const raw = localStorage.getItem(DISMISSED_EXAMPLES_KEY)
-    return raw ? new Set(JSON.parse(raw) as number[]) : new Set()
-  } catch {
-    return new Set()
-  }
+  return new Set(loadFromStorage<number[]>(STORAGE_KEYS.DISMISSED_EXAMPLES, []))
 }
 
 function dismissExample(id: number): void {
   const dismissed = loadDismissedExamples()
   dismissed.add(id)
-  localStorage.setItem(DISMISSED_EXAMPLES_KEY, JSON.stringify([...dismissed]))
+  saveToStorage(STORAGE_KEYS.DISMISSED_EXAMPLES, [...dismissed])
 }
 
 // Exported for tests

@@ -1,13 +1,10 @@
 import type { TimerStatus } from '../hooks/useTimer'
+import { formatSeconds } from '../utils/formatting'
 
 interface Props {
   elapsedMs: number
   status: TimerStatus
   armed: boolean
-}
-
-function formatTime(ms: number): string {
-  return (ms / 1000).toFixed(2)
 }
 
 export function TimerDisplay({ elapsedMs, status, armed }: Props) {
@@ -26,7 +23,7 @@ export function TimerDisplay({ elapsedMs, status, armed }: Props) {
         </div>
       )}
       <div style={{ fontSize: 72, fontWeight: 'bold', fontFamily: 'monospace', color, lineHeight: 1 }}>
-        {formatTime(elapsedMs)}
+        {formatSeconds(elapsedMs)}
       </div>
     </div>
   )

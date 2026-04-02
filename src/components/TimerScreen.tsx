@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
+import { STORAGE_KEYS } from '../utils/storageKeys'
 import type { SolveRecord } from '../types/solve'
 import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
@@ -73,13 +74,13 @@ export function TimerScreen({
   })
   const [regeneratePending, setRegeneratePending] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem('sidebarWidth')
+    const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)
     return saved ? parseInt(saved, 10) : 160
   })
   const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem('sidebarWidth', String(sidebarWidth))
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth))
   }, [sidebarWidth])
 
   useEffect(() => {
