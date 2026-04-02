@@ -43,9 +43,9 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
       data-testid="phase-bar-track"
       style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '8px auto 0' }}
       onMouseMove={(e) => interactive && setHoverPct(calcPct(e.clientX, e.currentTarget))}
-      onMouseLeave={() => { interactive && setHoverPct(null) }}
+      onMouseLeave={() => interactive && setHoverPct(null)}
       onTouchMove={(e) => interactive && setHoverPct(calcPct(e.touches[0].clientX, e.currentTarget))}
-      onTouchEnd={() => { interactive && setHoverPct(null) }}
+      onTouchEnd={() => interactive && setHoverPct(null)}
     >
       {/* Bar */}
       <div style={{ display: 'flex', height: 24, borderRadius: 4, overflow: 'hidden' }}>
