@@ -56,84 +56,67 @@ export function CubeCanvas({ facelets, quaternion, onRendererReady, style, inter
     if (!interactive) rendererRef.current?.setQuaternion(quaternion)
   }, [quaternion, interactive])
 
-  // Mouse handlers
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Shared drag logic — called by both mouse and touch handlers
+  const handleDragStart = (clientX: number, clientY: number) => {
     if (!interactive || !rendererRef.current || !canvasRef.current) return
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
-    const px = e.clientX - rect.left
-    const py = e.clientY - rect.top
-    const hit = rendererRef.current.raycastFace(px, py, canvas.clientWidth, canvas.clientHeight)
-    dragRef.current = { startX: e.clientX, startY: e.clientY, hit: hit ?? null }
+    const hit = rendererRef.current.raycastFace(
+      clientX - rect.left, clientY - rect.top,
+      canvas.clientWidth, canvas.clientHeight,
+    )
+    dragRef.current = { startX: clientX, startY: clientY, hit: hit ?? null }
   }
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleDragMove = (movementX: number, movementY: number) => {
     if (!interactive || !rendererRef.current || !dragRef.current) return
-    if (dragRef.current.hit === null) {
-      rendererRef.current.applyOrbitDelta(e.movementX, e.movementY)
-      onOrbit?.(rendererRef.current.getOrbitQuaternionAsSensorSpace())
-    }
-  }
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!interactive || !rendererRef.current || !dragRef.current) return
-    const { startX, startY, hit } = dragRef.current
-    dragRef.current = null
-
-    if (hit !== null) {
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      if (Math.sqrt(dx * dx + dy * dy) < MIN_DRAG_PX) return
-      const result = rendererRef.current.determineMoveFromDrag(hit, dx, dy)
-      if (result) onMove?.(result.face, result.direction)
-    }
-  }
-
-  const handleMouseLeave = () => {
-    dragRef.current = null
-  }
-
-  // Touch handlers — identical logic to mouse, adapted for TouchEvent
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (!interactive || !rendererRef.current || !canvasRef.current) return
-    const touch = e.touches[0]
-    if (!touch) return
-    const canvas = canvasRef.current
-    const rect = canvas.getBoundingClientRect()
-    const px = touch.clientX - rect.left
-    const py = touch.clientY - rect.top
-    const hit = rendererRef.current.raycastFace(px, py, canvas.clientWidth, canvas.clientHeight)
-    dragRef.current = { startX: touch.clientX, startY: touch.clientY, hit: hit ?? null }
-    lastTouchPos.current = { x: touch.clientX, y: touch.clientY }
-  }
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (!interactive || !rendererRef.current || !dragRef.current || !lastTouchPos.current) return
-    const touch = e.touches[0]
-    if (!touch) return
-    const movementX = touch.clientX - lastTouchPos.current.x
-    const movementY = touch.clientY - lastTouchPos.current.y
-    lastTouchPos.current = { x: touch.clientX, y: touch.clientY }
     if (dragRef.current.hit === null) {
       rendererRef.current.applyOrbitDelta(movementX, movementY)
       onOrbit?.(rendererRef.current.getOrbitQuaternionAsSensorSpace())
     }
   }
 
-  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleDragEnd = (clientX: number, clientY: number) => {
     if (!interactive || !rendererRef.current || !dragRef.current) return
     const { startX, startY, hit } = dragRef.current
     dragRef.current = null
-    lastTouchPos.current = null
-
     if (hit !== null) {
-      const touch = e.changedTouches[0]
-      const dx = touch.clientX - startX
-      const dy = touch.clientY - startY
+      const dx = clientX - startX
+      const dy = clientY - startY
       if (Math.sqrt(dx * dx + dy * dy) < MIN_DRAG_PX) return
       const result = rendererRef.current.determineMoveFromDrag(hit, dx, dy)
       if (result) onMove?.(result.face, result.direction)
     }
+  }
+
+  // Mouse handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => handleDragStart(e.clientX, e.clientY)
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => handleDragMove(e.movementX, e.movementY)
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => handleDragEnd(e.clientX, e.clientY)
+  const handleMouseLeave = () => { dragRef.current = null }
+
+  // Touch handlers
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const touch = e.touches[0]
+    if (!touch) return
+    lastTouchPos.current = { x: touch.clientX, y: touch.clientY }
+    handleDragStart(touch.clientX, touch.clientY)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const touch = e.touches[0]
+    if (!touch || !lastTouchPos.current) return
+    const movementX = touch.clientX - lastTouchPos.current.x
+    const movementY = touch.clientY - lastTouchPos.current.y
+    lastTouchPos.current = { x: touch.clientX, y: touch.clientY }
+    handleDragMove(movementX, movementY)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const touch = e.changedTouches[0]
+    if (!touch) return
+    lastTouchPos.current = null
+    handleDragEnd(touch.clientX, touch.clientY)
   }
 
   return (
