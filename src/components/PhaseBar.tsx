@@ -19,9 +19,15 @@ function fmtTps(turns: number, ms: number): string {
   return (turns / (ms / 1000)).toFixed(2)
 }
 
+function calcPct(clientX: number, el: HTMLElement): number {
+  const rect = el.getBoundingClientRect()
+  return Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+}
+
 export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPct }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [hoverPct, setHoverPct] = useState<number | null>(null)
 
   if (phaseRecords.length === 0) {
     // Show empty placeholder bar
@@ -33,7 +39,14 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
   const totalMs = phaseRecords.reduce((s, p) => s + p.recognitionMs + p.executionMs, 0)
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '8px auto 0' }}>
+    <div
+      data-testid="phase-bar-track"
+      style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '8px auto 0' }}
+      onMouseMove={(e) => interactive && setHoverPct(calcPct(e.clientX, e.currentTarget))}
+      onMouseLeave={() => { interactive && setHoverPct(null) }}
+      onTouchMove={(e) => interactive && setHoverPct(calcPct(e.touches[0].clientX, e.currentTarget))}
+      onTouchEnd={() => { interactive && setHoverPct(null) }}
+    >
       {/* Bar */}
       <div style={{ display: 'flex', height: 24, borderRadius: 4, overflow: 'hidden' }}>
         {phaseRecords.map((p, i) => {
@@ -79,6 +92,25 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
           boxShadow: '0 0 4px rgba(0,0,0,0.6)',
           transform: 'translateX(-1px)',
         }} />
+      )}
+
+      {/* Hover indicator */}
+      {hoverPct !== null && (
+        <div
+          data-testid="hover-indicator"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: `${hoverPct}%`,
+            width: 2,
+            height: 24,
+            background: '#fff',
+            borderRadius: 1,
+            pointerEvents: 'none',
+            boxShadow: '0 0 4px rgba(0,0,0,0.6)',
+            transform: 'translateX(-1px)',
+          }}
+        />
       )}
 
       {/* Labels row */}
