@@ -323,7 +323,7 @@ useEffect(() => {
         fontSize: 13,
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div className="solve-detail-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontWeight: 'bold', fontSize: 16 }}>{solve.isExample ? 'Example Solve' : `Solve #${solve.id}`}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {solve.isExample && (
@@ -378,7 +378,7 @@ useEffect(() => {
         {/* Body: Replay + Analysis */}
         <div className="solve-detail-body" style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           {/* Replay */}
-          <div style={{ flex: 1 }}>
+          <div className="replay-section" style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
               <span style={{ fontWeight: 'bold' }}>Replay</span>
               <label style={{ fontSize: 12 }}>
@@ -440,7 +440,7 @@ useEffect(() => {
           </div>
 
           {/* Detailed Analysis */}
-          <div style={{ flex: 1 }}>
+          <div className="analysis-section" style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
               <span style={{ color: '#888', fontSize: 12 }}>CFOP</span>
@@ -530,7 +530,7 @@ useEffect(() => {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="solve-detail-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           {confirmDelete ? (
             <>
               <span style={{ color: '#e74c3c', fontSize: 12, marginRight: 8, alignSelf: 'center' }}>
