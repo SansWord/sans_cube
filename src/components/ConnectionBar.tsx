@@ -47,7 +47,7 @@ export function ConnectionBar({ status, onConnect, onDisconnect, mode, onToggleM
       <select
         value={driverType}
         onChange={(e) => onSwitchDriver(e.target.value as DriverType)}
-        disabled={status === 'connected'}
+        disabled={status === 'connecting'}
         style={{ padding: '4px 6px', background: '#0f3460', border: '1px solid #333', color: '#ccc', borderRadius: 4, fontSize: 12 }}
       >
         <option value="cube">Cube</option>

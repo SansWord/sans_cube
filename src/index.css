@@ -17,4 +17,12 @@ select { background: #0f3460; color: #e0e0e0; border: 1px solid #444; border-rad
   .cube-canvas { height: 300px; }
   .scramble-moves { font-size: 18px !important; letter-spacing: 0px !important;}
   .scramble-area { flex: 1; min-width: 0; }
+  .solve-detail-body { flex-direction: column !important; }
+  .solve-detail-modal { padding: 12px !important; }
+  .solve-stats { gap: 6px !important; }
+  .solve-stats > div { padding: 4px 6px !important; }
+  .solve-stats .stat-label { font-size: 9px !important; }
+  .solve-stats .stat-value { font-size: 12px !important; }
+  .solve-scramble { padding: 5px 8px !important; }
+  .solve-scramble span { font-size: 10px !important; }
 }

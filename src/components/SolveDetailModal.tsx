@@ -309,7 +309,7 @@ useEffect(() => {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 100,
     }}>
-      <div style={{
+      <div className="solve-detail-modal" style={{
         background: '#0f1020',
         border: '1px solid #333',
         borderRadius: 8,
@@ -328,7 +328,7 @@ useEffect(() => {
         </div>
 
         {/* General statistics */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <div className="solve-stats" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           {[
             { label: 'Time', value: formatTime(solve.timeMs) },
             { label: 'Turns', value: String(totalTurns) },
@@ -337,14 +337,14 @@ useEffect(() => {
             { label: 'Driver', value: solve.driver === 'cube' ? 'Cube' : solve.driver === 'mouse' ? 'Mouse' : '—' },
           ].map(({ label, value }) => (
             <div key={label} style={{ flex: 1, background: '#161626', borderRadius: 4, padding: '8px 12px' }}>
-              <div style={{ color: '#666', fontSize: 11 }}>{label}</div>
-              <div style={{ fontWeight: 'bold', fontSize: 15 }}>{value}</div>
+              <div className="stat-label" style={{ color: '#666', fontSize: 11 }}>{label}</div>
+              <div className="stat-value" style={{ fontWeight: 'bold', fontSize: 15 }}>{value}</div>
             </div>
           ))}
         </div>
 
         {/* Scramble row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#161626', borderRadius: 4, padding: '8px 12px', marginBottom: 16 }}>
+        <div className="solve-scramble" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#161626', borderRadius: 4, padding: '8px 12px', marginBottom: 16 }}>
           <span style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{solve.scramble}</span>
           <button
             onClick={() => navigator.clipboard.writeText(solve.scramble)}
@@ -360,11 +360,11 @@ useEffect(() => {
         </div>
 
         {/* Body: Replay + Analysis */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div className="solve-detail-body" style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           {/* Replay */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Replay</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontWeight: 'bold' }}>Replay</span>
               <label style={{ fontSize: 12 }}>
                 <input type="checkbox" checked={gyroEnabled} onChange={(e) => setGyroEnabled(e.target.checked)} />
                 {' '}Gyro
@@ -429,7 +429,13 @@ useEffect(() => {
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
               <span style={{ color: '#888', fontSize: 12 }}>CFOP</span>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <PhaseBar
+              phaseRecords={solve.phases}
+              method={CFOP}
+              interactive={false}
+              indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
+            />
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginTop: 8 }}>
               <thead>
                 <tr style={{ color: '#555', borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '3px 4px' }}>Step</td>
@@ -505,17 +511,6 @@ useEffect(() => {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Time Distribution */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ color: '#666', fontSize: 11, marginBottom: 4 }}>Time Distribution</div>
-          <PhaseBar
-            phaseRecords={solve.phases}
-            method={CFOP}
-            interactive={false}
-            indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
-          />
         </div>
 
         {/* Actions */}
