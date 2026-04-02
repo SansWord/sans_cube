@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { CFOP } from '../methods/cfop'
 import { PhaseBar } from './PhaseBar'
@@ -7,9 +7,9 @@ import type { CubeRenderer } from '../rendering/CubeRenderer'
 import { SOLVED_FACELETS } from '../types/cube'
 import { applyMoveToFacelets } from '../hooks/useCubeState'
 import { parseScramble } from '../utils/scramble'
-import type { Quaternion } from '../types/cube'
 import { formatTime } from '../utils/formatting'
-import { IDENTITY_QUATERNION, findSlerpedQuaternion } from '../utils/quaternion'
+import { IDENTITY_QUATERNION } from '../utils/quaternion'
+import { useReplayController, SPEED_OPTIONS } from '../hooks/useReplayController'
 
 interface Props {
   solve: SolveRecord
@@ -17,8 +17,6 @@ interface Props {
   onDelete: (id: number) => void
   onUseScramble: (scramble: string) => void
 }
-
-const SPEED_OPTIONS = [0.5, 1, 2, 3, 5]
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString()
@@ -54,174 +52,26 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [indicatorMs, setIndicatorMs] = useState(0)
-  const [replayQuaternion] = useState<Quaternion>(IDENTITY_QUATERNION)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(solve.driver === 'mouse' ? 3 : 1)
-  const [gyroEnabled, setGyroEnabled] = useState(true)
-  const gyroEnabledRef = useRef(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
-  const gyroRafRef = useRef<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const modalRef = useRef<HTMLDivElement>(null)
   const phaseBarRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const justStartedPlayingRef = useRef(false)
-  const playStartWallRef = useRef(0)
-  const playStartOffsetRef = useRef(0)
+
+  const {
+    currentIndex, indicatorMs, isPlaying,
+    speed, setSpeed, gyroEnabled, setGyroEnabled,
+    playFrom, play, pause, seekTo,
+    stepForward, stepBackward, fastForward, fastBackward,
+  } = useReplayController(solve, rendererRef)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
-
-  useEffect(() => {
-    gyroEnabledRef.current = gyroEnabled
-    if (!gyroEnabled) {
-      rendererRef.current?.setQuaternion(IDENTITY_QUATERNION)
-      rendererRef.current?.setCameraPosition(4.5, 5, 5.5)
-    } else {
-      rendererRef.current?.setCameraPosition(0, 6, 7)
-      rendererRef.current?.setQuaternion(replayQuaternion)
-    }
-  }, [gyroEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const cancelScheduled = useCallback(() => {
-    timeoutsRef.current.forEach(clearTimeout)
-    timeoutsRef.current = []
-    if (gyroRafRef.current !== null) {
-      cancelAnimationFrame(gyroRafRef.current)
-      gyroRafRef.current = null
-    }
-  }, [])
-
-  const playFrom = useCallback((startIdx: number) => {
-    cancelScheduled()
-    setCurrentIndex(startIdx)
-    setIsPlaying(true)
-    const moves = solve.moves
-    const snapshots = solve.quaternionSnapshots ?? []
-    console.log('[Replay] snapshots=', snapshots.length, 'gyroEnabled=', gyroEnabledRef.current)
-
-    const startOffsetMs = startIdx > 0
-      ? moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp
-      : 0
-
-    let cumulativeDelay = 0
-    moves.slice(startIdx).forEach((m, i) => {
-      const globalIdx = startIdx + i
-      if (globalIdx > 0) {
-        cumulativeDelay += (m.cubeTimestamp - moves[globalIdx - 1].cubeTimestamp) / speed
-      }
-      const t = setTimeout(() => {
-        rendererRef.current?.animateMove(m.face, m.direction, 150)
-        setCurrentIndex(globalIdx + 1)
-        if (globalIdx + 1 >= moves.length) setIsPlaying(false)
-      }, cumulativeDelay)
-      timeoutsRef.current.push(t)
-    })
-
-    playStartWallRef.current = performance.now()
-    playStartOffsetRef.current = startOffsetMs
-    const totalMs = solve.timeMs
-    const loop = () => {
-      const solveElapsed = Math.min(
-        playStartOffsetRef.current + (performance.now() - playStartWallRef.current) * speed,
-        totalMs,
-      )
-      setIndicatorMs(solveElapsed)
-      if (gyroEnabledRef.current && snapshots.length >= 2) {
-        const q = findSlerpedQuaternion(snapshots, solveElapsed)
-        if (q) rendererRef.current?.setQuaternion(q)
-      }
-      if (solveElapsed < totalMs) {
-        gyroRafRef.current = requestAnimationFrame(loop)
-      } else {
-        gyroRafRef.current = null
-      }
-    }
-    gyroRafRef.current = requestAnimationFrame(loop)
-  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots, speed])
-
-  const play = useCallback(() => playFrom(currentIndex >= solve.moves.length ? 0 : currentIndex), [playFrom, currentIndex, solve.moves.length])
-
-  const pause = useCallback(() => {
-    cancelScheduled()
-    setIsPlaying(false)
-  }, [cancelScheduled])
-
-  // Seek to a move index without starting playback.
-  // quatAnimMs > 0 smoothly animates the orientation change over that duration.
-  const seekTo = useCallback((idx: number, quatAnimMs = 0) => {
-    cancelScheduled()
-    setIsPlaying(false)
-    const clamped = Math.max(0, Math.min(solve.moves.length, idx))
-    setCurrentIndex(clamped)
-    const ms = clamped > 0
-      ? solve.moves[clamped - 1].cubeTimestamp - solve.moves[0].cubeTimestamp
-      : 0
-    setIndicatorMs(ms)
-    const snapshots = solve.quaternionSnapshots ?? []
-    if (gyroEnabledRef.current && snapshots.length >= 2) {
-      const q = findSlerpedQuaternion(snapshots, ms)
-      if (q) {
-        if (quatAnimMs > 0) rendererRef.current?.animateQuaternionTo(q, quatAnimMs)
-        else rendererRef.current?.setQuaternion(q)
-      }
-    }
-  }, [cancelScheduled, solve.moves, solve.quaternionSnapshots])
-
-  const stepForward = useCallback(() => {
-    if (currentIndex >= solve.moves.length) return
-    rendererRef.current?.animateMove(solve.moves[currentIndex].face, solve.moves[currentIndex].direction, 150)
-    seekTo(currentIndex + 1, 150)
-  }, [seekTo, currentIndex, solve.moves])
-
-  const stepBackward = useCallback(() => {
-    if (currentIndex <= 0) return
-    const move = solve.moves[currentIndex - 1]
-    rendererRef.current?.animateMove(move.face, move.direction === 'CW' ? 'CCW' : 'CW', 150)
-    seekTo(currentIndex - 1, 150)
-  }, [seekTo, currentIndex, solve.moves])
-
-  // Phase start indices for fast navigation
-  const phaseStarts = useMemo(() => {
-    const starts: number[] = []
-    let cum = 0
-    for (const p of solve.phases) {
-      starts.push(cum)
-      cum += p.turns
-    }
-    return starts
-  }, [solve.phases])
-
-  const fastForward = useCallback(() => {
-    const next = phaseStarts.find(s => s > currentIndex) ?? solve.moves.length
-    seekTo(next)
-  }, [seekTo, phaseStarts, currentIndex, solve.moves.length])
-
-  const lastFastBackwardMs = useRef(0)
-  const fastBackward = useCallback(() => {
-    const now = Date.now()
-    const currentPhaseStart = [...phaseStarts].reverse().find(s => s <= currentIndex) ?? 0
-    const atStart = currentIndex === currentPhaseStart
-    const quickRepeat = now - lastFastBackwardMs.current < 500
-    if (atStart || quickRepeat) {
-      const prevStart = [...phaseStarts].reverse().find(s => s < currentPhaseStart) ?? 0
-      seekTo(prevStart)
-    } else {
-      seekTo(currentPhaseStart)
-    }
-    lastFastBackwardMs.current = now
-  }, [seekTo, phaseStarts, currentIndex])
-
-useEffect(() => {
-    if (isPlaying) { cancelScheduled(); setIsPlaying(false) }
-  }, [speed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalMs = solve.timeMs
 
@@ -389,10 +239,10 @@ useEffect(() => {
             </div>
             <CubeCanvas
               facelets={computeFaceletsAtIndex(scrambledFacelets, solve.moves, currentIndex)}
-              quaternion={replayQuaternion}
+              quaternion={IDENTITY_QUATERNION}
               onRendererReady={(r) => {
                 rendererRef.current = r
-                if (!solve.moves.some((m) => m.quaternion) || !gyroEnabledRef.current) {
+                if (!solve.moves.some((m) => m.quaternion) || !gyroEnabled) {
                   r.setCameraPosition(4.5, 5, 5.5)
                 }
               }}
