@@ -105,6 +105,11 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const gyroRafRef = useRef<number | null>(null)
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
+  const modalRef = useRef<HTMLDivElement>(null)
+  const phaseBarRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const justStartedPlayingRef = useRef(false)
   const playStartWallRef = useRef(0)
   const playStartOffsetRef = useRef(0)
 
@@ -182,7 +187,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     gyroRafRef.current = requestAnimationFrame(loop)
   }, [cancelScheduled, solve.moves, solve.quaternionSnapshots, speed])
 
-  const play = useCallback(() => playFrom(currentIndex), [playFrom, currentIndex])
+  const play = useCallback(() => playFrom(currentIndex >= solve.moves.length ? 0 : currentIndex), [playFrom, currentIndex, solve.moves.length])
 
   const pause = useCallback(() => {
     cancelScheduled()
@@ -299,6 +304,34 @@ useEffect(() => {
         return tableRows.findIndex((r) => currentIndex - 1 >= r.moveStart && currentIndex - 1 < r.moveStart + r.turns)
       })()
   const activeMoveInPhase = activePhaseIndex >= 0 ? (currentIndex - 1) - tableRows[activePhaseIndex].moveStart : -1
+  // When play starts: scroll body to top so replay+phasebar become sticky
+  useEffect(() => {
+    if (!isPlaying || !bodyRef.current || !modalRef.current) return
+    justStartedPlayingRef.current = true
+    const modal = modalRef.current
+    const body = bodyRef.current
+    const modalRect = modal.getBoundingClientRect()
+    const bodyRect = body.getBoundingClientRect()
+    modal.scrollTo({ top: bodyRect.top - modalRect.top + modal.scrollTop, behavior: 'smooth' })
+    const timer = setTimeout(() => { justStartedPlayingRef.current = false }, 600)
+    return () => clearTimeout(timer)
+  }, [isPlaying])
+
+  // As phases advance during playback: scroll active row to just below phasebar
+  useEffect(() => {
+    if (!isPlaying || justStartedPlayingRef.current) return
+    const row = activePhaseIndex >= 0 ? rowRefs.current[activePhaseIndex] : null
+    const modal = modalRef.current
+    if (!row || !modal) return
+    const modalRect = modal.getBoundingClientRect()
+    const rowRect = row.getBoundingClientRect()
+    const phaseBarBottom = phaseBarRef.current
+      ? phaseBarRef.current.getBoundingClientRect().bottom - modalRect.top
+      : 0
+    const rowTopInModal = rowRect.top - modalRect.top + modal.scrollTop
+    modal.scrollTo({ top: rowTopInModal - phaseBarBottom, behavior: 'smooth' })
+  }, [activePhaseIndex, isPlaying])
+
   const totalRecMs = solve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
   const execPct = totalMs > 0 ? ((totalExecMs / totalMs) * 100).toFixed(0) : '0'
@@ -310,7 +343,7 @@ useEffect(() => {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 100,
     }}>
-      <div className="solve-detail-modal" style={{
+      <div ref={modalRef} className="solve-detail-modal" style={{
         background: '#0f1020',
         border: '1px solid #333',
         borderRadius: 8,
@@ -376,7 +409,7 @@ useEffect(() => {
         </div>
 
         {/* Body: Replay + Analysis */}
-        <div className="solve-detail-body" style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div ref={bodyRef} className="solve-detail-body" style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           {/* Replay */}
           <div className="replay-section" style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -445,12 +478,14 @@ useEffect(() => {
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
               <span style={{ color: '#888', fontSize: 12 }}>CFOP</span>
             </div>
-            <PhaseBar
-              phaseRecords={solve.phases}
-              method={CFOP}
-              interactive={false}
-              indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
-            />
+            <div ref={phaseBarRef} className="analysis-phasebar">
+              <PhaseBar
+                phaseRecords={solve.phases}
+                method={CFOP}
+                interactive={false}
+                indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
+              />
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginTop: 8 }}>
               <thead>
                 <tr style={{ color: '#555', borderBottom: '1px solid #222' }}>
@@ -477,7 +512,9 @@ useEffect(() => {
                   const rowBg = isActive ? 'rgba(46,204,113,0.1)' : isHovered ? '#161626' : 'transparent'
                   return (
                     <React.Fragment key={i}>
-                      <tr style={{ background: rowBg, cursor: 'pointer' }}
+                      <tr
+                        ref={(el) => { rowRefs.current[i] = el }}
+                        style={{ background: rowBg, cursor: 'pointer' }}
                         onClick={() => playFrom(row.moveStart)}
                         onMouseEnter={() => setHoveredRowIndex(i)}
                         onMouseLeave={() => setHoveredRowIndex(null)}
