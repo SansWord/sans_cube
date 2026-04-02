@@ -27,32 +27,13 @@ select { background: #0f3460; color: #e0e0e0; border: 1px solid #444; border-rad
   .solve-scramble { padding: 5px 8px !important; }
   .solve-scramble span { font-size: 10px !important; }
 
-  /* Solve detail: frozen replay, scrollable analysis */
-  .solve-detail-modal {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-  .solve-detail-header,
-  .solve-stats,
-  .solve-scramble,
-  .solve-detail-actions { flex-shrink: 0; }
-  .solve-detail-body {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-  .replay-section { flex-shrink: 0; overflow: hidden; }
-  .analysis-section {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    min-height: 0 !important;
-  }
-  .analysis-section thead tr {
+  /* Solve detail: sticky replay, normal modal scroll */
+  .replay-section {
     position: sticky;
     top: 0;
     background: #0f1020;
-    z-index: 1;
+    z-index: 2;
+    padding-bottom: 4px;
   }
 }
 
