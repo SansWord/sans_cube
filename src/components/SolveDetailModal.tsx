@@ -49,7 +49,7 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
   return 'Solved'
 }
 
-const AUTO_PLAY_DELAY_MS = 2000
+const AUTO_PLAY_DELAY_MS = 500
 
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
