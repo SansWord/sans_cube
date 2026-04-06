@@ -4,6 +4,8 @@ A Rubik's cube solve analyzer for speedcubers. Connects to your smart cube via B
 
 Built by SansWord [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sansword/)
 
+**[Live demo →](https://sansword.github.io/sans_cube/#solve--2)**
+
 ---
 
 ## Features
