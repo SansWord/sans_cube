@@ -49,6 +49,8 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
   return 'Solved'
 }
 
+const AUTO_PLAY_DELAY_MS = 2000
+
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
@@ -72,6 +74,11 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  useEffect(() => {
+    const t = setTimeout(() => play(), AUTO_PLAY_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [play])
 
   const totalMs = solve.timeMs
 
