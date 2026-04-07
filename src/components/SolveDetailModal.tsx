@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import type { SolveRecord } from '../types/solve'
-import { CFOP } from '../methods/cfop'
+import { getMethod } from '../methods/index'
 import { PhaseBar } from './PhaseBar'
 import { CubeCanvas } from './CubeCanvas'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
@@ -54,6 +54,7 @@ const AUTO_PLAY_DELAY_MS = 500
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
+  const method = getMethod(solve.method)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
@@ -201,6 +202,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
             { label: 'TPS', value: tps.toFixed(2) },
             { label: 'Date', value: formatDate(solve.date) },
             { label: 'Driver', value: solve.driver === 'cube' ? 'Cube' : solve.driver === 'mouse' ? 'Mouse' : '—' },
+            { label: 'Method', value: method.label },
           ].map(({ label, value }) => (
             <div key={label} style={{ flex: 1, background: '#161626', borderRadius: 4, padding: '8px 12px' }}>
               <div className="stat-label" style={{ color: '#666', fontSize: 11 }}>{label}</div>
@@ -293,12 +295,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
           <div className="analysis-section" style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
-              <span style={{ color: '#888', fontSize: 12 }}>CFOP</span>
+              <span style={{ color: '#888', fontSize: 12 }}>{method.label}</span>
             </div>
             <div ref={phaseBarRef} className="analysis-phasebar">
               <PhaseBar
                 phaseRecords={solve.phases}
-                method={CFOP}
+                method={method}
                 interactive={false}
                 indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
               />
