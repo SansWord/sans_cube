@@ -8,7 +8,8 @@ import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
 import { useTimer } from '../hooks/useTimer'
 import { useSolveHistory } from '../hooks/useSolveHistory'
-import { CFOP } from '../methods/cfop'
+import { useMethod } from '../hooks/useMethod'
+import { MethodSelector } from './MethodSelector'
 import { CubeCanvas } from './CubeCanvas'
 import { ScrambleDisplay } from './ScrambleDisplay'
 import { TimerDisplay } from './TimerDisplay'
@@ -93,9 +94,11 @@ export function TimerScreen({
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
+  const { method, setMethod } = useMethod()
+
   const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer } = useTimer(
     driver,
-    CFOP,
+    method,
     armed,
     driverVersion,
   )
@@ -126,6 +129,7 @@ export function TimerScreen({
       quaternionSnapshots,
       date: Date.now(),
       driver: driverType,
+      method: method.id,
     })
     // Generate next scramble after short delay
     setTimeout(() => {
@@ -255,7 +259,13 @@ export function TimerScreen({
             onMove={onCubeMove}
           />
 
-          <PhaseBar phaseRecords={displayedPhaseRecords} method={CFOP} />
+          <MethodSelector
+            method={method}
+            onChange={(m) => { setMethod(m); setArmed(false); resetTimer() }}
+            disabled={status === 'solving'}
+          />
+
+          <PhaseBar phaseRecords={displayedPhaseRecords} method={method} />
         </div>
       </div>
 
