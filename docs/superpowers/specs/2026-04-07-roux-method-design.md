@@ -143,7 +143,7 @@ No other type changes required.
 New localStorage key added to `src/utils/storageKeys.ts`:
 
 ```ts
-METHOD: 'method'
+METHOD: 'sans_cube_method'
 ```
 
 ---
