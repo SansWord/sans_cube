@@ -4,4 +4,5 @@ export const STORAGE_KEYS = {
   DISMISSED_EXAMPLES: 'sans_cube_dismissed_examples',
   ORIENTATION_CONFIG: 'cubeOrientationConfig',
   SIDEBAR_WIDTH: 'sidebarWidth',
+  METHOD: 'sans_cube_method',
 } as const

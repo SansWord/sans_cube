@@ -29,6 +29,7 @@ export interface SolveRecord {
   quaternionSnapshots?: QuaternionSnapshot[]
   driver?: 'cube' | 'mouse'
   isExample?: boolean
+  method?: string       // 'cfop' | 'roux'; absent on old solves, treated as 'cfop'
 }
 
 export interface Phase {
