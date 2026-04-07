@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
+import { getMethod } from '../methods/index'
 
 interface StatEntry {
   current: number | null
@@ -108,7 +109,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
               <tr style={{ color: '#555', fontSize: 11 }}>
                 <td style={{ padding: '2px 12px' }}>#</td>
                 <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
-                <td style={{ textAlign: 'right', padding: '2px 12px' }}>TPS</td>
+                <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                <td style={{ textAlign: 'right', padding: '2px 12px' }}>Method</td>
               </tr>
             </thead>
             <tbody>
@@ -120,7 +122,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
                 >
                   <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
                   <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 12px', color: '#888' }}>{fmtTps(s)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
                 </tr>
               ))}
             </tbody>
@@ -172,7 +175,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
               <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
                 <td style={{ padding: '2px 8px' }}>#</td>
                 <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
-                <td style={{ textAlign: 'right', padding: '2px 8px' }}>TPS</td>
+                <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                <td style={{ textAlign: 'right', padding: '2px 8px' }}>Method</td>
               </tr>
             </thead>
             <tbody>
@@ -186,7 +190,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
                 >
                   <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : s.id}</td>
                   <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 8px', color: '#888' }}>{fmtTps(s)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                  <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
                 </tr>
               ))}
             </tbody>
