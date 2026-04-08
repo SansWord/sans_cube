@@ -12,3 +12,7 @@
 
 ## Mobile
 - should I support touch/mouse for middle slice move?
+
+## Statistic
+- separate by method
+- statistic history trends by phases

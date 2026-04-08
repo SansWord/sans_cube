@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from '../utils/storageKeys'
 import type { SolveRecord } from '../types/solve'
 import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
+import type { TrackingState } from '../hooks/useScrambleTracker'
 import { useTimer } from '../hooks/useTimer'
 import { useSolveHistory } from '../hooks/useSolveHistory'
 import { useMethod } from '../hooks/useMethod'
@@ -94,6 +95,27 @@ export function TimerScreen({
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
+  // Track trackingState at each D move so the gesture check can look at the state
+  // at the time each move was made, not just when the 4th move fires the gesture.
+  const trackingStateRef = useRef<TrackingState>(tracker.trackingState)
+  trackingStateRef.current = tracker.trackingState
+  const dGestureStatesRef = useRef<TrackingState[]>([])
+
+  useEffect(() => {
+    const d = driver.current
+    if (!d) return
+    const onMove = (move: Move) => {
+      if (move.face === 'D') {
+        dGestureStatesRef.current.push(trackingStateRef.current)
+        if (dGestureStatesRef.current.length > 4) dGestureStatesRef.current.shift()
+      } else {
+        dGestureStatesRef.current = []
+      }
+    }
+    d.on('move', onMove)
+    return () => d.off('move', onMove)
+  }, [driver, driverVersion])
+
   const { method, setMethod } = useMethod()
 
   const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer } = useTimer(
@@ -180,7 +202,13 @@ export function TimerScreen({
     resetTimer()
     regenerate()
   }
-  gestureResetRef.current = handleResetCube
+  gestureResetRef.current = () => {
+    const states = dGestureStatesRef.current
+    const startedBlocked = states.some(s => s === 'scrambling' || s === 'warning')
+    dGestureStatesRef.current = []
+    if (startedBlocked) return
+    handleResetCube()
+  }
 
   const handleAutoScramble = useCallback(() => {
     onResetState()
