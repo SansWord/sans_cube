@@ -54,17 +54,21 @@ function makeStickerTexture(color: number): THREE.CanvasTexture {
   return new THREE.CanvasTexture(canvas)
 }
 
-const LAYER_AXIS: Record<Face, 'x' | 'y' | 'z'> = {
+const LAYER_AXIS: Record<AnyFace, 'x' | 'y' | 'z'> = {
   U: 'y', D: 'y', F: 'z', B: 'z', R: 'x', L: 'x',
+  M: 'x', E: 'y', S: 'z',
 }
-const LAYER_VALUE: Record<Face, number> = {
+const LAYER_VALUE: Record<AnyFace, number> = {
   U: 1, D: -1, F: 1, B: -1, R: 1, L: -1,
+  M: 0, E: 0, S: 0,
 }
-// Rotation angle for CW move (in radians)
-const LAYER_CW_ANGLE: Record<Face, number> = {
+// Rotation angle for CW move (in radians). Slice moves follow their outer-face partner:
+// M follows L, E follows D, S follows F.
+const LAYER_CW_ANGLE: Record<AnyFace, number> = {
   U: -Math.PI / 2, D: Math.PI / 2,
   F: -Math.PI / 2, B: Math.PI / 2,
   R: -Math.PI / 2, L: Math.PI / 2,
+  M:  Math.PI / 2, E: Math.PI / 2, S: -Math.PI / 2,
 }
 
 export class CubeRenderer {
@@ -78,10 +82,12 @@ export class CubeRenderer {
   private renderFrameId: number | null = null
   private animFrameId: number | null = null
   private animationQueue: Array<
-    | { type: 'move'; face: Face; direction: 'CW' | 'CCW'; durationMs: number; resolve: () => void }
+    | { type: 'move'; face: AnyFace; direction: 'CW' | 'CCW'; durationMs: number; resolve: () => void }
     | { type: 'facelets'; facelets: string }
   > = []
   private animationRunning = false
+
+  get isAnimating(): boolean { return this.animationRunning }
 
   constructor(canvas: HTMLCanvasElement) {
     this.stickerTextures = new Map(
@@ -211,8 +217,6 @@ export class CubeRenderer {
   }
 
   animateMove(face: AnyFace, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
-    // Slice moves (M/E/S) have no 3D layer animation; facelets are updated separately
-    if (face === 'M' || face === 'E' || face === 'S') return Promise.resolve()
     return new Promise((resolve) => {
       this.animationQueue.push({ type: 'move', face, direction, durationMs, resolve })
       if (!this.animationRunning) this._drainAnimationQueue()
@@ -241,7 +245,7 @@ export class CubeRenderer {
     })
   }
 
-  private _snapMove(face: Face, direction: 'CW' | 'CCW'): void {
+  private _snapMove(face: AnyFace, direction: 'CW' | 'CCW'): void {
     const axis = LAYER_AXIS[face]
     const layerVal = LAYER_VALUE[face]
     const cwAngle = LAYER_CW_ANGLE[face]
@@ -280,7 +284,7 @@ export class CubeRenderer {
     this._syncMaterialVisibility()
   }
 
-  private _runMoveAnimation(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
+  private _runMoveAnimation(face: AnyFace, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
     if (durationMs <= 0) {
       this._snapMove(face, direction)
       return Promise.resolve()

@@ -20,6 +20,8 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
   const playStartOffsetRef = useRef(0)
   const lastFastBackwardMs = useRef(0)
   const currentIndexRef = useRef(0)
+  const wasAnimatingRef = useRef(false)
+  const settleUntilRef = useRef(0)
 
   useEffect(() => {
     currentIndexRef.current = currentIndex
@@ -72,6 +74,8 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
 
     playStartWallRef.current = performance.now()
     playStartOffsetRef.current = startOffsetMs
+    wasAnimatingRef.current = false
+    settleUntilRef.current = 0
     const totalMs = solve.timeMs
     const loop = () => {
       const solveElapsed = Math.min(
@@ -80,8 +84,21 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
       )
       setIndicatorMs(solveElapsed)
       if (gyroEnabledRef.current && snapshots.length >= 2) {
-        const q = findSlerpedQuaternion(snapshots, solveElapsed)
-        if (q) rendererRef.current?.setQuaternion(q)
+        const isAnim = rendererRef.current?.isAnimating ?? false
+        const now = performance.now()
+        if (wasAnimatingRef.current && !isAnim) {
+          // Animation just finished — smoothly settle to correct orientation
+          const q = findSlerpedQuaternion(snapshots, solveElapsed)
+          if (q) {
+            rendererRef.current?.animateQuaternionTo(q, 120)
+            settleUntilRef.current = now + 120
+          }
+        } else if (!isAnim && now >= settleUntilRef.current) {
+          // Normal gyro update
+          const q = findSlerpedQuaternion(snapshots, solveElapsed)
+          if (q) rendererRef.current?.setQuaternion(q)
+        }
+        wasAnimatingRef.current = isAnim
       }
       if (solveElapsed < totalMs) {
         gyroRafRef.current = requestAnimationFrame(loop)

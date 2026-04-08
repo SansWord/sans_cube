@@ -46,7 +46,6 @@ export class SliceMoveDetector extends CubeEventEmitter implements CubeDriver {
       if (wallGap <= SliceMoveDetector.RETRO_WINDOW_MS) {
         const slice = pairResult(this._lastEmitted.move, incoming)
         if (slice !== null) {
-          console.log(`[SliceMoveDetector] retroactive ${slice.face}${slice.direction} (wallGap=${wallGap}ms)`)
           this._lastEmitted = null
           const corrected: Move = {
             face: slice.face,
@@ -75,7 +74,6 @@ export class SliceMoveDetector extends CubeEventEmitter implements CubeDriver {
           quaternion: this._pending.quaternion,
         }
         this._pending = null
-        console.log(`[SliceMoveDetector] fast pair ${sliceMove.face}${sliceMove.direction}`)
         this._emitMove(sliceMove)
         return
       }
