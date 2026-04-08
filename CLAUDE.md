@@ -80,6 +80,10 @@ npm run lint      # ESLint
 
 See `future.md` for the full backlog (single source of truth).
 
+## End of Session
+
+At the end of each session, remind SansWord to update `docs/devlog.md` with learnings from the session. If he forgets, prompt him: "Want me to add today's learnings to the devlog?"
+
 ## GitHub Upload Safety
 
 Before committing or pushing any file to GitHub, check for:
