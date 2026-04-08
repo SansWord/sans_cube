@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { GanCubeDriver } from '../drivers/GanCubeDriver'
 import { MouseDriver } from '../drivers/MouseDriver'
+import { SliceMoveDetector } from '../drivers/SliceMoveDetector'
 import type { CubeDriver, ConnectionStatus } from '../drivers/CubeDriver'
 
 export type DriverType = 'cube' | 'mouse'
@@ -27,7 +28,7 @@ export function useCubeDriver() {
     old?.removeAllListeners()
     old?.disconnect()
 
-    const next = type === 'mouse' ? new MouseDriver() : new GanCubeDriver()
+    const next = type === 'mouse' ? new MouseDriver() : new SliceMoveDetector(new GanCubeDriver())
     next.on('connection', setStatus)
     driverRef.current = next
     setDriverType(type)
