@@ -58,6 +58,34 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
+## v1.3 post — Cloud Loading UX (2026-04-08)
+
+**What was built:**
+- Loading spinner in the solve history sidebar when cloud sync is enabled and data hasn't arrived yet
+- Suppresses example solves and local solves during the loading window to prevent false content flashing
+
+**The core bug — React render cycle gap:**
+
+When Firebase `onAuthStateChanged` resolves, it calls `setUser(user)` and `setAuthLoading(false)`. React batches these into one render. But `useEffect` runs *after* render — so there's exactly one render where:
+- auth is resolved (`authLoading = false`, `user = User`)
+- the Firestore loading effect hasn't started yet (`cloudLoading` is still `false`)
+
+Any loading state that relies on an effect to turn `true` has this one-render blind spot, which appears as a brief flash of local content.
+
+**The fix — derive loading from `cloudReady`, not `cloudLoading`:**
+
+Instead of a `cloudLoading` state that an effect switches on, track `cloudReady` (has Firestore ever successfully returned for this uid?). Derive the loading condition purely:
+
+```ts
+const isCloudLoading = enabled && (!user || !cloudReady)
+```
+
+This stays `true` continuously from page load through auth resolution through Firestore return — no effect cycle needed to turn it on, so no gap.
+
+**Rule of thumb:** if a loading state needs an effect to *start* it, there's a window between "condition became true" and "effect ran" where it's incorrectly false. Prefer deriving loading from "has the data arrived yet?" rather than "have I started fetching?"
+
+---
+
 ## v1.3 — Firebase Cloud Sync (2026-04-08)
 
 **What was built:**

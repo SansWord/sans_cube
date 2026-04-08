@@ -14,6 +14,7 @@ import {
 export interface CloudConfig {
   enabled: boolean
   user: User | null
+  authLoading?: boolean
 }
 
 function loadNextId(): number {
@@ -105,7 +106,7 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
 
   // Cloud state
   const [cloudSolves, setCloudSolves] = useState<SolveRecord[]>([])
-  const [cloudLoading, setCloudLoading] = useState(false)
+  const [cloudReady, setCloudReady] = useState(false)
   const migratedRef = useRef(false)
 
   // Sequential ID counter (for localStorage mode)
@@ -116,9 +117,10 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
 
   // Load from Firestore when cloud is enabled
   useEffect(() => {
-    if (!useCloud || !uid) return
-
-    setCloudLoading(true)
+    if (!useCloud || !uid) {
+      setCloudReady(false)
+      return
+    }
 
     // Migrate localStorage solves on first enable (only once per session)
     const doLoad = async () => {
@@ -128,7 +130,7 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
       }
       const solves = await loadSolvesFromFirestore(uid)
       setCloudSolves(solves)
-      setCloudLoading(false)
+      setCloudReady(true)
     }
 
     doLoad()
@@ -176,10 +178,14 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
     }
   }, [useCloud, uid])
 
-  const solves = useCloud ? cloudSolves : localSolves
-  const visibleExamples = EXAMPLE_SOLVES.filter((e) => !dismissedExamples.has(e.id))
+  // Show loading whenever cloud sync is enabled and data isn't ready yet:
+  // covers auth-pending (no user yet) AND the gap between auth resolving and Firestore returning
+  const isCloudLoading = !!(cloudConfig?.enabled && (!cloudConfig?.user || !cloudReady))
+
+  const solves = isCloudLoading ? [] : (useCloud ? cloudSolves : localSolves)
+  const visibleExamples = isCloudLoading ? [] : EXAMPLE_SOLVES.filter((e) => !dismissedExamples.has(e.id))
   const allSolves = [...visibleExamples, ...solves]
   const stats = computeStats(solves)
 
-  return { solves: allSolves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading }
+  return { solves: allSolves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading: isCloudLoading }
 }

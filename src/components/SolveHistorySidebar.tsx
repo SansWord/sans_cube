@@ -22,6 +22,7 @@ interface Props {
   width: number
   onWidthChange: (w: number) => void
   onClose?: () => void
+  cloudLoading?: boolean
 }
 
 const MIN_WIDTH = 120
@@ -40,7 +41,7 @@ function fmtTps(solve: SolveRecord): string {
   return (solve.moves.length / secs).toFixed(2)
 }
 
-export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange, onClose }: Props) {
+export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange, onClose, cloudLoading }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -104,30 +105,37 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ color: '#555', fontSize: 11 }}>
-                <td style={{ padding: '2px 12px' }}>#</td>
-                <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
-                <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
-                <td style={{ textAlign: 'right', padding: '2px 12px' }}>Method</td>
-              </tr>
-            </thead>
-            <tbody>
-              {reversedSolves.map((s) => (
-                <tr
-                  key={s.id}
-                  onClick={() => onSelectSolve(s)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
+          {cloudLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ color: '#555', fontSize: 11 }}>
+                  <td style={{ padding: '2px 12px' }}>#</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                  <td style={{ textAlign: 'right', padding: '2px 12px' }}>Method</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {reversedSolves.map((s) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => onSelectSolve(s)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     )
@@ -170,32 +178,39 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
-                <td style={{ padding: '2px 8px' }}>#</td>
-                <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
-                <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
-                <td style={{ textAlign: 'right', padding: '2px 8px' }}>Method</td>
-              </tr>
-            </thead>
-            <tbody>
-              {reversedSolves.map((s) => (
-                <tr
-                  key={s.id}
-                  onClick={() => onSelectSolve(s)}
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
-                  <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
+          {cloudLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
+                  <td style={{ padding: '2px 8px' }}>#</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                  <td style={{ textAlign: 'right', padding: '2px 8px' }}>Method</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {reversedSolves.map((s) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => onSelectSolve(s)}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
       <div

@@ -30,7 +30,7 @@ export default function App() {
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
-  const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user }
+  const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
