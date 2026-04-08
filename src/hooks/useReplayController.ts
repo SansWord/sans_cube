@@ -19,6 +19,11 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
   const playStartWallRef = useRef(0)
   const playStartOffsetRef = useRef(0)
   const lastFastBackwardMs = useRef(0)
+  const currentIndexRef = useRef(0)
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex
+  }, [currentIndex])
 
   useEffect(() => {
     gyroEnabledRef.current = gyroEnabled
@@ -88,8 +93,8 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
   }, [cancelScheduled, solve.moves, solve.quaternionSnapshots, solve.timeMs, speed, rendererRef])
 
   const play = useCallback(
-    () => playFrom(currentIndex >= solve.moves.length ? 0 : currentIndex),
-    [playFrom, currentIndex, solve.moves.length],
+    () => playFrom(currentIndexRef.current >= solve.moves.length ? 0 : currentIndexRef.current),
+    [playFrom, solve.moves.length],
   )
 
   const pause = useCallback(() => {
