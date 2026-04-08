@@ -9,6 +9,7 @@ import { useScrambleTracker } from '../hooks/useScrambleTracker'
 import type { TrackingState } from '../hooks/useScrambleTracker'
 import { useTimer } from '../hooks/useTimer'
 import { useSolveHistory } from '../hooks/useSolveHistory'
+import type { CloudConfig } from '../hooks/useSolveHistory'
 import { useMethod } from '../hooks/useMethod'
 import { MethodSelector } from './MethodSelector'
 import { CubeCanvas } from './CubeCanvas'
@@ -37,6 +38,7 @@ interface Props {
   driverType?: 'cube' | 'mouse'
   interactive?: boolean
   onCubeMove?: (face: Face, direction: 'CW' | 'CCW') => void
+  cloudConfig?: CloudConfig
 }
 
 export function TimerScreen({
@@ -51,10 +53,11 @@ export function TimerScreen({
   driverType,
   interactive,
   onCubeMove,
+  cloudConfig,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
-  const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory()
+  const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory(cloudConfig)
 
   useEffect(() => {
     const d = driver.current
