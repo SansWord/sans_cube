@@ -36,13 +36,13 @@ export const ROUX: SolveMethod = {
     {
       label: 'UL+UR',
       group: 'LSE',
-      color: '#2ecc71',
+      color: '#27ae60',
       isComplete: isULURDone,
     },
     {
       label: 'EP',
       group: 'LSE',
-      color: '#58d68d',
+      color: '#27ae60',
       isComplete: isSolvedFacelets,
     },
   ],

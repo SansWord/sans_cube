@@ -20,7 +20,8 @@ export interface PhaseRecord {
 }
 
 export interface SolveRecord {
-  id: number            // sequential, 1-indexed
+  id: number            // internal key (sequential in local mode, timestamp in cloud mode)
+  seq?: number          // display number: stable 1-indexed counter, gaps allowed on delete
   scramble: string
   timeMs: number        // wall-clock solve duration
   moves: Move[]         // all moves with cubeTimestamp for replay

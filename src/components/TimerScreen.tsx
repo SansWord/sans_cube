@@ -57,7 +57,7 @@ export function TimerScreen({
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
-  const { solves, addSolve, deleteSolve, stats, nextId } = useSolveHistory(cloudConfig)
+  const { solves, addSolve, deleteSolve, stats, nextSolveIds } = useSolveHistory(cloudConfig)
 
   useEffect(() => {
     const d = driver.current
@@ -144,9 +144,10 @@ export function TimerScreen({
   // Save solve when timer reaches solved
   const prevStatusRef = useRef(status)
   if (status === 'solved' && prevStatusRef.current !== 'solved') {
-    const id = nextId()
+    const { id, seq } = nextSolveIds()
     addSolve({
       id,
+      seq,
       scramble: scramble ?? '',
       timeMs: elapsedMs,
       moves: recordedMoves,

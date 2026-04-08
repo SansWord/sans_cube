@@ -26,19 +26,19 @@ export const CFOP: SolveMethod = {
     {
       label: 'F2L Slot 2',
       group: 'F2L',
-      color: '#3498db',
+      color: '#2980b9',
       isComplete: (f) => countCompletedF2LSlots(f) >= 2,
     },
     {
       label: 'F2L Slot 3',
       group: 'F2L',
-      color: '#5dade2',
+      color: '#2980b9',
       isComplete: (f) => countCompletedF2LSlots(f) >= 3,
     },
     {
       label: 'F2L Slot 4',
       group: 'F2L',
-      color: '#85c1e9',
+      color: '#2980b9',
       isComplete: (f) => countCompletedF2LSlots(f) >= 4,
     },
     {
@@ -50,7 +50,7 @@ export const CFOP: SolveMethod = {
     {
       label: 'COLL',
       group: 'OLL',
-      color: '#e67e22',
+      color: '#f39c12',
       isComplete: isOLLDone,
     },
     {
@@ -62,7 +62,7 @@ export const CFOP: SolveMethod = {
     {
       label: 'EPLL',
       group: 'PLL',
-      color: '#2ecc71',
+      color: '#27ae60',
       isComplete: isSolvedFacelets,
     },
   ],

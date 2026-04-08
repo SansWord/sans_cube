@@ -134,15 +134,12 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
     doLoad()
   }, [useCloud, uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const nextId = useCallback((): number => {
-    if (useCloud) {
-      // In cloud mode, use timestamp as ID to avoid cross-device conflicts
-      return Date.now()
-    }
-    const id = nextIdRef.current
-    nextIdRef.current = id + 1
+  const nextSolveIds = useCallback((): { id: number; seq: number } => {
+    const seq = nextIdRef.current
+    nextIdRef.current = seq + 1
     saveNextId(nextIdRef.current)
-    return id
+    const id = useCloud ? Date.now() : seq
+    return { id, seq }
   }, [useCloud])
 
   const addSolve = useCallback((solve: SolveRecord) => {
@@ -184,5 +181,5 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
   const allSolves = [...visibleExamples, ...solves]
   const stats = computeStats(solves)
 
-  return { solves: allSolves, addSolve, deleteSolve, stats, nextId, cloudLoading }
+  return { solves: allSolves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading }
 }
