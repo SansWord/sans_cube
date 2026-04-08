@@ -9,6 +9,7 @@ const GAN_FACE_MAP: Face[] = ['U', 'R', 'F', 'D', 'L', 'B']
 export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   private connection: Awaited<ReturnType<typeof connectGanCube>> | null = null
   private batteryPollInterval: ReturnType<typeof setInterval> | null = null
+  private _lastCubeTs = 0  // tracks last valid cubeTimestamp for interpolating missed-move nulls
 
   async connect(): Promise<void> {
     this.emit('connection', 'connecting')
@@ -47,10 +48,15 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
     if (event.type === 'MOVE') {
       const ganFaceIndex = event.face as number
       const ganDir = event.direction as number
+      // GAN Gen4 sends cubeTimestamp: null for missed/recovered moves (BLE packet loss).
+      // Interpolate with +50ms rather than passing null, which would corrupt replay timing.
+      const rawTs = event.cubeTimestamp as number | null
+      const cubeTimestamp = rawTs != null ? rawTs : this._lastCubeTs + 50
+      this._lastCubeTs = cubeTimestamp
       const move: Move = {
         face: GAN_FACE_MAP[ganFaceIndex],
         direction: ganDir === 0 ? 'CW' : 'CCW',
-        cubeTimestamp: event.cubeTimestamp as number,
+        cubeTimestamp,
         serial: event.serial as number,
       }
       this.emit('move', move)
