@@ -16,6 +16,7 @@ import { TimerScreen } from './components/TimerScreen'
 import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
+import { useCloudSync } from './hooks/useCloudSync'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -28,6 +29,8 @@ export default function App() {
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>('timer')
   const [battery, setBattery] = useState<number | null>(null)
+  const cloudSync = useCloudSync()
+  const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user }
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
@@ -96,6 +99,7 @@ export default function App() {
           driverType={driverType}
           interactive={driverType === 'mouse'}
           onCubeMove={handleCubeMove}
+          cloudConfig={cloudConfig}
         />
       ) : (
         <>
@@ -113,6 +117,51 @@ export default function App() {
           />
           <FaceletDebug facelets={facelets} />
           <MoveHistory moves={moves} />
+          <div style={{
+            fontFamily: 'monospace',
+            fontSize: 11,
+            background: '#111',
+            color: '#ccc',
+            padding: '12px 16px',
+            borderRadius: 6,
+            marginTop: 8,
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 8, color: '#aaa' }}>Cloud Sync (Firebase)</div>
+
+            {cloudSync.authLoading ? (
+              <div style={{ color: '#666' }}>Loading auth...</div>
+            ) : cloudSync.user ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ color: '#4c4' }}>Signed in as {cloudSync.user.email}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={cloudSync.enabled}
+                      onChange={(e) => e.target.checked ? cloudSync.enable() : cloudSync.disable()}
+                    />
+                    Enable cloud sync
+                  </label>
+                </div>
+                <button
+                  onClick={cloudSync.signOut}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: 3, fontSize: 11 }}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ color: '#888' }}>Not signed in</div>
+                <button
+                  onClick={cloudSync.signIn}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: 3, fontSize: 11 }}
+                >
+                  Sign in with Google
+                </button>
+              </div>
+            )}
+          </div>
           <div style={{ padding: '12px 0', textAlign: 'center', display: 'flex', gap: 8, justifyContent: 'center' }}>
             <button
               onClick={() => { localStorage.clear(); window.location.reload() }}
