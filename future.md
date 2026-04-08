@@ -2,7 +2,6 @@
 
 ## Solving Methods
 - ZZ method support
-- Fix existing unit-test cases
 
 ## Hardware
 - Support for non-GAN cubes (MoYu, QiYi, etc.)
