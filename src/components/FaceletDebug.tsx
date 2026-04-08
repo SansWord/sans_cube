@@ -52,6 +52,14 @@ function FaceGrid({ facelets, face }: { facelets: string; face: string }) {
 
 export function FaceletDebug({ facelets }: { facelets: string }) {
   const [show, setShow] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(facelets).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
   const cell = (face: string) => <FaceGrid facelets={facelets} face={face} />
   const blank = <div style={{ display: 'inline-block', width: 38 }} />
 
@@ -65,11 +73,23 @@ export function FaceletDebug({ facelets }: { facelets: string }) {
       borderRadius: 6,
       marginTop: 8,
     }}>
-      <div
-        onClick={() => setShow(s => !s)}
-        style={{ marginBottom: show ? 4 : 0, color: '#888', cursor: 'pointer', userSelect: 'none' }}
-      >
-        {show ? '▼' : '▶'} Facelet state
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: show ? 4 : 0 }}>
+        <div
+          onClick={() => setShow(s => !s)}
+          style={{ color: '#888', cursor: 'pointer', userSelect: 'none' }}
+        >
+          {show ? '▼' : '▶'} Facelet state
+        </div>
+        <button
+          onClick={handleCopy}
+          style={{
+            fontSize: 10, padding: '1px 6px', cursor: 'pointer',
+            background: '#222', color: copied ? '#4c4' : '#aaa',
+            border: '1px solid #444', borderRadius: 3,
+          }}
+        >
+          {copied ? 'copied' : 'copy'}
+        </button>
       </div>
       {show && <>
         {/* Row 1: U */}

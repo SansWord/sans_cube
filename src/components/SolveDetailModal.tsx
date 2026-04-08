@@ -5,6 +5,7 @@ import { PhaseBar } from './PhaseBar'
 import { CubeCanvas } from './CubeCanvas'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import { SOLVED_FACELETS } from '../types/cube'
+import type { Move } from '../types/cube'
 import { applyMoveToFacelets } from '../hooks/useCubeState'
 import { parseScramble } from '../utils/scramble'
 import { formatTime } from '../utils/formatting'
@@ -56,6 +57,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
   const method = getMethod(solve.method)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [copiedSteps, setCopiedSteps] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const modalRef = useRef<HTMLDivElement>(null)
@@ -111,6 +113,18 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     cumTurns += p.turns
     return { ...p, stepMs, cumMs, moveStart, moves: solve.moves.slice(moveStart, cumTurns) }
   })
+
+  function copySteps() {
+    const moveStr = (m: Move) => m.face + (m.direction === 'CCW' ? "'" : '')
+    const lines = [`Scramble: ${solve.scramble}`, '']
+    for (const row of tableRows) {
+      const moves = row.moves.length > 0 ? row.moves.map(moveStr).join(' ') : '—'
+      lines.push(`${row.label}: ${moves}`)
+    }
+    navigator.clipboard.writeText(lines.join('\n'))
+    setCopiedSteps(true)
+    setTimeout(() => setCopiedSteps(false), 1500)
+  }
 
   // Which phase and move-within-phase is currently active during replay
   // If currentIndex lands exactly on a phase boundary, highlight the upcoming phase.
@@ -219,6 +233,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
             style={{ padding: '4px 8px', fontSize: 11 }}
             title="Copy scramble"
           >📋</button>
+          <button
+            onClick={copySteps}
+            style={{ padding: '4px 10px', fontSize: 11, background: copiedSteps ? '#27ae60' : '#2980b9', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', transition: 'background 0.2s' }}
+          >
+            {copiedSteps ? 'Copied!' : 'Copy steps'}
+          </button>
           <button
             onClick={() => { onUseScramble(solve.scramble); onClose() }}
             style={{ padding: '4px 10px', fontSize: 11, background: '#2ecc71', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer' }}
@@ -350,7 +370,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
                         <td style={{ textAlign: 'right', padding: '4px 4px' }}>{row.turns}</td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid #1a1a2e', background: isActive ? 'rgba(46,204,113,0.05)' : 'transparent' }}>
-                          <td colSpan={6} style={{ padding: '4px 8px 8px 20px', fontFamily: 'monospace', fontSize: 12, letterSpacing: 1 }}>
+                          <td colSpan={6} style={{ padding: '4px 8px 8px 20px', fontFamily: 'monospace', fontSize: 12, letterSpacing: 1, whiteSpace: 'normal', wordBreak: 'break-word' }}>
                             {row.moves.length > 0
                               ? row.moves.map((m, mi) => {
                                   const isCurrentMove = isActive && mi === activeMoveInPhase
