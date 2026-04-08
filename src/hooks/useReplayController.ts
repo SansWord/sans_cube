@@ -48,14 +48,14 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
     const snapshots = solve.quaternionSnapshots ?? []
 
     const startOffsetMs = startIdx > 0
-      ? moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp
+      ? Math.max(0, moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp)
       : 0
 
     let cumulativeDelay = 0
     moves.slice(startIdx).forEach((m, i) => {
       const globalIdx = startIdx + i
       if (globalIdx > 0) {
-        cumulativeDelay += (m.cubeTimestamp - moves[globalIdx - 1].cubeTimestamp) / speed
+        cumulativeDelay += Math.max(0, m.cubeTimestamp - moves[globalIdx - 1].cubeTimestamp) / speed
       }
       const t = setTimeout(() => {
         rendererRef.current?.animateMove(m.face, m.direction, 150)
@@ -103,7 +103,7 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
     const clamped = Math.max(0, Math.min(solve.moves.length, idx))
     setCurrentIndex(clamped)
     const ms = clamped > 0
-      ? solve.moves[clamped - 1].cubeTimestamp - solve.moves[0].cubeTimestamp
+      ? Math.max(0, solve.moves[clamped - 1].cubeTimestamp - solve.moves[0].cubeTimestamp)
       : 0
     setIndicatorMs(ms)
     const snapshots = solve.quaternionSnapshots ?? []
