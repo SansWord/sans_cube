@@ -16,3 +16,8 @@
 ## Statistic
 - separate by method
 - statistic history trends by phases
+
+## Miscs
+- localization
+- case detection - OLL, PLL, EO, LR+LU, EP
+- clean code
