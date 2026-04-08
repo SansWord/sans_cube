@@ -1,0 +1,147 @@
+# Firebase Cloud Sync
+
+Solve history is stored locally in `localStorage` by default. Cloud sync is an opt-in feature that persists solves to Firebase Firestore, enabling cross-device access.
+
+## How it works
+
+- Toggle is in **debug mode** (top-right mode switch → debug)
+- Requires signing in with a Google account
+- Each user's solves are stored separately — no one can see another user's data
+- When you first enable it, existing local solves are migrated to Firestore automatically
+- Once enabled, reads and writes go to Firestore only (no local copy)
+
+## Firebase setup (for developers / self-hosting)
+
+### 1. Create a Firebase project
+
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project
+3. Add a **Web app** and copy the config object
+
+### 2. Enable services
+
+- **Authentication → Sign-in method → Google** — enable it
+- **Firestore Database** — create in production mode
+
+### 3. Set Firestore security rules
+
+In Firebase Console → Firestore → Rules:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/solves/{solveId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### 4. Configure environment variables
+
+Create `.env.local` in the project root (never commit this file):
+
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+Fill in the values from your Firebase web app config.
+
+### 5. Add authorized domain (for GitHub Pages)
+
+Firebase Console → Authentication → Settings → Authorized domains → add `sansword.github.io`.
+
+## Data model
+
+Solves are stored at:
+
+```
+users/{uid}/solves/{date}
+```
+
+Where `{date}` is `String(solve.date)` — the Unix timestamp (ms) when the solve was recorded. This is unique per solve and doubles as a natural sort key.
+
+Each document is a serialized `SolveRecord` object (see `src/types/solve.ts`).
+
+## Deployment (GitHub Pages)
+
+Firebase config values are stored as GitHub Actions secrets (repo → Settings → Secrets and variables → Actions). The deploy workflow injects them at build time so they're baked into the JS bundle.
+
+See `.github/workflows/deploy.yml` for the full workflow.
+
+> **Note:** Firebase web API keys are not sensitive secrets — they identify the project but access is controlled by Firestore security rules. Storing them as GitHub secrets just keeps them out of the git history.
+
+## Admin access
+
+There is no in-app admin view. To inspect any user's data, use the [Firebase Console](https://console.firebase.google.com) → Firestore → browse the `users` collection.
+
+## User IDs
+
+Firebase assigns each user a permanent UID when they sign in with Google. The same Google account always gets the same UID across all devices. You never generate or manage UIDs — `onAuthStateChanged` returns the signed-in user object and `user.uid` is read from it.
+
+## Local development
+
+`npm run dev` works out of the box. Firebase Auth automatically whitelists `localhost`, so Google Sign-In works without any extra configuration. Ensure `.env.local` exists with the Firebase config values before starting the dev server.
+
+## Security
+
+### API key exposure
+
+The Firebase config (including API key) is baked into the JS bundle and visible to anyone who inspects the page source. This is expected — Firebase web API keys are not secrets. Access control is enforced by Firestore security rules and Firebase Auth, not by the key itself.
+
+### Risk 1: Script abuse via extracted API key
+
+A malicious user could extract the API key from the bundle and write a script that creates accounts and floods Firestore with writes, exhausting your free-tier quota.
+
+**Mitigation: Firebase App Check**
+
+App Check ties your Firebase project to your specific deployed app using reCAPTCHA v3. Requests not originating from your actual web page are rejected before reaching Firestore.
+
+Setup: Firebase Console → App Check → register your app with reCAPTCHA v3 (free). Add to `src/services/firebase.ts`:
+
+```typescript
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'),
+  isTokenAutoRefreshEnabled: true,
+})
+```
+
+Enable App Check enforcement in the Firebase Console after registering. Add App Check to the deploy workflow if needed (reCAPTCHA site keys are safe to commit).
+
+### Risk 2: Oversized or malformed documents
+
+A legitimate user could write extremely large solve records or documents missing required fields.
+
+**Mitigation: Firestore rule validation**
+
+Replace the basic security rule with this stricter version:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/solves/{solveId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+                && request.auth.uid == userId
+                && request.resource.data.keys().hasAll(['id', 'date', 'timeMs', 'moves', 'phases'])
+                && request.resource.size < 100000;
+    }
+  }
+}
+```
+
+This limits each solve document to 100KB and requires the core fields to be present.
+
+### Free-tier limits as a natural ceiling
+
+Even without the above mitigations, the Firebase free tier caps at 20k writes/day and 1GB total storage across all users. For a personal cubing app this is unlikely to be a concern, but it does bound worst-case abuse.
+
+**Recommended priority:** Add App Check before sharing the app URL publicly. The document size rule is a low-effort addition worth including in the Firestore rules from the start.

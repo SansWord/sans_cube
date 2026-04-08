@@ -21,3 +21,6 @@
 - localization
 - case detection - OLL, PLL, EO, LR+LU, EP
 - clean code
+
+## firebase
+- once I enable app check, would it shows up everytime finishes a solve?
