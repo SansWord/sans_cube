@@ -58,6 +58,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
   const method = getMethod(solve.method)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copiedSteps, setCopiedSteps] = useState(false)
+  const [copiedExample, setCopiedExample] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const modalRef = useRef<HTMLDivElement>(null)
@@ -124,6 +125,14 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     navigator.clipboard.writeText(lines.join('\n'))
     setCopiedSteps(true)
     setTimeout(() => setCopiedSteps(false), 1500)
+  }
+
+  function copyAsExample() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, isExample: _ie, ...data } = solve
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+    setCopiedExample(true)
+    setTimeout(() => setCopiedExample(false), 1500)
   }
 
   // Which phase and move-within-phase is currently active during replay
@@ -420,12 +429,23 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            >
-              Delete
-            </button>
+            <>
+              {!solve.isExample && (
+                <button
+                  onClick={copyAsExample}
+                  style={{ padding: '6px 14px', background: copiedExample ? '#27ae60' : '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 8, transition: 'background 0.2s' }}
+                  title="Copy solve JSON for use as an example solve in exampleSolves.ts"
+                >
+                  {copiedExample ? 'Copied!' : 'Copy as example'}
+                </button>
+              )}
+              <button
+                onClick={() => setConfirmDelete(true)}
+                style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            </>
           )}
         </div>
       </div>
