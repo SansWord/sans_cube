@@ -2,12 +2,13 @@
 
 ## Overview
 
-The 3D cube animation has two independent systems that run simultaneously during replay:
+The 3D cube animation has three independent systems that run simultaneously during replay:
 
 1. **Move animation** — rotates a layer of cubies in Three.js
 2. **Gyro animation** — sets the overall cube orientation from recorded quaternion snapshots
+3. **Orbit** — user-controlled viewing angle, independent of gyro/move state
 
-These two systems must be coordinated to avoid visual conflicts (see [Gyro/Move Conflict](#gyromove-conflict) below).
+Move and gyro must be coordinated to avoid visual conflicts (see [Gyro/Move Conflict](#gyromove-conflict) below).
 
 ---
 
@@ -39,6 +40,16 @@ Each face/slice maps to an axis, a layer coordinate, and a CW rotation angle:
 
 Selection predicate: `Math.round(cubie.userData[axis]) === layerValue`. Rounding handles floating-point drift from previous animations.
 
+### Scene graph
+
+```
+scene
+└── orbitGroup        ← user drag (viewing angle)
+    └── pivotGroup    ← gyro / cube orientation
+        ├── cubie mesh × 26
+        └── pivot (temporary, exists only during layer animation)
+```
+
 ### Animation mechanics
 
 1. A temporary `pivot` Group is added as a child of `pivotGroup`.
@@ -59,7 +70,7 @@ During replay, `useReplayController` runs a `requestAnimationFrame` loop that:
 
 1. Computes `solveElapsed` (solve time at current playback position).
 2. Calls `findSlerpedQuaternion(snapshots, solveElapsed)` — binary-searches the 10 Hz snapshot array and SLERPs between the two nearest samples.
-3. Calls `renderer.setQuaternion(q)` — converts from GAN sensor space to Three.js space and sets `pivotGroup.quaternion` directly.
+3. Calls `renderer.setQuaternion(q)` — converts from GAN sensor space to Three.js space and sets `pivotGroup.quaternion` directly. `orbitGroup.quaternion` (user orbit offset) is unaffected.
 
 Quaternion snapshots are recorded at **10 Hz** during a live solve (`useTimer`, 100 ms cap). The 60 Hz replay loop interpolates between them, so orientation appears smooth.
 
@@ -86,6 +97,16 @@ The gyro loop checks `renderer.isAnimating` each frame and coordinates in three 
 The 120 ms smooth settle prevents the 4.5° accumulated drift from appearing as a visible snap when the move animation ends.
 
 `renderer.isAnimating` exposes the private `animationRunning` flag, which is `true` for the entire duration of any queued animation (move or facelets).
+
+---
+
+## Orbit
+
+`applyOrbitDelta(dx, dy)` rotates `orbitGroup.quaternion` in response to user drag. Because `orbitGroup` is the parent of `pivotGroup` in the scene graph, the two compose naturally — the user sees gyro orientation from their chosen viewing angle.
+
+`setQuaternion` writes only to `pivotGroup`, so gyro updates during replay never overwrite the orbit offset. `resetOrientation()` zeroes `orbitGroup.quaternion`, restoring the default view without affecting gyro state.
+
+`determineMoveFromDrag` uses `pivotGroup.getWorldQuaternion()` (which includes both orbit and gyro) to correctly map screen drag to cube-local space regardless of viewing angle.
 
 ---
 

@@ -77,7 +77,8 @@ export class CubeRenderer {
   readonly renderer: THREE.WebGLRenderer
   private cubies: THREE.Mesh[] = []
   private readonly stickerTextures: Map<string, THREE.CanvasTexture>
-  private pivotGroup = new THREE.Group()
+  private orbitGroup = new THREE.Group()  // user-controlled viewing angle
+  private pivotGroup = new THREE.Group()  // gyro / cube orientation
   // Separate frame IDs: renderFrameId is always running; animFrameId is only set during an animation tick
   private renderFrameId: number | null = null
   private animFrameId: number | null = null
@@ -110,7 +111,8 @@ export class CubeRenderer {
     dir.position.set(5, 10, 7)
     this.scene.add(dir)
 
-    this.scene.add(this.pivotGroup)
+    this.orbitGroup.add(this.pivotGroup)
+    this.scene.add(this.orbitGroup)
     this._buildCubies()
     this._startRenderLoop()
   }
@@ -398,7 +400,7 @@ export class CubeRenderer {
    */
   determineMoveFromDrag(hit: FaceHit, screenDx: number, screenDy: number): { face: Face; direction: 'CW' | 'CCW' } | null {
     this.camera.updateMatrixWorld()
-    this.pivotGroup.updateMatrixWorld()
+    this.orbitGroup.updateMatrixWorld()
 
     // Camera basis in world space: right = col 0, up = col 1
     const cameraRight = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0)
@@ -408,8 +410,10 @@ export class CubeRenderer {
     const worldDrag = cameraRight.clone().multiplyScalar(screenDx)
       .addScaledVector(cameraUp, -screenDy)
 
-    // Transform to cube-local space by removing cube's rotation
-    const invQ = this.pivotGroup.quaternion.clone().invert()
+    // Transform to cube-local space by removing both orbit and gyro rotations
+    const worldQ = new THREE.Quaternion()
+    this.pivotGroup.getWorldQuaternion(worldQ)
+    const invQ = worldQ.invert()
     const localDrag = worldDrag.applyQuaternion(invQ)
 
     // Determine face normal axis first
@@ -452,7 +456,7 @@ export class CubeRenderer {
   }
 
   resetOrientation(): void {
-    this.pivotGroup.quaternion.identity()
+    this.orbitGroup.quaternion.identity()
   }
 
   animateQuaternionTo(q: { x: number; y: number; z: number; w: number }, durationMs: number): void {
@@ -472,11 +476,11 @@ export class CubeRenderer {
   // Smoothly rotates orbit to a view that shows F, U, R over the given duration
   animateOrbitToDefaultView(durationMs = 400): void {
     const target = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6)
-    const start = this.pivotGroup.quaternion.clone()
+    const start = this.orbitGroup.quaternion.clone()
     const startTime = performance.now()
     const animate = () => {
       const t = Math.min((performance.now() - startTime) / durationMs, 1)
-      this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
+      this.orbitGroup.quaternion.slerpQuaternions(start, target, t)
       if (t < 1) requestAnimationFrame(animate)
     }
     requestAnimationFrame(animate)
@@ -489,7 +493,7 @@ export class CubeRenderer {
   getOrbitQuaternionAsSensorSpace(): { x: number; y: number; z: number; w: number } {
     const R = CubeRenderer._GAN_TO_THREE
     const Rinv = R.clone().invert()
-    const sensorQ = Rinv.clone().multiply(this.pivotGroup.quaternion).multiply(R.clone())
+    const sensorQ = Rinv.clone().multiply(this.orbitGroup.quaternion).multiply(R.clone())
     return { x: sensorQ.x, y: sensorQ.y, z: sensorQ.z, w: sensorQ.w }
   }
 
@@ -497,7 +501,7 @@ export class CubeRenderer {
     const sensitivity = 0.005
     const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), dy * sensitivity)
     const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dx * sensitivity)
-    this.pivotGroup.quaternion.premultiply(qY).premultiply(qX)
+    this.orbitGroup.quaternion.premultiply(qY).premultiply(qX)
   }
 
   dispose(): void {

@@ -54,6 +54,7 @@ const AUTO_PLAY_DELAY_MS = 500
 
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
+  const [orbitChanged, setOrbitChanged] = useState(false)
   const scrambledFacelets = computeScrambledFacelets(solve.scramble)
   const method = getMethod(solve.method)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -275,16 +276,37 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
                 {SPEED_OPTIONS.map((s) => <option key={s} value={s}>{s}×</option>)}
               </select>
             </div>
-            <CubeCanvas
-              facelets={computeFaceletsAtIndex(scrambledFacelets, solve.moves, currentIndex)}
-              quaternion={IDENTITY_QUATERNION}
-              onRendererReady={(r) => {
-                rendererRef.current = r
-                if (!solve.moves.some((m) => m.quaternion) || !gyroEnabled) {
-                  r.setCameraPosition(4.5, 5, 5.5)
-                }
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <CubeCanvas
+                facelets={computeFaceletsAtIndex(scrambledFacelets, solve.moves, currentIndex)}
+                quaternion={IDENTITY_QUATERNION}
+                interactive
+                onRendererReady={(r) => {
+                  rendererRef.current = r
+                  if (!solve.moves.some((m) => m.quaternion) || !gyroEnabled) {
+                    r.setCameraPosition(4.5, 5, 5.5)
+                  }
+                }}
+                onOrbit={() => setOrbitChanged(true)}
+              />
+              {orbitChanged && (
+                <button
+                  onClick={() => {
+                    rendererRef.current?.resetOrientation()
+                    setOrbitChanged(false)
+                  }}
+                  style={{
+                    position: 'absolute', top: 6, right: 6,
+                    fontSize: 11, padding: '2px 7px',
+                    background: 'rgba(0,0,0,0.5)', color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Reset view
+                </button>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
               {[
                 { label: '↺',  title: 'Restart',              onClick: () => seekTo(0) },
