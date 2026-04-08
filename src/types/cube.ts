@@ -1,8 +1,10 @@
 export type Face = 'U' | 'R' | 'F' | 'D' | 'L' | 'B'
+export type SliceFace = 'M' | 'E' | 'S'
+export type AnyFace = Face | SliceFace
 export type Direction = 'CW' | 'CCW'
 
 export interface Move {
-  face: Face
+  face: AnyFace
   direction: Direction
   cubeTimestamp: number
   serial: number

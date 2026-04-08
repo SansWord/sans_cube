@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Quaternion, Face } from '../types/cube'
+import type { Quaternion, Face, AnyFace } from '../types/cube'
 
 export interface FaceHit {
   face: Face
@@ -210,7 +210,9 @@ export class CubeRenderer {
     if (!this.animationRunning) this._drainAnimationQueue()
   }
 
-  animateMove(face: Face, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
+  animateMove(face: AnyFace, direction: 'CW' | 'CCW', durationMs: number): Promise<void> {
+    // Slice moves (M/E/S) have no 3D layer animation; facelets are updated separately
+    if (face === 'M' || face === 'E' || face === 'S') return Promise.resolve()
     return new Promise((resolve) => {
       this.animationQueue.push({ type: 'move', face, direction, durationMs, resolve })
       if (!this.animationRunning) this._drainAnimationQueue()
