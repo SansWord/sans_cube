@@ -77,6 +77,32 @@ See `.github/workflows/deploy.yml` for the full workflow.
 
 > **Note:** Firebase web API keys are not sensitive secrets — they identify the project but access is controlled by Firestore security rules. Storing them as GitHub secrets just keeps them out of the git history.
 
+## Migration behavior
+
+When cloud sync is first enabled in a session, the following happens:
+
+1. If there are solves in localStorage, they are **migrated to Firestore** first (once per session, guarded by `migratedRef`)
+2. All solves are then loaded from Firestore
+
+Migration uses `setDoc` (upsert), so re-running it on page reload is safe — solves with the same document ID are overwritten, not duplicated.
+
+**When both localStorage and Firestore already have solves:** both sets end up in Firestore after migration. Since document IDs are based on `solve.date` (Unix timestamp in ms), duplicates only occur if two solves share the exact same timestamp — which cannot happen in practice.
+
+Migration direction is **local → Firestore only**. Firestore data is never written back to localStorage.
+
+## Solve ID design
+
+| Mode | ID source | Example |
+|------|-----------|---------|
+| localStorage | Sequential integer, starting from 1, persisted to `localStorage` | `1`, `2`, `3` |
+| Cloud sync | `Date.now()` at solve completion | `1775676812105` |
+
+The two ranges never overlap (a sequential counter starting from 1 cannot reach a 13-digit Unix timestamp), so there are no cross-mode ID conflicts.
+
+Within cloud mode, two solves finishing in the same millisecond would conflict — but a solve takes at minimum several seconds, making this impossible in practice.
+
+The `authDomain` env var should always be set to the Firebase-provided domain (e.g. `your-project.firebaseapp.com`), not the GitHub Pages domain. Firebase Auth uses it internally for the OAuth flow.
+
 ## Admin access
 
 There is no in-app admin view. To inspect any user's data, use the [Firebase Console](https://console.firebase.google.com) → Firestore → browse the `users` collection.

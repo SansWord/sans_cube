@@ -24,3 +24,4 @@
 
 ## firebase
 - once I enable app check, would it shows up everytime finishes a solve?
+- disply id or just a list of number? and when loaing from url, should I still display id?
