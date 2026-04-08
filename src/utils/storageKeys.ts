@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   ORIENTATION_CONFIG: 'cubeOrientationConfig',
   SIDEBAR_WIDTH: 'sidebarWidth',
   METHOD: 'sans_cube_method',
+  CLOUD_SYNC_ENABLED: 'sans_cube_cloud_sync_enabled',
 } as const
