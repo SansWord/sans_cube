@@ -115,14 +115,56 @@ export function isSecondBlockDone(f: string): boolean {
     )
 }
 
-// All 4 U-layer corners solved. M-slice edges are ignored.
-export function isCMLLDone(f: string): boolean {
+// CMLL: all 4 corners in the layer opposite the two blocks are solved.
+// Checked in 4 rotational positions (matching block orientations).
+// M-slice edges are ignored throughout.
+
+// U-layer corners: UBL UFL UFR UBR
+function isUCMLLDone(f: string): boolean {
   return (
-    f[6] === 'U' && f[18] === 'F' && f[38] === 'L' &&   // UFL corner
-    f[8] === 'U' && f[20] === 'F' && f[9]  === 'R' &&   // UFR corner
-    f[2] === 'U' && f[45] === 'B' && f[11] === 'R' &&   // UBR corner
-    f[0] === 'U' && f[47] === 'B' && f[36] === 'L'      // UBL corner
+    f[0] === f[2] && f[2] === f[6] && f[6] === f[8] &&  // U: all same
+    f[18] === f[20] &&  // F: UFL, UFR
+    f[45] === f[47] &&  // B: UBR, UBL
+    f[36] === f[38] &&  // L: UBL, UFL
+    f[9]  === f[11]     // R: UFR, UBR
   )
+}
+
+// D-layer corners: DBL DFL DFR DBR
+function isDCMLLDone(f: string): boolean {
+  return (
+    f[27] === f[29] && f[29] === f[33] && f[33] === f[35] &&  // D: all same
+    f[24] === f[26] &&  // F: DFL, DFR
+    f[51] === f[53] &&  // B: DBR, DBL
+    f[42] === f[44] &&  // L: DBL, DFL
+    f[15] === f[17]     // R: DFR, DBR
+  )
+}
+
+// F-layer corners: UFL UFR DFL DFR
+function isFCMLLDone(f: string): boolean {
+  return (
+    f[18] === f[20] && f[20] === f[24] && f[24] === f[26] &&  // F: all same
+    f[6]  === f[8]  &&  // U: UFL, UFR
+    f[27] === f[29] &&  // D: DFL, DFR
+    f[38] === f[44] &&  // L: UFL, DFL
+    f[9]  === f[15]     // R: UFR, DFR
+  )
+}
+
+// B-layer corners: UBL UBR DBL DBR
+function isBCMLLDone(f: string): boolean {
+  return (
+    f[45] === f[47] && f[47] === f[51] && f[51] === f[53] &&  // B: all same
+    f[0]  === f[2]  &&  // U: UBL, UBR
+    f[33] === f[35] &&  // D: DBL, DBR
+    f[36] === f[42] &&  // L: UBL, DBL
+    f[11] === f[17]     // R: UBR, DBR
+  )
+}
+
+export function isCMLLDone(f: string): boolean {
+  return isUCMLLDone(f) || isDCMLLDone(f) || isFCMLLDone(f) || isBCMLLDone(f)
 }
 
 // All 6 LSE edges oriented: U/D-colored sticker faces U or D.
