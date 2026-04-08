@@ -4,6 +4,60 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## Meta — Using CLAUDE.md as a Process Brain (2026-04-08)
+
+The biggest workflow shift this session wasn't a feature — it was realising that CLAUDE.md can act as a persistent process brain that removes the need to remember conventions, reminders, and decisions across sessions.
+
+### The problem it solves
+
+Claude Code starts every session cold. Without CLAUDE.md, you repeat yourself:
+- "remember we use Vitest not Jest"
+- "don't forget to update the devlog"
+- "the cube orientation is green front / yellow bottom"
+
+With CLAUDE.md, you write it once and never say it again.
+
+### What we put in CLAUDE.md and why
+
+| Entry | Why it's there |
+|-------|---------------|
+| Who is working on this (speedcuber, GAN 12, new to web dev) | Claude adapts explanations to your level — no over-explaining BLE, no under-explaining React |
+| Tech stack + Web Bluetooth caveat | Prevents Claude from suggesting Firefox-incompatible solutions |
+| Key architecture (drivers, hooks, components, services) | Claude knows where to look before reading code |
+| Persistence section | Prevents Claude from suggesting localStorage when Firestore is active, or vice versa |
+| Doc index (`docs/`) | Claude reads only relevant docs — saves context window |
+| Current State + version | Claude knows what's done and what's in progress |
+| GitHub Upload Safety | A checklist Claude runs before any commit or push — secrets never slip through |
+| End of Session reminder | Claude prompts you to update the devlog — you don't have to remember |
+
+### The principle: delegate memory, not just code
+
+Claude can hold your preferences, conventions, and reminders as reliably as code — more reliably than your own memory across sessions. Anything you've said more than once to Claude is a candidate for CLAUDE.md.
+
+Good candidates:
+- Project conventions that aren't obvious from the code
+- Reminders that should happen at a specific moment ("at end of session...")
+- Context that would take Claude several file reads to infer (cube orientation, who you are, what browser matters)
+- Decisions already made that shouldn't be revisited ("we use Firestore, not Supabase")
+
+Bad candidates (don't put these in CLAUDE.md):
+- Things derivable from reading the code
+- Temporary state or in-progress work (use tasks for that)
+- Long documents (link to `docs/` instead)
+
+### The workflow that emerged
+
+1. **Brainstorm in conversation** — explore options, ask questions, decide together
+2. **Write a plan** — locked-in spec, exact file paths, complete code, no placeholders
+3. **Execute with subagents** — fresh context per task, two-stage review (spec then quality)
+4. **Merge + tag** — clean history, tagged versions
+5. **Update devlog** — capture learnings while fresh (CLAUDE.md reminds you)
+6. **Update CLAUDE.md** — if a new convention emerged, add it so future sessions inherit it
+
+The key insight: CLAUDE.md is not documentation for humans — it's instructions for Claude. Write it in imperative, from the project's perspective, as if briefing a contractor who just walked in.
+
+---
+
 ## v1.3 — Firebase Cloud Sync (2026-04-08)
 
 **What was built:**
