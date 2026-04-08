@@ -164,26 +164,42 @@ function isBCMLLDone(f: string): boolean {
 }
 
 export function isCMLLDone(f: string): boolean {
-  return isUCMLLDone(f) || isDCMLLDone(f) || isFCMLLDone(f) || isBCMLLDone(f)
-}
-
-// All 6 LSE edges oriented: U/D-colored sticker faces U or D.
-// Edges: UF, UB, DF, DB (M-slice) + UL, UR (column).
-export function isEODone(f: string): boolean {
-  return (
-    (f[7]  === 'U' || f[7]  === 'D') &&   // UF
-    (f[1]  === 'U' || f[1]  === 'D') &&   // UB
-    (f[28] === 'U' || f[28] === 'D') &&   // DF
-    (f[34] === 'U' || f[34] === 'D') &&   // DB
-    (f[3]  === 'U' || f[3]  === 'D') &&   // UL
-    (f[5]  === 'U' || f[5]  === 'D')      // UR
+  return isSecondBlockDone(f) && (
+    isUCMLLDone(f) || isDCMLLDone(f) || isFCMLLDone(f) || isBCMLLDone(f)
   )
 }
 
-// UL and UR edges in correct position and correctly oriented.
+// All 6 LSE edges oriented: U/D-colored sticker faces U or D.
+// M-slice edges (UF, UB, DF, DB) are always the same.
+// Column edges differ by block position:
+//   blocks at D (LD+RD) → UL, UR
+//   blocks at U (LU+RU) → DL, DR (UL/UR are inside the blocks)
+export function isEODone(f: string): boolean {
+  const mSlice =
+    (f[7]  === 'U' || f[7]  === 'D') &&   // UF
+    (f[1]  === 'U' || f[1]  === 'D') &&   // UB
+    (f[28] === 'U' || f[28] === 'D') &&   // DF
+    (f[34] === 'U' || f[34] === 'D')       // DB
+
+  return isCMLLDone(f) && mSlice && (
+    // blocks at D: column edges UL, UR
+    ((f[3]  === 'U' || f[3]  === 'D') && (f[5]  === 'U' || f[5]  === 'D')) ||
+    // blocks at U: column edges DL, DR
+    ((f[30] === 'U' || f[30] === 'D') && (f[32] === 'U' || f[32] === 'D'))
+  )
+}
+
+// Two free column edges (not inside the blocks) placed at home.
+// Which pair is free depends on block orientation:
+//   blocks at D (LD+RD) → UL + UR
+//   blocks at U (LU+RU) → DL + DR
+//   blocks at F (LF+RF) → BL + BR
+//   blocks at B (LB+RB) → FL + FR
 export function isULURDone(f: string): boolean {
-  return (
-    f[3] === 'U' && f[37] === 'L' &&   // UL edge
-    f[5] === 'U' && f[10] === 'R'      // UR edge
+  return isEODone(f) && (
+    (f[3]  === 'U' && f[37] === 'L' && f[5]  === 'U' && f[10] === 'R') ||  // UL + UR
+    (f[30] === 'U' && f[43] === 'L' && f[32] === 'U' && f[16] === 'R') ||  // DL + DR
+    (f[50] === 'U' && f[39] === 'L' && f[48] === 'U' && f[14] === 'R') ||  // BL + BR
+    (f[21] === 'U' && f[41] === 'L' && f[23] === 'U' && f[12] === 'R')     // FL + FR
   )
 }
