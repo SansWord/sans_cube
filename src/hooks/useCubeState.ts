@@ -129,6 +129,30 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
       if (ccw) rotateFaceCCW(f, 45); else rotateFaceCW(f, 45)
       cycle(f, 0, 1, 2, 42, 39, 36, 35, 34, 33, 11, 14, 17)
       break
+
+    case 'M':
+      // M CW (like L): middle column cycles U→F→D→B
+      // No face rotation. B mid-col is inverted: indices 52,49,46 = B pos 7,4,1 (bottom→top).
+      // cycle(f, 1,4,7,  19,22,25,  28,31,34,  52,49,46)
+      // a=U mid-col, b=F mid-col, c=D mid-col, d=B mid-col(bot→top)
+      cycle(f, 1, 4, 7, 19, 22, 25, 28, 31, 34, 52, 49, 46)
+      break
+
+    case 'E':
+      // E CW (like D): middle row cycles F→R→B→L
+      // No face rotation. No inversions. Content flows L→F→R→B.
+      // cycle(f, 21,22,23,  12,13,14,  48,49,50,  39,40,41)
+      // a=F mid-row, b=R mid-row, c=B mid-row, d=L mid-row
+      cycle(f, 21, 22, 23, 12, 13, 14, 48, 49, 50, 39, 40, 41)
+      break
+
+    case 'S':
+      // S CW (like F): middle slice cycles U→R→D→L
+      // No face rotation. D mid-row and L mid-col are inverted.
+      // cycle(f, 3,4,5,  10,13,16,  32,31,30,  43,40,37)
+      // a=U mid-row, b=R mid-col, c=D mid-row(rev), d=L mid-col(rev)
+      cycle(f, 3, 4, 5, 10, 13, 16, 32, 31, 30, 43, 40, 37)
+      break
   }
 
   return f.join('')
