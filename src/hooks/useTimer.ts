@@ -43,6 +43,7 @@ export function useTimer(
   const quaternionSnapshotsRef = useRef<QuaternionSnapshot[]>([])
   const lastGyroMsRef = useRef(-Infinity)
   const faceletsRef = useRef(SOLVED_FACELETS)
+  const prevFaceletsRef = useRef(SOLVED_FACELETS)
   const latestQuaternionRef = useRef<Quaternion | undefined>(undefined)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const methodRef = useRef(method)
@@ -87,6 +88,7 @@ export function useTimer(
     stopInterval()
     statusRef.current = 'idle'
     faceletsRef.current = SOLVED_FACELETS
+    prevFaceletsRef.current = SOLVED_FACELETS
     completedPhasesRef.current = []
     movesRef.current = []
     quaternionSnapshotsRef.current = []
@@ -127,7 +129,8 @@ export function useTimer(
 
       if (statusRef.current === 'solved') return
 
-      // Update facelets
+      // Update facelets (save previous for retroactive slice correction)
+      prevFaceletsRef.current = faceletsRef.current
       faceletsRef.current = applyMoveToFacelets(faceletsRef.current, moveWithQ)
 
       if (statusRef.current === 'idle') {
@@ -207,8 +210,42 @@ export function useTimer(
       }
     }
 
+    const onReplacePreviousMove = (move: Move) => {
+      if (statusRef.current !== 'solving') return
+      const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
+
+      // Revert the last move and apply the replacement slice move
+      faceletsRef.current = applyMoveToFacelets(prevFaceletsRef.current, moveWithQ)
+
+      // Replace the last recorded move
+      if (movesRef.current.length > 0) {
+        movesRef.current = [...movesRef.current.slice(0, -1), moveWithQ]
+      }
+
+      // Check if the replacement move solves the cube
+      if (isSolvedFacelets(faceletsRef.current)) {
+        const now = Date.now()
+        while (phaseIndexRef.current < methodRef.current.phases.length) {
+          completePhase(now)
+        }
+        stopInterval()
+        const total = now - startTimeRef.current
+        statusRef.current = 'solved'
+        setStatus('solved')
+        setElapsedMs(total)
+        setPhaseRecords([...completedPhasesRef.current])
+        setRecordedMoves([...movesRef.current])
+        setQuaternionSnapshots([...quaternionSnapshotsRef.current])
+      }
+    }
+
     d.on('move', onMove)
-    return () => { d.off('move', onMove); d.off('gyro', onGyro) }
+    d.on('replacePreviousMove', onReplacePreviousMove)
+    return () => {
+      d.off('move', onMove)
+      d.off('gyro', onGyro)
+      d.off('replacePreviousMove', onReplacePreviousMove)
+    }
   }, [driver, driverVersion, completePhase, startInterval, stopInterval])
 
   return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset }
