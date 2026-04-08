@@ -71,16 +71,11 @@ function cycle3CCW(
 // Apply a single move to a facelets string.
 // Kociemba face order: U(0-8) R(9-17) F(18-26) D(27-35) L(36-44) B(45-53)
 export function applyMoveToFacelets(facelets: string, move: Move): string {
-  return internalApplyMoveToFacelets(facelets, move.direction === 'CCW', move.face)
-}
-
-// Apply a single move to a facelets string.
-// Kociemba face order: U(0-8) R(9-17) F(18-26) D(27-35) L(36-44) B(45-53)
-function internalApplyMoveToFacelets(facelets: string, ccw: boolean, face: AnyFace): string {
   const f = facelets.split('')
+  const ccw = move.direction === 'CCW'
   const cycle = ccw ? cycle3CCW : cycle3CW
 
-  switch (face) {
+  switch (move.face) {
     case 'U':
       // U CW: rotate U face CW; side cycle: F-top→R-top→B-top→L-top
       // Meaning: what was in F-top goes to R-top (CW rotation of U)
@@ -135,29 +130,36 @@ function internalApplyMoveToFacelets(facelets: string, ccw: boolean, face: AnyFa
       cycle(f, 0, 1, 2, 42, 39, 36, 35, 34, 33, 11, 14, 17)
       break
 
-    case 'M':
-      // M CW (like L): middle column cycles U→F→D→B
-      // No face rotation. B mid-col is inverted: indices 52,49,46 = B pos 7,4,1 (bottom→top).
-      // cycle(f, 1,4,7,  19,22,25,  28,31,34,  52,49,46)
-      // a=U mid-col, b=F mid-col, c=D mid-col, d=B mid-col(bot→top)
-      cycle(f, 1, 4, 7, 19, 22, 25, 28, 31, 34, 52, 49, 46)
-      break
+    case 'M': {
+      // M CW = L CCW + R CW (GAN reports M as paired opposite outer-face events).
+      // Apply both face moves; the combined sticker effect matches the physical M.
+      const lDir = ccw ? 'CW' : 'CCW'
+      const rDir = ccw ? 'CCW' : 'CW'
+      return applyMoveToFacelets(
+        applyMoveToFacelets(facelets, { face: 'L', direction: lDir, cubeTimestamp: 0, serial: 0 }),
+        { face: 'R', direction: rDir, cubeTimestamp: 0, serial: 0 }
+      )
+    }
 
-    case 'E':
-      // E CW (like D): middle row cycles F→R→B→L
-      // No face rotation. No inversions. Content flows L→F→R→B.
-      // cycle(f, 21,22,23,  12,13,14,  48,49,50,  39,40,41)
-      // a=F mid-row, b=R mid-row, c=B mid-row, d=L mid-row
-      cycle(f, 21, 22, 23, 12, 13, 14, 48, 49, 50, 39, 40, 41)
-      break
+    case 'E': {
+      // E CW = D CCW + U CW
+      const dDir = ccw ? 'CW' : 'CCW'
+      const uDir = ccw ? 'CCW' : 'CW'
+      return applyMoveToFacelets(
+        applyMoveToFacelets(facelets, { face: 'D', direction: dDir, cubeTimestamp: 0, serial: 0 }),
+        { face: 'U', direction: uDir, cubeTimestamp: 0, serial: 0 }
+      )
+    }
 
-    case 'S':
-      // S CW (like F): middle slice cycles U→R→D→L
-      // No face rotation. D mid-row and L mid-col are inverted.
-      // cycle(f, 3,4,5,  10,13,16,  32,31,30,  43,40,37)
-      // a=U mid-row, b=R mid-col, c=D mid-row(rev), d=L mid-col(rev)
-      cycle(f, 3, 4, 5, 10, 13, 16, 32, 31, 30, 43, 40, 37)
-      break
+    case 'S': {
+      // S CW = F CCW + B CW
+      const fDir = ccw ? 'CW' : 'CCW'
+      const bDir = ccw ? 'CCW' : 'CW'
+      return applyMoveToFacelets(
+        applyMoveToFacelets(facelets, { face: 'F', direction: fDir, cubeTimestamp: 0, serial: 0 }),
+        { face: 'B', direction: bDir, cubeTimestamp: 0, serial: 0 }
+      )
+    }
   }
 
   return f.join('')

@@ -170,124 +170,65 @@ describe('applyMoveToFacelets sticker cycles', () => {
 })
 
 // ── Slice move sticker tests ──────────────────────────────────────────────────
-// These verify the M/E/S cases in applyMoveToFacelets.
-// Input strings use sentinel characters at the affected stickers so we can
-// assert exactly where they land after the move.
+// M/E/S are implemented as their paired outer-face moves (GAN reports slice moves
+// as two simultaneous outer-face events). M CW = L CCW + R CW, E CW = D CCW + U CW,
+// S CW = F CCW + B CW.
 
 describe('applyMoveToFacelets — M moves', () => {
-  // M CW: cycle(f, 1,4,7,  19,22,25,  28,31,34,  52,49,46)
-  // cycle3CW(a,b,c,d): a←d, b←a, c←b, d←c
-  // a=U mid-col[1,4,7], b=F mid-col[19,22,25], c=D mid-col[28,31,34], d=B mid-col-reversed[52,49,46]
-  //
-  // Mark B mid-col top→bot: B[46]='1', B[49]='2', B[52]='3'
-  // B layout in string: B[45..53] = 'B1BB2BB3B'
-  const M_INPUT = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLB1BB2BB3B' as const
-  // d=[f[52],f[49],f[46]] = ['3','2','1']  → a (U mid-col) ← ['3','2','1']
-
-  it('M CW: U mid-col gets B mid-col reversed (inverted)', () => {
-    const result = applyMoveToFacelets(M_INPUT, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[1]).toBe('3') // U[1] ← B[52]
-    expect(result[4]).toBe('2') // U[4] ← B[49]
-    expect(result[7]).toBe('1') // U[7] ← B[46]
+  it('M CW from solved: left and right cols of U get F color; mid unchanged', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+    // U left col (0,3,6) and right col (2,5,8) ← F color; mid (1,4,7) stays U
+    expect(result[0]).toBe('F'); expect(result[2]).toBe('F')
+    expect(result[3]).toBe('F'); expect(result[5]).toBe('F')
+    expect(result[6]).toBe('F'); expect(result[8]).toBe('F')
+    expect(result[1]).toBe('U'); expect(result[4]).toBe('U'); expect(result[7]).toBe('U')
   })
 
-  it('M CW: F mid-col gets U mid-col', () => {
-    // b=[19,22,25] ← a_old=[1,4,7] = ['U','U','U']
-    const result = applyMoveToFacelets(M_INPUT, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[19]).toBe('U')
-    expect(result[22]).toBe('U')
-    expect(result[25]).toBe('U')
+  it('M CW from solved: full state matches L CCW then R CW', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+    expect(result).toBe('FUFFUFFUFRRRRRRRRRDFDDFDDFDBDBBDBBDBLLLLLLLLLUBUUBUUBU')
   })
 
-  // M CCW: cycle3CCW uses same indices; a←b, b←c, c←d, d←a
-  // Mark U mid-col: U[1]='1', U[4]='2', U[7]='3'
-  // U layout: 'U1UUU2UUU3U' — wait, U is 0-8, so:
-  // U[0]='U',U[1]='1',U[2]='U',U[3]='U',U[4]='2',U[5]='U',U[6]='U',U[7]='3',U[8]='U'
-  const M_CCW_INPUT = 'U1UU2UU3UURRRRRRRRRfffffffffdddddddddlllllllllbbbbbbbbb' as const
-  // cycle3CCW(a,b,c,d): a←b, so F mid-col[19,22,25] ← U mid-col a_old=['1','2','3']? No:
-  // cycle3CCW(a,b,c,d): a←b, b←c, c←d, d←a
-  // a=U[1,4,7]=['1','2','3'], b=F[19,22,25], c=D[28,31,34], d=B-rev[52,49,46]
-  // After CCW: a←b (U ← F), d←a_old (B-rev ← U)
-  // So B[52]←a_old[0]='1', B[49]←a_old[1]='2', B[46]←a_old[2]='3'
+  it('M CCW from solved: full state matches L CW then R CCW', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
+    expect(result).toBe('BUBBUBBUBRRRRRRRRRUFUUFUUFUFDFFDFFDFLLLLLLLLLDBDDBDDBD')
+  })
 
-  it('M CCW: B mid-col (bottom to top) gets U mid-col', () => {
-    const result = applyMoveToFacelets(M_CCW_INPUT, { face: 'M', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
-    expect(result[52]).toBe('1') // B[52] ← U[1]
-    expect(result[49]).toBe('2') // B[49] ← U[4]
-    expect(result[46]).toBe('3') // B[46] ← U[7]
+  it('M CW then M CCW returns to solved', () => {
+    const after = applyMoveToFacelets(
+      applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 }),
+      { face: 'M', direction: 'CCW', cubeTimestamp: 0, serial: 0 }
+    )
+    expect(after).toBe(SOLVED_FACELETS)
   })
 })
 
 describe('applyMoveToFacelets — E moves', () => {
-  // E CW: cycle(f, 21,22,23,  12,13,14,  48,49,50,  39,40,41)
-  // a=F mid-row[21,22,23], b=R mid-row[12,13,14], c=B mid-row[48,49,50], d=L mid-row[39,40,41]
-  // cycle3CW: a←d, b←a, c←b, d←c
-  //
-  // Mark R mid-row: R[12]='1', R[13]='2', R[14]='3'
-  // R layout (9-17): 'RRR123RRR'
-  const E_INPUT = 'UUUUUUUUURRR123RRRfffffffffdddddddddlllllllllbbbbbbbbb' as const
-  // b_old=[12,13,14]=['1','2','3'] → c=[48,49,50] ← b_old
-
-  it('E CW: B mid-row gets R mid-row (not inverted)', () => {
-    const result = applyMoveToFacelets(E_INPUT, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[48]).toBe('1') // B[48] ← R[12]
-    expect(result[49]).toBe('2') // B[49] ← R[13]
-    expect(result[50]).toBe('3') // B[50] ← R[14]
+  it('E CW from solved: full state matches D CCW then U CW', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+    expect(result).toBe('UUUUUUUUUBBBRRRBBBRRRFFFRRRDDDDDDDDDFFFLLLFFFLLLBBBLLL')
   })
 
-  it('E CW: F mid-row gets L mid-row', () => {
-    // a=[21,22,23] ← d_old=[39,40,41] = 'lll' (from SOLVED context all L's)
-    const result = applyMoveToFacelets(E_INPUT, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[21]).toBe('l') // F[21] ← L[39]
-    expect(result[22]).toBe('l') // F[22] ← L[40]
-    expect(result[23]).toBe('l') // F[23] ← L[41]
+  it('E CW then E CCW returns to solved', () => {
+    const after = applyMoveToFacelets(
+      applyMoveToFacelets(SOLVED_FACELETS, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 }),
+      { face: 'E', direction: 'CCW', cubeTimestamp: 0, serial: 0 }
+    )
+    expect(after).toBe(SOLVED_FACELETS)
   })
 })
 
 describe('applyMoveToFacelets — S moves', () => {
-  // S CW: cycle(f, 3,4,5,  10,13,16,  32,31,30,  43,40,37)
-  // a=U mid-row[3,4,5], b=R mid-col[10,13,16], c=D mid-row-rev[32,31,30], d=L mid-col-rev[43,40,37]
-  // cycle3CW: a←d, b←a, c←b, d←c
-
-  // Test 1: R mid-col → D mid-row (inverted)
-  // Mark R[10]='1', R[13]='2', R[16]='3'
-  // R layout (9-17): 'R1RR2RR3R'
-  const S_INPUT_R = 'UUUUUUUUUR1RR2RR3Rfffffffffdddddddddlllllllllbbbbbbbbb' as const
-  // b_old=[10,13,16]=['1','2','3'] → c=[32,31,30] ← b_old
-  // So D[32]='1', D[31]='2', D[30]='3'
-  // D mid-row left-to-right = D[30],D[31],D[32] = ['3','2','1']
-
-  it('S CW: D mid-row gets R mid-col reversed (R-top→D-right)', () => {
-    const result = applyMoveToFacelets(S_INPUT_R, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[30]).toBe('3') // D[30] ← R[16] (R-bot → D-left)
-    expect(result[31]).toBe('2') // D[31] ← R[13]
-    expect(result[32]).toBe('1') // D[32] ← R[10] (R-top → D-right)
+  it('S CW from solved: full state matches F CCW then B CW', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+    expect(result).toBe('RRRUUURRRDRDDRDDRDFFFFFFFFFLLLDDDLLLULUULUULUBBBBBBBBB')
   })
 
-  // Test 2: U mid-row → R mid-col (same order)
-  // Mark U[3]='1', U[4]='2', U[5]='3'
-  // U layout (0-8): 'UUU123UUU'
-  const S_INPUT_U = 'UUU123UUURRRRRRRRRfffffffffdddddddddlllllllllbbbbbbbbb' as const
-  // a_old=[3,4,5]=['1','2','3'] → b=[10,13,16] ← a_old
-
-  it('S CW: R mid-col gets U mid-row (same order)', () => {
-    const result = applyMoveToFacelets(S_INPUT_U, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[10]).toBe('1') // R[10] ← U[3]
-    expect(result[13]).toBe('2') // R[13] ← U[4]
-    expect(result[16]).toBe('3') // R[16] ← U[5]
-  })
-
-  // Test 3: L mid-col → U mid-row (inverted)
-  // Mark L[37]='1', L[40]='2', L[43]='3'
-  // L layout (36-44): 'L1LL2LL3L'
-  const S_INPUT_L = 'UUUUUUUUURRRRRRRRRfffffffffDDDDDDDDDL1LL2LL3Lbbbbbbbbb' as const
-  // d=[43,40,37]=['3','2','1'] (reversed) → a=[3,4,5] ← d_old
-  // So U[3]='3', U[4]='2', U[5]='1'
-
-  it('S CW: U mid-row gets L mid-col reversed (L-bot→U-left)', () => {
-    const result = applyMoveToFacelets(S_INPUT_L, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result[3]).toBe('3') // U[3] ← L[43] (L-bot)
-    expect(result[4]).toBe('2') // U[4] ← L[40]
-    expect(result[5]).toBe('1') // U[5] ← L[37] (L-top)
+  it('S CW then S CCW returns to solved', () => {
+    const after = applyMoveToFacelets(
+      applyMoveToFacelets(SOLVED_FACELETS, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 }),
+      { face: 'S', direction: 'CCW', cubeTimestamp: 0, serial: 0 }
+    )
+    expect(after).toBe(SOLVED_FACELETS)
   })
 })

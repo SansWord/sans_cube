@@ -123,9 +123,8 @@ describe('SliceMoveDetector', () => {
     expect(quats).toHaveLength(1)
   })
 
-  it('integration: L CCW + R CW emits M CW that correctly cycles middle column', () => {
-    // Apply M CW to solved cube: U mid-col should get B mid-col (all B = 'B')
-    // On a solved cube, B mid-col is ['B','B','B'], so U mid-col becomes ['B','B','B']
+  it('integration: L CCW + R CW emits M CW that correctly applies L CCW + R CW sticker effect', () => {
+    // M CW = L CCW + R CW: U left and right cols get F color; U mid unchanged
     let emittedMove: Move | null = null
     detector.on('move', (m) => { emittedMove = m })
 
@@ -137,14 +136,11 @@ describe('SliceMoveDetector', () => {
     expect(emittedMove!.direction).toBe('CW')
 
     const result = applyMoveToFacelets(SOLVED_FACELETS, emittedMove!)
-    // M CW on solved cube: U mid-col (indices 1,4,7) gets B mid-col reversed (B[52],B[49],B[46])
-    // On solved cube all B stickers = 'B', so U[1,4,7] should all be 'B'
-    expect(result[1]).toBe('B')
-    expect(result[4]).toBe('B')
-    expect(result[7]).toBe('B')
-    // F mid-col (19,22,25) gets old U mid-col = 'U'
-    expect(result[19]).toBe('U')
-    expect(result[22]).toBe('U')
-    expect(result[25]).toBe('U')
+    // M CW on solved: U left col (0,3,6) and right col (2,5,8) get F color ('F')
+    expect(result[0]).toBe('F')
+    expect(result[2]).toBe('F')
+    expect(result[1]).toBe('U') // U mid unchanged
+    // Full state check
+    expect(result).toBe('FUFFUFFUFRRRRRRRRRDFDDFDDFDBDBBDBBDBLLLLLLLLLUBUUBUUBU')
   })
 })
