@@ -3,6 +3,8 @@ import { SliceMoveDetector } from '../../src/drivers/SliceMoveDetector'
 import { CubeEventEmitter } from '../../src/drivers/CubeDriver'
 import type { CubeDriver } from '../../src/drivers/CubeDriver'
 import type { Move } from '../../src/types/cube'
+import { applyMoveToFacelets } from '../../src/hooks/useCubeState'
+import { SOLVED_FACELETS } from '../../src/types/cube'
 
 // Minimal in-process driver for feeding moves to SliceMoveDetector
 class MockDriver extends CubeEventEmitter implements CubeDriver {
@@ -119,5 +121,30 @@ describe('SliceMoveDetector', () => {
     detector.on('gyro', (q) => quats.push(q))
     inner.emit('gyro', { x: 0.1, y: 0.2, z: 0.3, w: 0.9 })
     expect(quats).toHaveLength(1)
+  })
+
+  it('integration: L CCW + R CW emits M CW that correctly cycles middle column', () => {
+    // Apply M CW to solved cube: U mid-col should get B mid-col (all B = 'B')
+    // On a solved cube, B mid-col is ['B','B','B'], so U mid-col becomes ['B','B','B']
+    let emittedMove: Move | null = null
+    detector.on('move', (m) => { emittedMove = m })
+
+    inner.emit('move', makeMove('L', 'CCW', 9000, 20))
+    inner.emit('move', makeMove('R', 'CW', 9025, 21))
+
+    expect(emittedMove).not.toBeNull()
+    expect(emittedMove!.face).toBe('M')
+    expect(emittedMove!.direction).toBe('CW')
+
+    const result = applyMoveToFacelets(SOLVED_FACELETS, emittedMove!)
+    // M CW on solved cube: U mid-col (indices 1,4,7) gets B mid-col reversed (B[52],B[49],B[46])
+    // On solved cube all B stickers = 'B', so U[1,4,7] should all be 'B'
+    expect(result[1]).toBe('B')
+    expect(result[4]).toBe('B')
+    expect(result[7]).toBe('B')
+    // F mid-col (19,22,25) gets old U mid-col = 'U'
+    expect(result[19]).toBe('U')
+    expect(result[22]).toBe('U')
+    expect(result[25]).toBe('U')
   })
 })
