@@ -14,9 +14,9 @@
 export function isLDBlockDone(f: string): boolean {
   return (
     f[39] === 'L' && f[41] === 'L' && f[42] === 'L' && f[43] === 'L' && f[44] === 'L' &&
-    f[50] === f[53] &&                       // B: BL, DBL
-    f[21] === f[24] &&                       // F: FL, DFL
-    f[27] === f[30] && f[30] === f[33]       // D: DFL, DL, DBL
+    f[50] === 'B' && f[50] === f[53] &&                       // B: BL, DBL
+    f[21] === 'F' && f[21] === f[24] &&                       // F: FL, DFL
+    f[27] === 'D' && f[27] === f[30] && f[30] === f[33]       // D: DFL, DL, DBL
   )
 }
 
@@ -24,9 +24,9 @@ export function isLDBlockDone(f: string): boolean {
 export function isLUBlockDone(f: string): boolean {
   return (
     f[36] === 'L' && f[37] === 'L' && f[38] === 'L' && f[39] === 'L' && f[41] === 'L' &&
-    f[0] === f[3] && f[3] === f[6] &&        // U: UBL, UL, UFL
-    f[47] === f[50] &&                       // B: UBL, BL
-    f[18] === f[21]                          // F: UFL, FL
+    f[0]  === 'D' && f[0] === f[3] && f[3] === f[6] &&        // U: UBL, UL, UFL
+    f[47] === 'F' && f[47] === f[50] &&                       // B: UBL, BL
+    f[18] === 'B' && f[18] === f[21]                          // F: UFL, FL
   )
 }
 
@@ -34,9 +34,9 @@ export function isLUBlockDone(f: string): boolean {
 export function isLFBlockDone(f: string): boolean {
   return (
     f[37] === 'L' && f[38] === 'L' && f[41] === 'L' && f[43] === 'L' && f[44] === 'L' &&
-    f[3] === f[6] &&                         // U: UL, UFL
-    f[18] === f[21] && f[21] === f[24] &&    // F: UFL, FL, DFL
-    f[27] === f[30]                          // D: DFL, DL
+    f[3]  === 'F' && f[3] === f[6] &&                         // U: UL, UFL
+    f[18] === 'D' && f[18] === f[21] && f[21] === f[24] &&    // F: UFL, FL, DFL
+    f[27] === 'B' && f[27] === f[30]                          // D: DFL, DL
   )
 }
 
@@ -44,9 +44,9 @@ export function isLFBlockDone(f: string): boolean {
 export function isLBBlockDone(f: string): boolean {
   return (
     f[36] === 'L' && f[37] === 'L' && f[39] === 'L' && f[42] === 'L' && f[43] === 'L' &&
-    f[0] === f[3] &&                         // U: UBL, UL
-    f[47] === f[50] && f[50] === f[53] &&    // B: UBL, BL, DBL
-    f[30] === f[33]                          // D: DL, DBL
+    f[0]  === 'B' && f[0] === f[3] &&                         // U: UBL, UL
+    f[47] === 'D' && f[47] === f[50] && f[50] === f[53] &&    // B: UBL, BL, DBL
+    f[30] === 'F' && f[30] === f[33]                          // D: DL, DBL
   )
 }
 
@@ -56,9 +56,9 @@ export function isLBBlockDone(f: string): boolean {
 export function isRDBlockDone(f: string): boolean {
   return (
     f[12] === 'R' && f[14] === 'R' && f[15] === 'R' && f[16] === 'R' && f[17] === 'R' &&
-    f[23] === f[26] &&                       // F: FR, DFR
-    f[48] === f[51] &&                       // B: BR, DBR
-    f[29] === f[32] && f[32] === f[35]       // D: DFR, DR, DBR
+    f[23] === 'F' && f[23] === f[26] &&                       // F: FR, DFR
+    f[48] === 'B' && f[48] === f[51] &&                       // B: BR, DBR
+    f[29] === 'D' && f[29] === f[32] && f[32] === f[35]       // D: DFR, DR, DBR
   )
 }
 
@@ -66,9 +66,9 @@ export function isRDBlockDone(f: string): boolean {
 export function isRUBlockDone(f: string): boolean {
   return (
     f[9]  === 'R' && f[10] === 'R' && f[11] === 'R' && f[12] === 'R' && f[14] === 'R' &&
-    f[2] === f[5] && f[5] === f[8] &&        // U: UBR, UR, UFR
-    f[20] === f[23] &&                       // F: UFR, FR
-    f[45] === f[48]                          // B: UBR, BR
+    f[2]  === 'D' && f[2] === f[5] && f[5] === f[8] &&        // U: UBR, UR, UFR
+    f[20] === 'B' && f[20] === f[23] &&                       // F: UFR, FR
+    f[45] === 'F' && f[45] === f[48]                          // B: UBR, BR
   )
 }
 
@@ -76,9 +76,9 @@ export function isRUBlockDone(f: string): boolean {
 export function isRFBlockDone(f: string): boolean {
   return (
     f[9]  === 'R' && f[10] === 'R' && f[12] === 'R' && f[15] === 'R' && f[16] === 'R' &&
-    f[5] === f[8] &&                         // U: UR, UFR
-    f[20] === f[23] && f[23] === f[26] &&    // F: UFR, FR, DFR
-    f[29] === f[32]                          // D: DFR, DR
+    f[5]  === 'F' && f[5] === f[8] &&                         // U: UR, UFR
+    f[20] === 'D' && f[20] === f[23] && f[23] === f[26] &&    // F: UFR, FR, DFR
+    f[29] === 'B' && f[29] === f[32]                          // D: DFR, DR
   )
 }
 
@@ -86,9 +86,9 @@ export function isRFBlockDone(f: string): boolean {
 export function isRBBlockDone(f: string): boolean {
   return (
     f[10] === 'R' && f[11] === 'R' && f[14] === 'R' && f[16] === 'R' && f[17] === 'R' &&
-    f[2] === f[5] &&                         // U: UBR, UR
-    f[45] === f[48] && f[48] === f[51] &&    // B: UBR, BR, DBR
-    f[32] === f[35]                          // D: DR, DBR
+    f[2]  === 'B' && f[2] === f[5] &&                         // U: UBR, UR
+    f[45] === 'D' && f[45] === f[48] && f[48] === f[51] &&    // B: UBR, BR, DBR
+    f[32] === 'F' && f[32] === f[35]                          // D: DR, DBR
   )
 }
 

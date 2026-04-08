@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   isLDBlockDone,
+  isLBBlockDone,
   isRDBlockDone,
+  isRFBlockDone,
   isFirstBlockDone,
   isSecondBlockDone,
   isCMLLDone,
@@ -25,9 +27,9 @@ describe('isLDBlockDone', () => {
     expect(isLDBlockDone(SOLVED_FACELETS)).toBe(true)
   })
 
-  it('returns false after L move (breaks left block)', () => {
+  it('returns true after L move (becomes LB block)', () => {
     const f = applyMoves(SOLVED_FACELETS, [move('L')])
-    expect(isLDBlockDone(f)).toBe(false)
+    expect(isLBBlockDone(f)).toBe(true)
   })
 
   it('returns true after R move (right side unchanged)', () => {
@@ -51,9 +53,9 @@ describe('isRDBlockDone', () => {
     expect(isRDBlockDone(SOLVED_FACELETS)).toBe(true)
   })
 
-  it('returns false after R move (breaks right block)', () => {
+  it('returns true after R move (becomes RF block)', () => {
     const f = applyMoves(SOLVED_FACELETS, [move('R')])
-    expect(isRDBlockDone(f)).toBe(false)
+    expect(isRFBlockDone(f)).toBe(true)
   })
 
   it('returns true after L move (left side unchanged)', () => {
@@ -140,9 +142,9 @@ describe('isEODone', () => {
     expect(isEODone(f)).toBe(false)
   })
 
-  it('returns true after U move (no edge flipping)', () => {
+  it('returns true after U move (breaks CMLL)', () => {
     const f = applyMoves(SOLVED_FACELETS, [move('U')])
-    expect(isEODone(f)).toBe(true)
+    expect(isEODone(f)).toBe(false)
   })
 })
 
