@@ -4,6 +4,9 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 
 type EventMap = {
   move: Move
+  /** Emitted when a previously emitted move is retroactively identified as a slice.
+   *  Consumers should replace the last recorded move with this one. */
+  replacePreviousMove: Move
   gyro: Quaternion
   connection: ConnectionStatus
   battery: number   // 0–100 percent

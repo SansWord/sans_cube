@@ -71,11 +71,16 @@ function cycle3CCW(
 // Apply a single move to a facelets string.
 // Kociemba face order: U(0-8) R(9-17) F(18-26) D(27-35) L(36-44) B(45-53)
 export function applyMoveToFacelets(facelets: string, move: Move): string {
+  return internalApplyMoveToFacelets(facelets, move.direction === 'CCW', move.face)
+}
+
+// Apply a single move to a facelets string.
+// Kociemba face order: U(0-8) R(9-17) F(18-26) D(27-35) L(36-44) B(45-53)
+function internalApplyMoveToFacelets(facelets: string, ccw: boolean, face: AnyFace): string {
   const f = facelets.split('')
-  const ccw = move.direction === 'CCW'
   const cycle = ccw ? cycle3CCW : cycle3CW
 
-  switch (move.face) {
+  switch (face) {
     case 'U':
       // U CW: rotate U face CW; side cycle: F-top→R-top→B-top→L-top
       // Meaning: what was in F-top goes to R-top (CW rotation of U)
@@ -179,7 +184,11 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     const d = driver.current
     if (!d) return
 
+    // Saved before each move so replacePreviousMove can revert + re-apply.
+    let prevFacelets: string | null = null
+
     const onMove = (move: Move) => {
+      prevFacelets = faceletsRef.current
       const next = applyMoveToFacelets(faceletsRef.current, move)
       const solved = isSolvedFacelets(next)
       faceletsRef.current = next
@@ -188,9 +197,22 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
       setIsSolved(solved)
     }
 
+    const onReplacePreviousMove = (move: Move) => {
+      if (prevFacelets === null) return
+      const next = applyMoveToFacelets(prevFacelets, move)
+      const solved = isSolvedFacelets(next)
+      faceletsRef.current = next
+      isSolvedRef.current = solved
+      prevFacelets = null
+      setFacelets(next)
+      setIsSolved(solved)
+    }
+
     d.on('move', onMove)
+    d.on('replacePreviousMove', onReplacePreviousMove)
     return () => {
       d.off('move', onMove)
+      d.off('replacePreviousMove', onReplacePreviousMove)
     }
   }, [driver, driverVersion])
 

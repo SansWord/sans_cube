@@ -50,8 +50,18 @@ export function useSolveRecorder(
       }
     }
 
+    const onReplacePreviousMove = (move: Move) => {
+      if (!isRecording.current || entries.current.length === 0) return
+      entries.current.pop()
+      entries.current.push({ move, cubeTimestamp: move.cubeTimestamp })
+    }
+
     d.on('move', onMove)
-    return () => d.off('move', onMove)
+    d.on('replacePreviousMove', onReplacePreviousMove)
+    return () => {
+      d.off('move', onMove)
+      d.off('replacePreviousMove', onReplacePreviousMove)
+    }
   }, [driver, driverVersion])
 
   const clearSession = useCallback(() => setLastSession(null), [])
