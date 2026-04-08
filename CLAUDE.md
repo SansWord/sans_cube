@@ -23,13 +23,18 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 - `MouseDriver.ts` — simulates cube in browser via mouse drag
 - `ButtonDriver.ts` — simulates cube via button clicks
 
+**Services** (`src/services/`)
+- `firebase.ts` — Firebase app init, exports `auth`, `db`, `googleProvider`
+- `firestoreSolves.ts` — Firestore CRUD for solve records (`users/{uid}/solves`)
+
 **Hooks** (`src/hooks/`)
 - `useCubeDriver` — manages driver lifecycle and connection
 - `useCubeState` — tracks current cube state from move events
 - `useGyro` — gyroscope orientation tracking
 - `useGestureDetector` — detects gesture shortcuts (U×4 = reset gyro, D×4 = reset cube state)
 - `useSolveRecorder` — records move sequences and timing for a solve
-- `useSolveHistory` — persists solve history to localStorage
+- `useSolveHistory` — persists solve history to localStorage or Firestore (when cloud sync enabled)
+- `useCloudSync` — Firebase Auth state + cloud sync toggle
 - `useTimer` — solve timer with CFOP phase detection
 - `useScramble` / `useScrambleTracker` — scramble generation and tracking
 - `useReplayController` — replay playback state (play/pause, speed, scrub)
@@ -46,10 +51,16 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 - `OrientationConfig` — front/bottom face color config (persisted to localStorage)
 - `TimerDisplay`, `ControlBar`, `MoveHistory`, `FaceletDebug`
 
+## Documentation (`docs/`)
+- `firebase-cloud-sync.md` — cloud sync architecture, security, migration behavior, ID design
+- `animation-system.md` — Three.js animation details
+- `manual-test-checklist.md` — manual QA checklist
+
 ## Persistence
 
-- Solve history: `localStorage`
+- Solve history: `localStorage` (default) or Firebase Firestore (opt-in, requires Google sign-in)
 - Orientation config (front/bottom face): `localStorage`
+- Cloud sync toggle: `localStorage` (`sans_cube_cloud_sync_enabled`)
 
 ## Development Commands
 
@@ -60,10 +71,10 @@ npm run test      # run Vitest tests
 npm run lint      # ESLint
 ```
 
-## Current State (as of 2026-04-06)
+## Current State (as of 2026-04-08)
 
-- **v0.2** complete and merged to main — timer mode with CFOP phase detection, scramble tracking, solve history
-- Latest refactors: deduplicated mouse/touch drag logic, extracted `useReplayController`, added "Use this scramble" button in solve detail modal
+- **v1.3** complete and merged to main — Firebase cloud sync (opt-in, debug section), GitHub Pages deploy workflow
+- **v0.2** — timer mode with CFOP phase detection, scramble tracking, solve history
 
 ## Planned Future Work
 
