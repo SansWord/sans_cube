@@ -14,35 +14,35 @@ export const ROUX: SolveMethod = {
   phases: [
     {
       label: 'FB',
-      color: '#8e44ad',
+      color: '#e74c3c',
       isComplete: isFirstBlockDone,
     },
     {
       label: 'SB',
-      color: '#9b59b6',
+      color: '#2980b9',
       isComplete: isSecondBlockDone,
     },
     {
       label: 'CMLL',
-      color: '#e67e22',
+      color: '#f39c12',
       isComplete: isCMLLDone,
     },
     {
       label: 'EO',
       group: 'LSE',
-      color: '#16a085',
+      color: '#27ae60',
       isComplete: isEODone,
     },
     {
       label: 'UL+UR',
       group: 'LSE',
-      color: '#1abc9c',
+      color: '#2ecc71',
       isComplete: isULURDone,
     },
     {
       label: 'EP',
       group: 'LSE',
-      color: '#2ecc71',
+      color: '#58d68d',
       isComplete: isSolvedFacelets,
     },
   ],
