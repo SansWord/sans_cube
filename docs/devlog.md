@@ -19,10 +19,24 @@ A record of what was built and what was learned, especially around co-working wi
 - Firestore rejects `undefined` values (only accepts `null`) — always sanitize objects before writing with `JSON.parse(JSON.stringify(obj))`
 - `npm ci` in CI fails when `package-lock.json` was generated on macOS (Linux-specific optional native packages like `@emnapi/*` are missing) — use `npm install` instead in the workflow
 
+**Learnings — debugging:**
+- When a Firebase popup closes immediately, check the browser console — `CONFIGURATION_NOT_FOUND` means Google sign-in provider isn't enabled in the Firebase Console (Authentication → Sign-in method → Google → Enable)
+- Firestore rejects `undefined` values silently at runtime, not at compile time — TypeScript optional fields (`field?`) become `undefined`, which Firestore refuses. Fix: `JSON.parse(JSON.stringify(obj))` strips them before writing
+- `npm ci` fails in CI when `package-lock.json` was generated on macOS — Linux CI adds platform-specific optional packages (`@emnapi/*`) not in the Mac-generated lock file. Fix: use `npm install` in the workflow instead
+
+**Learnings — Firebase concepts:**
+- Firebase Auth authorized domains control which domains can trigger the OAuth popup — `localhost` is whitelisted by default, but `sansword.github.io` must be added manually for GitHub Pages
+- `authDomain` in the config should always be the Firebase-provided domain (`*.firebaseapp.com`), not the hosting domain — it's used internally for the OAuth flow, not to identify where the app lives
+- Firebase web API keys are not secrets — they're safe to expose in the browser bundle; security is enforced by Firestore rules and Auth, not the key itself
+- Firestore document sort order is determined at query time (`orderBy('date', 'asc')`) — there's no default ordering
+- UID is assigned permanently by Firebase when a user first signs in with Google — same account always gets the same UID across all devices, no management needed
+
 **Learnings — Claude Code workflow:**
-- Subagent-driven development (brainstorm → write plan → execute with subagents) produced high-quality, reviewed code with no surprises
-- Asking Claude to scan git log and deduce learning is a fast way to populate a devlog retroactively
-- CLAUDE.md doc index (`docs/firebase-cloud-sync.md`) is better than loading docs eagerly — Claude reads only what's relevant per session
+- Subagent-driven development (brainstorm → write plan → execute with subagents + two-stage review) produced high-quality, reviewed code with no surprises
+- Subagents sometimes do more than asked (adding Firebase test stubs) when they hit a blocker — this is correct behavior, not scope creep; review the extra work before accepting
+- Discussing architecture decisions in conversation before writing the plan catches design issues cheaply (e.g. single-user vs multi-user, localStorage default vs cloud default, Firebase-only vs dual-write)
+- CLAUDE.md doc index is better than loading docs eagerly — listing docs with one-line descriptions lets Claude read only what's relevant per session
+- Asking Claude to scan git log to deduce learnings is a fast way to bootstrap a devlog retroactively
 
 ---
 
