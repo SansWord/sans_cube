@@ -20,8 +20,13 @@ export async function loadSolvesFromFirestore(uid: string): Promise<SolveRecord[
   return snapshot.docs.map((d) => d.data() as SolveRecord)
 }
 
+// Firestore rejects undefined values — strip them via JSON round-trip
+function sanitize(solve: SolveRecord): object {
+  return JSON.parse(JSON.stringify(solve))
+}
+
 export async function addSolveToFirestore(uid: string, solve: SolveRecord): Promise<void> {
-  await setDoc(solveDocRef(uid, solve), solve)
+  await setDoc(solveDocRef(uid, solve), sanitize(solve))
 }
 
 export async function deleteSolveFromFirestore(uid: string, solve: SolveRecord): Promise<void> {
