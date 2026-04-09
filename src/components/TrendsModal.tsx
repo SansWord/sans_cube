@@ -30,6 +30,7 @@ const TYPE_COLORS: Record<TimeKey, { line: string; ao5: string; ao12: string }> 
   total: { line: '#888',    ao5: '#e94560', ao12: '#3498db' },
 }
 
+
 interface Props {
   solves: SolveRecord[]
   methodFilter: MethodFilter
@@ -84,16 +85,23 @@ function hslToHex(h: number, s: number, l: number): string {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+function parseToggle(raw: string | null): TimeToggle {
+  const set = new Set((raw ?? '').split(','))
+  const t: TimeToggle = { exec: set.has('exec'), recog: set.has('recog'), total: set.has('total') }
+  if (!t.exec && !t.recog && !t.total) { t.total = true }
+  return t
+}
+
 function parseHashParams(): {
   tab: Tab
   windowSize: WindowSize
   grouped: boolean
   totalToggle: TimeToggle
-  phaseTimeType: TimeKey
+  phaseToggle: TimeToggle
 } {
   const hash = window.location.hash
   if (!hash.startsWith('#trends')) {
-    return { tab: 'total', windowSize: 25, grouped: true, totalToggle: { exec: true, recog: false, total: false }, phaseTimeType: 'exec' }
+    return { tab: 'total', windowSize: 'all', grouped: true, totalToggle: { exec: false, recog: false, total: true }, phaseToggle: { exec: false, recog: false, total: true } }
   }
   const search = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
   const params = new URLSearchParams(search)
@@ -101,19 +109,12 @@ function parseHashParams(): {
   const w = params.get('window')
   const windowSize: WindowSize = w === 'all' ? 'all' : w === '50' ? 50 : w === '100' ? 100 : 25
   const grouped: boolean = params.get('group') !== 'split'
-  const ttRaw = params.get('ttotal') ?? 'exec'
-  const activeSet = new Set(ttRaw.split(','))
-  const totalToggle: TimeToggle = {
-    exec: activeSet.has('exec'),
-    recog: activeSet.has('recog'),
-    total: activeSet.has('total'),
-  }
-  if (!totalToggle.exec && !totalToggle.recog && !totalToggle.total) {
-    totalToggle.exec = true; totalToggle.recog = true; totalToggle.total = true
-  }
-  const ptRaw = params.get('tphase') ?? 'exec'
-  const phaseTimeType: TimeKey = (['exec', 'recog', 'total'] as TimeKey[]).includes(ptRaw as TimeKey) ? ptRaw as TimeKey : 'exec'
-  return { tab, windowSize, grouped, totalToggle, phaseTimeType }
+  const totalToggle = parseToggle(params.get('ttotal'))
+  const ptRaw = params.get('tphase') ?? 'total'
+  const ptSet = new Set(ptRaw.split(','))
+  const phaseToggle: TimeToggle = { exec: ptSet.has('exec'), recog: ptSet.has('recog'), total: ptSet.has('total') }
+  if (!phaseToggle.exec && !phaseToggle.recog && !phaseToggle.total) phaseToggle.total = true
+  return { tab, windowSize, grouped, totalToggle, phaseToggle }
 }
 
 function buildColorMap(
@@ -160,6 +161,28 @@ function buildColorMap(
 function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
   if (methodFilter === 'all') return solves
   return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
+}
+
+function buildMergedPhaseData(
+  solves: SolveRecord[],
+  windowSize: number | 'all',
+  phaseToggle: TimeToggle,
+  grouped: boolean,
+): PhaseDataPoint[] {
+  const activeTypes = (Object.keys(phaseToggle) as TimeKey[]).filter(k => phaseToggle[k])
+  if (activeTypes.length === 0) return []
+  const datasets = activeTypes.map(type => buildPhaseData(solves, windowSize, type, grouped))
+  return datasets[0].map((pt, i) => {
+    const merged: PhaseDataPoint = { seq: pt.seq, solveId: pt.solveId }
+    activeTypes.forEach((type, j) => {
+      const typePt = datasets[j][i]
+      Object.entries(typePt).forEach(([key, val]) => {
+        if (key === 'seq' || key === 'solveId') return
+        merged[`${key}_${type}`] = val as number
+      })
+    })
+    return merged
+  })
 }
 
 // ─── date helpers ────────────────────────────────────────────────────────────
@@ -315,10 +338,10 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   }, [onClose, detailOpen])
   const parsed = parseHashParams()
   const [tab, setTab] = useState<Tab>(parsed.tab)
-  const [windowSize, setWindowSize] = useState<WindowSize>(isMobile ? 25 : parsed.windowSize)
+  const [windowSize, setWindowSize] = useState<WindowSize>(isMobile ? 25 : (parsed.windowSize ?? 'all'))
   const [grouped, setGrouped] = useState(parsed.grouped)
-  const [totalToggle, setTotalToggle] = useState<TimeToggle>({ exec: true, recog: true, total: true })
-  const [phaseTimeType, setPhaseTimeType] = useState<TimeKey>(parsed.phaseTimeType)
+  const [totalToggle, setTotalToggle] = useState<TimeToggle>({ exec: false, recog: false, total: true })
+  const [phaseToggle, setPhaseToggle] = useState<TimeToggle>(parsed.phaseToggle)
   const [hiddenPhases, setHiddenPhases] = useState<Set<string>>(new Set())
   const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
   const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
@@ -331,7 +354,7 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   const currentDomain: [number, number] | null = zoomStack.length > 0 ? zoomStack[zoomStack.length - 1] : null
 
   const totalData = buildTotalData(filtered, windowSize)
-  const phaseData = buildPhaseData(filtered, windowSize, phaseTimeType, grouped)
+  const phaseData = buildMergedPhaseData(filtered, windowSize, phaseToggle, grouped)
 
   const visibleTotalData = currentDomain
     ? totalData.filter(pt => pt.seq >= currentDomain[0] && pt.seq <= currentDomain[1])
@@ -367,17 +390,18 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
 
   // Sync URL hash
   useEffect(() => {
-    const activeTotalTypes = (Object.keys(totalToggle) as TimeKey[]).filter(k => totalToggle[k]).join(',') || 'exec'
+    const activeTotalTypes = (Object.keys(totalToggle) as TimeKey[]).filter(k => totalToggle[k]).join(',') || 'exec,recog,total'
+    const activePhaseTypes = (Object.keys(phaseToggle) as TimeKey[]).filter(k => phaseToggle[k]).join(',') || 'total'
     const params = new URLSearchParams({
       method: methodFilter,
       tab,
       window: String(windowSize),
       group: grouped ? 'grouped' : 'split',
       ttotal: activeTotalTypes,
-      tphase: phaseTimeType,
+      tphase: activePhaseTypes,
     })
     window.location.hash = `trends?${params.toString()}`
-  }, [methodFilter, tab, windowSize, grouped, totalToggle, phaseTimeType])
+  }, [methodFilter, tab, windowSize, grouped, totalToggle, phaseToggle])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
@@ -389,7 +413,14 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   const toggleTimeType = (key: TimeKey) => {
     setTotalToggle(prev => {
       const next = { ...prev, [key]: !prev[key] }
-      // Ensure at least one is active
+      if (!next.exec && !next.recog && !next.total) return prev
+      return next
+    })
+  }
+
+  const togglePhaseType = (key: TimeKey) => {
+    setPhaseToggle(prev => {
+      const next = { ...prev, [key]: !prev[key] }
       if (!next.exec && !next.recog && !next.total) return prev
       return next
     })
@@ -568,11 +599,11 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                 <button onClick={() => toggleTimeType('recog')} style={{ ...btnStyle(totalToggle.recog), color: totalToggle.recog ? TYPE_COLORS.recog.line : '#555', borderColor: totalToggle.recog ? TYPE_COLORS.recog.line : '#333' }}>Recog</button>
               </div>
             ) : (
-              /* Single-select for Phases tab — order: Total, Exec, Recog */
+              /* Multi-toggle for Phases tab: Total / Exec / Recog */
               <div style={{ display: 'flex', gap: 4 }}>
-                <button onClick={() => setPhaseTimeType('total')} style={btnStyle(phaseTimeType === 'total')}>Total</button>
-                <button onClick={() => setPhaseTimeType('exec')} style={btnStyle(phaseTimeType === 'exec')}>Exec</button>
-                <button onClick={() => setPhaseTimeType('recog')} style={btnStyle(phaseTimeType === 'recog')}>Recog</button>
+                <button onClick={() => togglePhaseType('total')} style={btnStyle(phaseToggle.total)}>Total</button>
+                <button onClick={() => togglePhaseType('exec')} style={btnStyle(phaseToggle.exec)}>Exec</button>
+                <button onClick={() => togglePhaseType('recog')} style={btnStyle(phaseToggle.recog)}>Recog</button>
               </div>
             )}
             {tab === 'phases' && hasGroups && (
@@ -695,24 +726,35 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                 <Legend
                   wrapperStyle={{ fontSize: 12 }}
                   onClick={handleLegendClick}
-                  formatter={(value: string) => (
-                    <span style={{ color: hiddenPhases.has(value) ? '#444' : (colorMap[value] ?? '#888'), cursor: 'pointer' }}>
-                      {value}
-                    </span>
-                  )}
+                  formatter={(value: string) => {
+                    const typeMatch = value.match(/_(exec|recog|total)$/)
+                    const phaseName = typeMatch ? value.slice(0, -(typeMatch[0].length)) : value
+                    const timeType = typeMatch?.[1] as TimeKey | undefined
+                    const typeSuffix = timeType ? ` (${timeType[0].toUpperCase()}${timeType.slice(1)})` : ''
+                    const color = hiddenPhases.has(value) ? '#444' : (colorMap[phaseName] ?? '#888')
+                    return <span style={{ color, cursor: 'pointer' }}>{phaseName}{typeSuffix}</span>
+                  }}
                 />
-                {phaseKeys.map(key => (
-                  <Line
-                    key={key}
-                    dataKey={key}
-                    stroke={colorMap[key] ?? '#888'}
-                    dot={false}
-                    strokeWidth={2}
-                    connectNulls
-                    hide={hiddenPhases.has(key)}
-                    activeDot={{ r: 6, fill: colorMap[key] ?? '#888', cursor: 'pointer' }}
-                  />
-                ))}
+                {phaseKeys.map(key => {
+                  const typeMatch = key.match(/_(exec|recog|total)$/)
+                  const phaseName = typeMatch ? key.slice(0, -(typeMatch[0].length)) : key
+                  const timeType = typeMatch?.[1] as TimeKey | undefined
+                  const color = colorMap[phaseName] ?? '#888'
+                  const strokeDasharray = timeType === 'exec' ? '5 3' : timeType === 'recog' ? '2 3' : undefined
+                  return (
+                    <Line
+                      key={key}
+                      dataKey={key}
+                      stroke={color}
+                      dot={false}
+                      strokeWidth={2}
+                      strokeDasharray={strokeDasharray}
+                      connectNulls
+                      hide={hiddenPhases.has(key)}
+                      activeDot={{ r: 6, fill: color, cursor: 'pointer' }}
+                    />
+                  )
+                })}
 
                 {/* Zoom selection area */}
                 {refAreaLeft !== null && refAreaRight !== null && (

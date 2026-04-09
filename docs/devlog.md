@@ -4,6 +4,24 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.51 — Stats Trends Polish (2026-04-09)
+**Review:** not yet
+
+**What was built:**
+- **Click-to-detail fixed**: root cause was Recharts `onMouseMove` at chart level never populates `activePayload` — only the custom Tooltip component receives it. Fix: update `hoveredSolveIdRef` inside the tooltip render function; `handleChartClick` reads from the ref
+- **Tooltip shows correct solve number**: was showing windowed index (`d.seq = 1,2,3…`); now shows actual `solve.seq` via `solveMap`
+- **Esc chain**: TrendsModal closes on Esc only when SolveDetailModal is not open (`detailOpen` prop); full chain: detail → trends → timer
+- **Semi-transparent overlay**: `rgba(10,10,26,0.88)` + `backdropFilter: blur(2px)` so cube shows through
+- **Phases tab multi-toggle**: Total / Exec / Recog independently toggleable; Total=solid, Exec=`5 3` dash, Recog=`2 3` dash; phase colors preserved
+- **Default time type**: both tabs default to Total only
+- **Default window**: both tabs default to All (mobile still 25)
+
+**Key technical learnings:**
+- **Recharts `onMouseMove` does not populate `activePayload` at chart level.** Only the `Tooltip` component receives the correct payload via internal context. Tracking hover state must happen inside the custom tooltip render, not in `onMouseMove`.
+- **Multiple `window.addEventListener` handlers fire simultaneously** — `stopPropagation` has no effect between them. Guard with a prop (`detailOpen`) to let the lower modal yield to the upper one.
+
+---
+
 ## v1.5 — Stats Trends Enhancements (2026-04-09)
 **Review:** not yet
 
