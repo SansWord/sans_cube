@@ -1,14 +1,18 @@
 # Future Work
 
-## On-going
+## On-going, Next
+- Hardware Clock
 
 ## Solving Methods
 - ZZ method support
 
+## Hardware Clocking
+- when connect hardware, getting its time and identifiy the difference with wall-clock time. after that, use timestamp from hardware with adjusted difference as clock time. trust time on event instead of Date.now() to calculate overall solving time.
+- Use cubeTimestamp instead of wall-clock for phase timing (recognitionMs, executionMs) — wall clock can jitter on BLE events; hardware clock may be more accurate. Needs empirical testing to verify drift characteristics.
+
 ## Hardware
 - Support for non-GAN cubes (MoYu, QiYi, etc.)
 - Empirical testing for S/E moves
-- Use cubeTimestamp instead of wall-clock for phase timing (recognitionMs, executionMs) — wall clock can jitter on BLE events; hardware clock may be more accurate. Needs empirical testing to verify drift characteristics.
 
 ## Replay
 - M/S/E moves would make replay jummping and not smooth, also happened in some other cases, not sure what's the root cause.
@@ -28,6 +32,7 @@
 - localization
 - case detection - OLL, PLL, EO, LR+LU, EP
 - clean code
+- scramble optimization: for example, if we have UD pattern, it should be able to turn D and then U.
 
 ## firebase
 - **App Check**: Skip for now. Security rules already lock data to authenticated users — App Check adds a second layer but the main risk is ad blockers silently breaking cloud sync. Worth revisiting if there's real abuse risk or many users. Requires debug token setup for local dev.
