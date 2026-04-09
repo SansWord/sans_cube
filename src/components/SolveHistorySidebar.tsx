@@ -1,7 +1,10 @@
-import { useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
+import { computeStats } from '../hooks/useSolveHistory'
+
+type MethodFilter = 'all' | 'cfop' | 'roux'
 
 interface StatEntry {
   current: number | null
@@ -17,7 +20,6 @@ interface SolveStats {
 
 interface Props {
   solves: SolveRecord[]
-  stats: SolveStats
   onSelectSolve: (solve: SolveRecord) => void
   width: number
   onWidthChange: (w: number) => void
@@ -34,14 +36,85 @@ function calcFontSize(width: number): number {
   return Math.round(11 + t * 5)
 }
 
-
 function fmtTps(solve: SolveRecord): string {
   const secs = solve.timeMs / 1000
   if (secs === 0) return '—'
   return (solve.moves.length / secs).toFixed(2)
 }
 
-export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWidthChange, onClose, cloudLoading }: Props) {
+function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
+  if (methodFilter === 'all') return solves
+  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
+}
+
+function filterStatsPool(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
+  const realSolves = solves.filter(s => !s.isExample)
+  if (methodFilter === 'all') return realSolves
+  return realSolves.filter(s => (s.method ?? 'cfop') === methodFilter)
+}
+
+const filterSelectStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid #333',
+  color: '#888',
+  fontSize: 11,
+  padding: '1px 4px',
+  borderRadius: 3,
+  cursor: 'pointer',
+}
+
+function StatsSection({ solves, methodFilter, onFilterChange, fontSize }: {
+  solves: SolveRecord[]
+  methodFilter: MethodFilter
+  onFilterChange: (f: MethodFilter) => void
+  fontSize?: number
+}) {
+  const statsPool = filterStatsPool(solves, methodFilter)
+  const stats: SolveStats = computeStats(statsPool)
+  const rows: Array<{ label: string; entry: StatEntry }> = [
+    { label: 'Single', entry: stats.single },
+    { label: 'Ao5', entry: stats.ao5 },
+    { label: 'Ao12', entry: stats.ao12 },
+    { label: 'Ao100', entry: stats.ao100 },
+  ]
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <span style={{ fontWeight: 'bold', color: '#888' }}>Statistics</span>
+        <select
+          value={methodFilter}
+          onChange={e => onFilterChange(e.target.value as MethodFilter)}
+          style={filterSelectStyle}
+        >
+          <option value="all">All</option>
+          <option value="cfop">CFOP</option>
+          <option value="roux">Roux</option>
+        </select>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ color: '#555', fontSize: fontSize ? fontSize - 2 : 11 }}>
+            <td></td>
+            <td style={{ textAlign: 'right' }}>Current</td>
+            <td style={{ textAlign: 'right' }}>Best</td>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ label, entry }) => (
+            <tr key={label}>
+              <td style={{ color: '#888' }}>{label}</td>
+              <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
+              <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}
+
+export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading }: Props) {
+  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -66,13 +139,8 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
     window.addEventListener('mouseup', onMouseUp)
   }, [width, onWidthChange])
 
-  const rows: Array<{ label: string; entry: StatEntry }> = [
-    { label: 'Single', entry: stats.single },
-    { label: 'Ao5', entry: stats.ao5 },
-    { label: 'Ao12', entry: stats.ao12 },
-    { label: 'Ao100', entry: stats.ao100 },
-  ]
-  const reversedSolves = [...solves].reverse()
+  const filteredSolves = filterSolves(solves, methodFilter)
+  const reversedSolves = [...filteredSolves].reverse()
 
   // Overlay mode (mobile): full-screen fixed panel
   if (onClose) {
@@ -83,25 +151,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
           <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
         </div>
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#888' }}>Statistics</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ color: '#555', fontSize: 11 }}>
-                <td></td>
-                <td style={{ textAlign: 'right' }}>Current</td>
-                <td style={{ textAlign: 'right' }}>Best</td>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ label, entry }) => (
-                <tr key={label}>
-                  <td style={{ color: '#888' }}>{label}</td>
-                  <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
-                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
@@ -156,25 +206,7 @@ export function SolveHistorySidebar({ solves, stats, onSelectSolve, width, onWid
         color: '#ccc',
       }}>
         <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#888' }}>Statistics</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
-                <td></td>
-                <td style={{ textAlign: 'right' }}>Current</td>
-                <td style={{ textAlign: 'right' }}>Best</td>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ label, entry }) => (
-                <tr key={label}>
-                  <td style={{ color: '#888' }}>{label}</td>
-                  <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
-                  <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} fontSize={fontSize} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>
