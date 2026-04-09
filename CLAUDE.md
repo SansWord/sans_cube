@@ -17,39 +17,17 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 
 ## Key Architecture
 
-**Drivers** (`src/drivers/`)
-- `CubeDriver.ts` — abstract interface all drivers implement
-- `GanCubeDriver.ts` — BLE connection to real GAN cubes
-- `MouseDriver.ts` — simulates cube in browser via mouse drag
-- `ButtonDriver.ts` — simulates cube via button clicks
+See `docs/ui-architecture.md` for the full component tree, hook ownership, and data flow.
 
-**Services** (`src/services/`)
-- `firebase.ts` — Firebase app init, exports `auth`, `db`, `googleProvider`
-- `firestoreSolves.ts` — Firestore CRUD for solve records (`users/{uid}/solves`) and seq counter (`users/{uid}/meta/counter`)
+**Keep `docs/ui-architecture.md` up to date** whenever you add a component, remove a component, change which hooks a component owns, or change what props/callbacks a component exposes.
 
-**Hooks** (`src/hooks/`)
-- `useCubeDriver` — manages driver lifecycle and connection
-- `useCubeState` — tracks current cube state from move events
-- `useGyro` — gyroscope orientation tracking
-- `useGestureDetector` — detects gesture shortcuts (U×4 = reset gyro, D×4 = reset cube state)
-- `useSolveRecorder` — records move sequences and timing for a solve
-- `useSolveHistory` — persists solve history to localStorage or Firestore (when cloud sync enabled)
-- `useCloudSync` — Firebase Auth state + cloud sync toggle
-- `useTimer` — solve timer with CFOP phase detection
-- `useScramble` / `useScrambleTracker` — scramble generation and tracking
-- `useReplayController` — replay playback state (play/pause, speed, scrub)
+**Drivers** (`src/drivers/`) — `CubeDriver` (abstract), `GanCubeDriver` (BLE), `MouseDriver`, `ButtonDriver`, `SliceMoveDetector`
 
-**Components** (`src/components/`)
-- `CubeCanvas` — Three.js 3D cube rendering with gyro orientation
-- `TimerScreen` — main solve UI (timer, phases, scramble)
-- `SolveDetailModal` — post-solve breakdown with replay
-- `SolveHistorySidebar` — solve history list
-- `PhaseBar` — CFOP phase timeline scrubber
-- `SolveReplayer` — replay controls (play/pause, speed, scrub)
-- `ScrambleDisplay` — scramble sequence with move highlighting
-- `ConnectionBar` — BLE connection status and controls
-- `OrientationConfig` — front/bottom face color config (persisted to localStorage)
-- `TimerDisplay`, `ControlBar`, `MoveHistory`, `FaceletDebug`
+**Services** (`src/services/`) — `firebase.ts` (app init), `firestoreSolves.ts` (Firestore CRUD)
+
+**Hooks** (`src/hooks/`) — `useCubeDriver`, `useCubeState`, `useGyro`, `useGestureDetector`, `useSolveRecorder`, `useSolveHistory`, `useCloudSync`, `useTimer`, `useScramble`, `useScrambleTracker`, `useReplayController`, `useMethod`
+
+**Components** (`src/components/`) — `TimerScreen`, `SolveDetailModal`, `SolveHistorySidebar`, `CubeCanvas`, `PhaseBar`, `ScrambleDisplay`, `SolveReplayer`, `ConnectionBar`, `OrientationConfig`, `TimerDisplay`, `ControlBar`, `MoveHistory`, `FaceletDebug`, `MethodSelector`
 
 ## Documentation (`docs/`)
 
@@ -60,6 +38,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - `manual-test-checklist.md` — manual QA checklist
 - `storage.md` — all localStorage keys and Firestore structure; what syncs vs. what's local-only
 - `time-model.md` — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
+- `ui-architecture.md` — component tree, hook ownership per component, data flow, leaf component prop tables
 
 ## Persistence
 
