@@ -59,6 +59,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - `animation-system.md` — Three.js animation details
 - `manual-test-checklist.md` — manual QA checklist
 - `storage.md` — all localStorage keys and Firestore structure; what syncs vs. what's local-only
+- `time-model.md` — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
 
 ## Persistence
 
