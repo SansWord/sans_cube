@@ -4,6 +4,31 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## Stats Trends — Design Session (2026-04-09)
+**Review:** not yet
+
+**What was designed:**
+- Full spec for the stats trends feature — `docs/superpowers/specs/2026-04-09-stats-trends-design.md`
+- Dedicated full-screen modal opened from a "Trends" button in the sidebar
+- Two tabs: Total (scatter + Ao5/Ao12) and Phases (per-group lines)
+- Time type toggle (Exec / Recog) on both tabs — Total tab shows `sum(execMs)` or `sum(recogMs)`, Phases tab shows per-phase time
+- Group toggle (Grouped / Split) — collapses grouped phases by default; groups derived from `Phase.group` field, not hardcoded (CFOP: F2L, OLL, PLL; Roux: LSE)
+- Window toggle: 25 / 50 / 100 / All (mobile defaults to 25)
+- Method filter shared/synced between sidebar and modal (lifted to TimerScreen)
+- Click a chart dot → opens SolveDetailModal on top; close returns to chart
+- URL encoding: `#trends?method=...&tab=...&window=...&group=...&timetype=...`
+
+**Bug discovered — existing `#solve-<id>` URL with cloud sync:**
+`selectedSolve` is initialized via a `useState` lazy initializer that calls `solves.find(id)`. When cloud sync is on, `solves` is empty at mount — Firestore hasn't returned yet. Fix: replace lazy initializer with a `useEffect` gated on `isCloudLoading`, using a `urlResolvedRef` to ensure it only fires once.
+
+**Learnings:**
+- Recognition time (`recognitionMs`) and execution time (`executionMs`) per phase are already recorded — the trends feature doesn't need new data, just new visualization
+- `timeMs` (wall-clock) ≈ `sum(recogMs + execMs)` across phases — a decreasing `sum(recogMs)` trend means look-ahead is improving even before `timeMs` drops
+- Phase grouping (F2L, OLL, PLL, LSE) is already encoded in the `Phase.group` field — any new feature that needs grouping should derive from that, not hardcode method-specific logic
+- URL-triggered state (modal open, solve selected) needs to be deferred until cloud data is ready — lazy `useState` initializers run before Firestore returns
+
+---
+
 ## Meta — Using Claude More Effectively (2026-04-08)
 **Review:** not yet
 
