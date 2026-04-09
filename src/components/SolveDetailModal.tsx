@@ -183,7 +183,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
       position: 'fixed', inset: 0,
       background: 'rgba(0,0,0,0.85)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 100,
+      zIndex: 300,
     }}>
       <div ref={modalRef} className="solve-detail-modal" style={{
         background: '#0f1020',

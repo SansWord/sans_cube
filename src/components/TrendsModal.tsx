@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import type { ActiveDotProps } from 'recharts'
 import type { SolveRecord, MethodFilter } from '../types/solve'
 import { getMethod } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
@@ -141,16 +142,6 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
     window.location.hash = `trends?${params.toString()}`
   }, [methodFilter, tab, windowSize, grouped, timeType])
 
-  const handleDotClick = (data: TotalDataPoint) => {
-    const solve = solves.find(s => s.id === data.solveId)
-    if (solve) onSelectSolve(solve)
-  }
-
-  const handlePhaseLineDotClick = (_: unknown, payload: { payload: PhaseDataPoint }) => {
-    const solve = solves.find(s => s.id === payload.payload.solveId)
-    if (solve) onSelectSolve(solve)
-  }
-
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
     { label: '50', value: 50 },
@@ -259,7 +250,22 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                 dataKey="value"
                 stroke="none"
                 dot={{ r: 3, fill: '#555' }}
-                activeDot={{ r: 5, fill: '#777', onClick: handleDotClick as never }}
+                activeDot={(props: ActiveDotProps) => {
+                  const pt = props.payload as TotalDataPoint
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={5}
+                      fill="#777"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        const solve = solves.find(s => s.id === pt?.solveId)
+                        if (solve) onSelectSolve(solve)
+                      }}
+                    />
+                  )
+                }}
               />
               {totalData.length >= 5 && (
                 <Line
@@ -302,7 +308,22 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                   dot={false}
                   strokeWidth={2}
                   connectNulls
-                  activeDot={{ r: 5, onClick: handlePhaseLineDotClick as never, style: { cursor: 'pointer' } }}
+                  activeDot={(props: ActiveDotProps) => {
+                    const pt = props.payload as PhaseDataPoint
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={5}
+                        fill={colorMap[key] ?? '#888'}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          const solve = solves.find(s => s.id === pt?.solveId)
+                          if (solve) onSelectSolve(solve)
+                        }}
+                      />
+                    )
+                  }}
                 />
               ))}
             </LineChart>
