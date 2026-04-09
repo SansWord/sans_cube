@@ -4,6 +4,29 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## Meta — Using Claude More Effectively (2026-04-08)
+**Review:** not yet
+
+### /clear reloads CLAUDE.md
+
+`/clear` resets the conversation context but not the system prompt. CLAUDE.md is reloaded fresh at the start of every new session, including after `/clear`. This means:
+
+- You can `/clear` freely to reclaim context window without losing any conventions or reminders
+- Any instruction in CLAUDE.md is always present — you never need to repeat yourself after a clear
+- Auth state, solve history, and other runtime state are unaffected by `/clear` — it only clears Claude's conversation memory
+
+### Keep the docs list in CLAUDE.md current
+
+CLAUDE.md has a `docs/` index. Keeping it up to date pays off because Claude reads it at session start and knows exactly which doc to open for a given topic — instead of globbing `docs/` and reading files blindly. One line added to CLAUDE.md when creating a doc saves context on every future session that touches that area.
+
+The instruction added to CLAUDE.md: *"When creating any new `docs/*.md` file, always add it to this list with a one-line description."* This means Claude self-maintains the index going forward.
+
+### Context window cost of CLAUDE.md entries
+
+Adding a short instruction or doc reference to CLAUDE.md has negligible context cost. The benefit (Claude behaving correctly without prompting) always outweighs the cost of the few tokens it takes up.
+
+---
+
 ## Meta — Using CLAUDE.md as a Process Brain (2026-04-08)
 **Review:** not yet
 

@@ -17,6 +17,7 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
+import { renumberSolvesInFirestore } from './services/firestoreSolves'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -31,6 +32,7 @@ export default function App() {
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
+  const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
@@ -148,6 +150,21 @@ export default function App() {
                   style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: 3, fontSize: 11 }}
                 >
                   Sign out
+                </button>
+                <button
+                  disabled={renumbering !== 'idle'}
+                  onClick={async () => {
+                    if (!cloudSync.user) return
+                    if (!confirm('Renumber all cloud solves 1..n by date? This cannot be undone.')) return
+                    setRenumbering('running')
+                    const nextSeq = await renumberSolvesInFirestore(cloudSync.user.uid)
+                    localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
+                    setRenumbering('done')
+                    setTimeout(() => window.location.reload(), 1000)
+                  }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: renumbering !== 'idle' ? 'default' : 'pointer', background: '#222', color: renumbering === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${renumbering === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
+                >
+                  {renumbering === 'running' ? 'Renumbering...' : renumbering === 'done' ? 'Done! Reloading...' : 'Renumber solves (fix seq)'}
                 </button>
               </div>
             ) : (

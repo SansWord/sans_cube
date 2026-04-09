@@ -25,7 +25,7 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 
 **Services** (`src/services/`)
 - `firebase.ts` — Firebase app init, exports `auth`, `db`, `googleProvider`
-- `firestoreSolves.ts` — Firestore CRUD for solve records (`users/{uid}/solves`)
+- `firestoreSolves.ts` — Firestore CRUD for solve records (`users/{uid}/solves`) and seq counter (`users/{uid}/meta/counter`)
 
 **Hooks** (`src/hooks/`)
 - `useCubeDriver` — manages driver lifecycle and connection
@@ -52,15 +52,20 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 - `TimerDisplay`, `ControlBar`, `MoveHistory`, `FaceletDebug`
 
 ## Documentation (`docs/`)
+
+When creating any new `docs/*.md` file, always add it to this list with a one-line description.
+
 - `firebase-cloud-sync.md` — cloud sync architecture, security, migration behavior, ID design
 - `animation-system.md` — Three.js animation details
 - `manual-test-checklist.md` — manual QA checklist
+- `storage.md` — all localStorage keys and Firestore structure; what syncs vs. what's local-only
 
 ## Persistence
 
 - Solve history: `localStorage` (default) or Firebase Firestore (opt-in, requires Google sign-in)
 - Orientation config (front/bottom face): `localStorage`
 - Cloud sync toggle: `localStorage` (`sans_cube_cloud_sync_enabled`)
+- Full key/schema reference: `docs/storage.md`
 
 ## Development Commands
 

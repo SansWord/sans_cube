@@ -9,6 +9,8 @@ import {
   addSolveToFirestore,
   deleteSolveFromFirestore,
   migrateLocalSolvesToFirestore,
+  loadNextSeqFromFirestore,
+  updateCounterInFirestore,
 } from '../services/firestoreSolves'
 
 export interface CloudConfig {
@@ -122,13 +124,19 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
       return
     }
 
-    // Migrate localStorage solves on first enable (only once per session)
     const doLoad = async () => {
       if (!migratedRef.current && localSolves.length > 0) {
         migratedRef.current = true
         await migrateLocalSolvesToFirestore(uid, localSolves)
       }
-      const solves = await loadSolvesFromFirestore(uid)
+      const [solves, nextSeq] = await Promise.all([
+        loadSolvesFromFirestore(uid),
+        loadNextSeqFromFirestore(uid),
+      ])
+      if (nextSeq > nextIdRef.current) {
+        nextIdRef.current = nextSeq
+        saveNextId(nextIdRef.current)
+      }
       setCloudSolves(solves)
       setCloudReady(true)
     }
@@ -147,7 +155,11 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
   const addSolve = useCallback((solve: SolveRecord) => {
     if (useCloud && uid) {
       setCloudSolves((prev) => [...prev, solve])
-      addSolveToFirestore(uid, solve)
+      const nextSeq = (solve.seq ?? 0) + 1
+      void Promise.all([
+        addSolveToFirestore(uid, solve),
+        updateCounterInFirestore(uid, nextSeq),
+      ])
     } else {
       setLocalSolves((prev) => {
         const next = [...prev, solve]

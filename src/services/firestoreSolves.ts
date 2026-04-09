@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDocs, setDoc, deleteDoc,
+  collection, doc, getDocs, getDoc, setDoc, deleteDoc,
   query, orderBy,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -12,6 +12,19 @@ function solvesRef(uid: string) {
 // Document ID is String(solve.date) — unique per solve (Date.now() at solve time)
 function solveDocRef(uid: string, solve: SolveRecord) {
   return doc(db, 'users', uid, 'solves', String(solve.date))
+}
+
+function counterRef(uid: string) {
+  return doc(db, 'users', uid, 'meta', 'counter')
+}
+
+export async function loadNextSeqFromFirestore(uid: string): Promise<number> {
+  const snap = await getDoc(counterRef(uid))
+  return snap.exists() ? (snap.data().nextSeq as number) : 1
+}
+
+export async function updateCounterInFirestore(uid: string, nextSeq: number): Promise<void> {
+  await setDoc(counterRef(uid), { nextSeq })
 }
 
 export async function loadSolvesFromFirestore(uid: string): Promise<SolveRecord[]> {
@@ -35,4 +48,18 @@ export async function deleteSolveFromFirestore(uid: string, solve: SolveRecord):
 
 export async function migrateLocalSolvesToFirestore(uid: string, solves: SolveRecord[]): Promise<void> {
   await Promise.all(solves.map((s) => addSolveToFirestore(uid, s)))
+}
+
+/**
+ * Renumbers all Firestore solves sequentially (1..n) by date order.
+ * Returns the next seq to use (n + 1).
+ */
+export async function renumberSolvesInFirestore(uid: string): Promise<number> {
+  const solves = await loadSolvesFromFirestore(uid)
+  const nextSeq = solves.length + 1
+  await Promise.all([
+    ...solves.map((s, i) => setDoc(solveDocRef(uid, s), sanitize({ ...s, seq: i + 1 }))),
+    updateCounterInFirestore(uid, nextSeq),
+  ])
+  return nextSeq
 }
