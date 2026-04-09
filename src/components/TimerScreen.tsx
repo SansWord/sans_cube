@@ -57,7 +57,7 @@ export function TimerScreen({
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
-  const { solves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
+  const { solves, addSolve, deleteSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
 
   useEffect(() => {
     const d = driver.current
@@ -236,7 +236,6 @@ export function TimerScreen({
     <div style={{ display: 'flex', height: '100%', minHeight: '100vh' }}>
       <SolveHistorySidebar
         solves={solves}
-        stats={stats}
         onSelectSolve={setSelectedSolve}
         width={sidebarWidth}
         onWidthChange={setSidebarWidth}
@@ -305,7 +304,6 @@ export function TimerScreen({
       {showHistory && (
         <SolveHistorySidebar
           solves={solves}
-          stats={stats}
           onSelectSolve={(s) => setSelectedSolve(s)}
           width={sidebarWidth}
           onWidthChange={setSidebarWidth}

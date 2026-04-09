@@ -185,7 +185,5 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
   const solves = isCloudLoading ? [] : (useCloud ? cloudSolves : localSolves)
   const visibleExamples = isCloudLoading ? [] : EXAMPLE_SOLVES.filter((e) => !dismissedExamples.has(e.id))
   const allSolves = [...visibleExamples, ...solves]
-  const stats = computeStats(solves)
-
-  return { solves: allSolves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading: isCloudLoading }
+  return { solves: allSolves, addSolve, deleteSolve, nextSolveIds, cloudLoading: isCloudLoading }
 }
