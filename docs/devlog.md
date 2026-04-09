@@ -5,6 +5,7 @@ A record of what was built and what was learned, especially around co-working wi
 ---
 
 ## Meta — Using CLAUDE.md as a Process Brain (2026-04-08)
+**Review:** not yet
 
 The biggest workflow shift this session wasn't a feature — it was realising that CLAUDE.md can act as a persistent process brain that removes the need to remember conventions, reminders, and decisions across sessions.
 
@@ -58,7 +59,33 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
+## v1.4 — Method Filter in Solve History Sidebar (2026-04-08)
+**Review:** not yet
+
+**What was built:**
+- Method filter dropdown (All / CFOP / Roux) in `SolveHistorySidebar`, present in both desktop sidebar and mobile overlay modes
+- Stats derived locally inside the sidebar from the filtered solve pool — no longer passed as a prop from `TimerScreen`
+- `useSolveHistory` no longer computes or returns `stats`; `computeStats` remains exported for direct use
+
+**Design decisions:**
+- Filter state is local `useState` inside the sidebar — no need to lift it up since nothing else consumes it
+- Example solves always show regardless of filter (they're included for any method setting)
+- Legacy solves with no `method` field default to `'cfop'` — consistent with the existing convention in `SolveRecord`
+- Stats pool excludes examples (same as before — examples don't count toward averages)
+
+**Learnings — TDD workflow:**
+- Writing the failing tests first (Task 1 committed before implementation) made the acceptance criteria explicit and caught the exact props contract mismatch immediately
+- The three-commit structure (failing tests → implementation → stats cleanup) produced a clean, reviewable history
+- Plan-driven execution with worktrees made the session fast: no ambiguity mid-task, isolated branch, clean merge
+
+**Learnings — component design:**
+- Moving stat derivation into the component that owns the filter (rather than the parent) is the right call when the parent has no use for filtered stats — prop drilling a computed value just to filter it downstream is a smell
+- Extracting `StatsSection` as an inner component kept both render paths (sidebar + overlay) DRY without over-engineering
+
+---
+
 ## v1.3 post — Cloud Loading UX (2026-04-08)
+**Review:** not yet
 
 **What was built:**
 - Loading spinner in the solve history sidebar when cloud sync is enabled and data hasn't arrived yet
@@ -87,6 +114,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v1.3 — Firebase Cloud Sync (2026-04-08)
+**Review:** not yet
 
 **What was built:**
 - Opt-in cloud sync via Firebase Firestore, toggled from the debug section
@@ -123,6 +151,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v1.2 — Mobile & Polish (2026-04-06)
+**Review:** not yet
 
 **What was built:**
 - Full mobile touch support for CubeCanvas (drag to rotate)
@@ -140,6 +169,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v1.1 — Roux Method + Slice Moves (2026-04-03 to 2026-04-05)
+**Review:** not yet
 
 **What was built:**
 - Roux method phase detection (FB, SB, CMLL, LSE)
@@ -158,6 +188,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v1.0 — Scramble Tracker + Timer + Solve History (2026-03-31 to 2026-04-02)
+**Review:** not yet
 
 **What was built:**
 - Full CFOP timer with phase detection (Cross, F2L ×4, OLL, PLL)
@@ -182,6 +213,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v0.4 — Example Solves + Button Driver (2026-03-30)
+**Review:** not yet
 
 **What was built:**
 - Example solve records with negative IDs (won't conflict with real solves)
@@ -196,6 +228,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v0.3 — Replay + Phase Highlighting (2026-03-28)
+**Review:** not yet
 
 **What was built:**
 - Smooth gyro-interpolated replay of recorded solves
@@ -212,6 +245,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v0.2 — Layout + Sidebar (2026-03-27)
+**Review:** not yet
 
 **What was built:**
 - Timer/debug mode toggle
@@ -226,6 +260,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 ---
 
 ## v0.1 — Foundation (2026-03-25 to 2026-03-26)
+**Review:** not yet
 
 **What was built:**
 - Vite + React + TypeScript scaffold
