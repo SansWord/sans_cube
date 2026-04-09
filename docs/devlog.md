@@ -4,18 +4,49 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.9 — Stats Trends (2026-04-09)
+## v1.5 — Stats Trends Enhancements (2026-04-09)
 **Review:** not yet
 
 **What was built:**
-- `src/utils/trends.ts` — pure `buildTotalData` / `buildPhaseData` functions with trimmed rolling Ao5/Ao12; fully unit-tested (19 tests, TDD)
-- `src/components/TrendsModal.tsx` — full-screen fixed overlay with Total tab (scatter dots + Ao5/Ao12 lines) and Phases tab (one line per phase/group); Exec/Recog time type toggle; Group/Split toggle; window size selector (25/50/100/All); URL hash sync; dot-click → SolveDetailModal on top
+- **Total tab multi-toggle**: Total / Exec / Recog independently toggleable; all three on by default; ao5/ao12 per type
+- **Phase hiding**: click legend label to show/hide individual phase lines
+- **Split color variants**: sub-phases within a group get HSL lightness variants derived from the base phase color
+- **Range zoom**: drag to select range, committed to a `zoomStack`; ← Back (one level) and Reset zoom (clear all); both visible whenever `zoomStack.length >= 1`; drag threshold of ≥2 seq units to avoid trackpad false positives
+- **Out-of-range fix**: pre-filter `visibleTotalData`/`visiblePhaseData` to current domain — Recharts `domain` prop only scales the axis, it does not remove data points
+- **X-axis domain padding**: `[firstVisSeq - 0.5, lastVisSeq + 0.5]` prevents blank left section on small zoomed ranges
+- **Day reference lines**: day-boundary `ReferenceLine` at start of each day (browser timezone); `#4a6080` color, `6 3` dash; labels show `M/D`; top margin increased to 24 to prevent label clip
+- **Datetime in tooltips**: both Total and Phase tooltips show `YYYY/MM/DD HH:MM:SS` (browser timezone)
+- **Click-to-detail**: clicking near a hovered dot opens SolveDetailModal; tooltip `seq` label now shows actual `solve.seq`, not windowed index
+- **Disable while cloud loading**: Trends button and method filter select both disabled when `cloudLoading` is true; non-cloud users unaffected (`cloudLoading` undefined)
+- **Esc to close**: TrendsModal closes on Esc unless SolveDetailModal is on top (`detailOpen` prop); Esc chain: detail → trends → timer
+- **Semi-transparent background**: `rgba(10,10,26,0.88)` with `backdropFilter: blur(2px)` so the cube shows through
+
+**Key technical learnings:**
+
+- **Recharts `onMouseMove` at chart level does not provide `activePayload`.** The chart-level event (`CategoricalChartState`) shows `activeLabel` and `activeCoordinate` but `activePayload` is always undefined. The `Tooltip` component receives the correct payload via internal context. Fix: update `hoveredSolveIdRef` inside the custom tooltip render function (where `payload` is always available), rather than in `onMouseMove`.
+
+- **Recharts `onClick` also never has `activePayload`** (confirmed in prior session). The ref approach captures the solveId during tooltip render; the click handler reads from the ref.
+
+- **`didZoomRef` vs. state for drag/click disambiguation.** Using a state variable to track "a zoom just happened" causes a re-render between mouseUp and click, resetting the flag before the click handler reads it. A ref holds the value across the event sequence without triggering re-renders.
+
+- **Multiple `window.addEventListener('keydown')` handlers all fire simultaneously.** `stopPropagation` on a `window` listener does not prevent other `window` listeners from firing. Fix: pass `detailOpen` prop to TrendsModal and guard its Esc handler with `!detailOpen`.
+
+**Process learnings:**
+- Systematic debugging (console.log tracing) revealed the root cause in two iterations: first confirmed `activePayload` is absent in `onMouseMove`; second confirmed it's also absent in `onClick`; then found the Tooltip component as the reliable source of truth
+- Zoom UX required careful state design: zoom stack (not a simple on/off), pre-filtered data (not just axis domain), and drag threshold (not just any movement)
+
+---
+
+## v1.5 — Stats Trends Initial Implementation (2026-04-09)
+**Review:** not yet
+
+**What was built:**
+- `src/utils/trends.ts` — pure `buildTotalData` / `buildPhaseData` functions with trimmed rolling Ao5/Ao12; fully unit-tested (21 tests, TDD)
+- `src/components/TrendsModal.tsx` — full-screen fixed overlay with Total tab (scatter dots + Ao5/Ao12 lines) and Phases tab (one line per phase/group); Exec/Recog time type toggle; Group/Split toggle; window size selector (25/50/100/All); URL hash sync
 - `src/components/TimerScreen.tsx` — lifted `methodFilter` state; added `showTrends`; fixed URL cloud timing bug (deferred hash resolution until cloud data loads)
 - `src/components/SolveHistorySidebar.tsx` — added "Trends" button to stats header; `methodFilter` now a controlled prop from `TimerScreen`
 
 **Key technical learnings:**
-
-- **Recharts `activeDot.onClick` does not receive the data payload.** When you pass `activeDot={{ r: 5, onClick: fn }}`, Recharts' `adaptEventHandlers` binds the activeDot config object as the first argument — not the chart data point. The `as never` cast hides the type error. Fix: use a render function `activeDot={(props) => <circle onClick={() => use(props.payload)} />}` that closes over `props.payload`.
 
 - **`<Scatter>` inside `<ComposedChart>` does not reliably use the chart's top-level `data` prop.** Using `dataKey="value"` alone produces invisible dots. Either pass `data={...}` directly to `<Scatter>`, or use a `<Line stroke="none" dot={...}>` — the Line approach is simpler and definitely works.
 
@@ -26,21 +57,20 @@ A record of what was built and what was learned, especially around co-working wi
 - **`phaseKeys` should union all data points, not just the first.** If the first solve in the window has incomplete phases, later phase keys are missing from the chart. Use `Array.from(phaseData.reduce((set, pt) => { Object.keys(pt).forEach(...) }, new Set()))`.
 
 **Process learnings:**
-- The final code review by the most capable model (opus) caught the `activeDot` and zIndex bugs that all prior reviews missed — both are easy to overlook because they're runtime-only failures with no TypeScript error
-- Subagent-driven development with 7 tasks + two-stage review per task produced clean, well-reviewed code at each step; the review loops were worth it
-- The plan self-review step (spec coverage + placeholder scan + type consistency check) caught the test wrapper gap before execution, saving a rework cycle
+- Subagent-driven development with 7 tasks + two-stage review per task produced clean, well-reviewed code at each step
+- The plan self-review step (spec coverage + placeholder scan + type consistency check) caught the test wrapper gap before execution
 
 ---
 
-## Stats Trends — Design Session (2026-04-09)
+## v1.5 — Stats Trends Design Session (2026-04-09)
 **Review:** complete
 
 **What was designed:**
 - Full spec for the stats trends feature — `docs/superpowers/specs/2026-04-09-stats-trends-design.md`
 - Dedicated full-screen modal opened from a "Trends" button in the sidebar
 - Two tabs: Total (scatter + Ao5/Ao12) and Phases (per-group lines)
-- Time type toggle (Exec / Recog) on both tabs — Total tab shows `sum(execMs)` or `sum(recogMs)`, Phases tab shows per-phase time
-- Group toggle (Grouped / Split) — collapses grouped phases by default; groups derived from `Phase.group` field, not hardcoded (CFOP: F2L, OLL, PLL; Roux: LSE)
+- Time type toggle (Exec / Recog) on both tabs
+- Group toggle (Grouped / Split) — groups derived from `Phase.group` field, not hardcoded
 - Window toggle: 25 / 50 / 100 / All (mobile defaults to 25)
 - Method filter shared/synced between sidebar and modal (lifted to TimerScreen)
 - Click a chart dot → opens SolveDetailModal on top; close returns to chart
@@ -51,9 +81,8 @@ A record of what was built and what was learned, especially around co-working wi
 
 **Learnings:**
 - Recognition time (`recognitionMs`) and execution time (`executionMs`) per phase are already recorded — the trends feature doesn't need new data, just new visualization
-- `timeMs` (wall-clock) ≈ `sum(recogMs + execMs)` across phases — a decreasing `sum(recogMs)` trend means look-ahead is improving even before `timeMs` drops
-- Phase grouping (F2L, OLL, PLL, LSE) is already encoded in the `Phase.group` field — any new feature that needs grouping should derive from that, not hardcode method-specific logic
-- URL-triggered state (modal open, solve selected) needs to be deferred until cloud data is ready — lazy `useState` initializers run before Firestore returns
+- Phase grouping is already encoded in the `Phase.group` field — derive from that, don't hardcode method-specific logic
+- URL-triggered state needs to be deferred until cloud data is ready — lazy `useState` initializers run before Firestore returns
 
 ---
 

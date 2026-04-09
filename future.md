@@ -2,10 +2,6 @@
 
 ## On-going
 
-### Stats Trends (spec ready, not yet implemented)
-- To implement: `Write an implementation plan based on the spec in docs/superpowers/specs/2026-04-09-stats-trends-design.md`
-- To discuss design first: `I want to discuss the design in docs/superpowers/specs/2026-04-09-stats-trends-design.md before implementing it`
-
 ## Solving Methods
 - ZZ method support
 
@@ -22,7 +18,11 @@
 
 ## Statistic
 - ~~separate by method~~ — done in v1.4 (method filter in sidebar, stats derive from filtered pool)
-- statistic history trends by phases
+- ~~statistic history trends by phases~~ — done in v1.5 (TrendsModal with Total + Phases tabs)
+- ~~for time type toggle - add a toggle to show exec + recog~~ — done in v1.5 (Total/Exec/Recog independently toggleable)
+- ~~for phases - allow to hide/show each phases~~ — done in v1.5 (click legend label to hide/show)
+- ~~range selection: choose a range and show only that range, with a reset-button~~ — done in v1.5 (drag-to-zoom with multi-level stack, ← Back, Reset zoom)
+
 
 ## Miscs
 - localization

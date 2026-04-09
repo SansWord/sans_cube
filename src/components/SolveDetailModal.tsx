@@ -199,7 +199,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
       }}>
         {/* Header */}
         <div className="solve-detail-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontWeight: 'bold', fontSize: 16 }}>{solve.isExample ? 'Example Solve' : `Solve #${solve.id}`}</span>
+          <span style={{ fontWeight: 'bold', fontSize: 16 }}>{solve.isExample ? 'Example Solve' : `Solve #${solve?.seq ?? solve.id}`}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {solve.isExample && (
               <a

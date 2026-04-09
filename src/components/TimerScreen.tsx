@@ -341,6 +341,7 @@ export function TimerScreen({
             setShowTrends(false)
             setSelectedSolve(null)
           }}
+          detailOpen={!!selectedSolve}
         />
       )}
 

@@ -64,11 +64,12 @@ const filterSelectStyle: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, fontSize }: {
+function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, cloudLoading, fontSize }: {
   solves: SolveRecord[]
   methodFilter: MethodFilter
   onFilterChange: (f: MethodFilter) => void
   onOpenTrends?: () => void
+  cloudLoading?: boolean
   fontSize?: number
 }) {
   const statsPool = filterStatsPool(solves, methodFilter)
@@ -87,14 +88,16 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, font
           {onOpenTrends && (
             <button
               onClick={onOpenTrends}
+              disabled={cloudLoading}
               style={{
                 background: 'transparent',
                 border: '1px solid #333',
-                color: '#888',
+                color: cloudLoading ? '#444' : '#888',
                 fontSize: 11,
                 padding: '1px 6px',
                 borderRadius: 3,
-                cursor: 'pointer',
+                cursor: cloudLoading ? 'not-allowed' : 'pointer',
+                opacity: cloudLoading ? 0.5 : 1,
               }}
             >
               Trends
@@ -103,7 +106,12 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, font
           <select
             value={methodFilter}
             onChange={e => onFilterChange(e.target.value as MethodFilter)}
-            style={filterSelectStyle}
+            disabled={cloudLoading}
+            style={{
+              ...filterSelectStyle,
+              cursor: cloudLoading ? 'not-allowed' : 'pointer',
+              opacity: cloudLoading ? 0.5 : 1,
+            }}
           >
             <option value="all">All</option>
             <option value="cfop">CFOP</option>
@@ -170,7 +178,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
           <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
         </div>
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} />
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
@@ -225,7 +233,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         color: '#ccc',
       }}>
         <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} fontSize={fontSize} />
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} fontSize={fontSize} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>

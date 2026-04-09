@@ -39,6 +39,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - `storage.md` — all localStorage keys and Firestore structure; what syncs vs. what's local-only
 - `time-model.md` — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
 - `ui-architecture.md` — component tree, hook ownership per component, data flow, leaf component prop tables
+- `trends-zoom.md` — drag-to-zoom behavior in TrendsModal: zoom stack, data filtering, x-axis domain, day reference lines
 
 ## Persistence
 
@@ -56,10 +57,11 @@ npm run test      # run Vitest tests
 npm run lint      # ESLint
 ```
 
-## Current State (as of 2026-04-08)
+## Current State (as of 2026-04-09)
 
-- **v1.3** complete and merged to main — Firebase cloud sync (opt-in, debug section), GitHub Pages deploy workflow
-- **v0.2** — timer mode with CFOP phase detection, scramble tracking, solve history
+- **v1.5** complete — Stats Trends modal (Total + Phases tabs, drag-to-zoom, Exec/Recog/Total toggles, phase hide/show, day reference lines, click-to-detail)
+- **v1.4** — method filter in solve history sidebar
+- **v1.3** — Firebase cloud sync (opt-in), GitHub Pages deploy workflow
 
 ## Planned Future Work
 

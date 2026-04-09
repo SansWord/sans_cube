@@ -34,35 +34,43 @@ function makeSolve(
 // ─── buildTotalData ──────────────────────────────────────────────────────────
 
 describe('buildTotalData', () => {
-  it('returns one entry per solve with exec value = sum(executionMs)', () => {
+  it('returns one entry per solve with exec = sum(executionMs)', () => {
     const solves = [
       makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
       makeSolve(2, [makePhase('Cross', 1200, 600), makePhase('F2L', 2800, 300)]),
     ]
-    const result = buildTotalData(solves, 'all', 'exec')
+    const result = buildTotalData(solves, 'all')
     expect(result).toHaveLength(2)
-    expect(result[0].value).toBe(4000)  // 1000 + 3000
-    expect(result[1].value).toBe(4000)  // 1200 + 2800
+    expect(result[0].exec).toBe(4000)  // 1000 + 3000
+    expect(result[1].exec).toBe(4000)  // 1200 + 2800
   })
 
-  it('returns recog value = sum(recognitionMs) when timeType is recog', () => {
+  it('returns recog = sum(recognitionMs)', () => {
     const solves = [
       makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
     ]
-    const result = buildTotalData(solves, 'all', 'recog')
-    expect(result[0].value).toBe(900)  // 500 + 400
+    const result = buildTotalData(solves, 'all')
+    expect(result[0].recog).toBe(900)  // 500 + 400
+  })
+
+  it('returns total = exec + recog', () => {
+    const solves = [
+      makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
+    ]
+    const result = buildTotalData(solves, 'all')
+    expect(result[0].total).toBe(4900)  // 4000 + 900
   })
 
   it('assigns sequential seq numbers starting from 1', () => {
     const solves = [makeSolve(10, [makePhase('A', 1000, 0)]), makeSolve(11, [makePhase('A', 1000, 0)])]
-    const result = buildTotalData(solves, 'all', 'exec')
+    const result = buildTotalData(solves, 'all')
     expect(result[0].seq).toBe(1)
     expect(result[1].seq).toBe(2)
   })
 
   it('stores the solve id in solveId', () => {
     const solves = [makeSolve(42, [makePhase('A', 1000, 0)])]
-    const result = buildTotalData(solves, 'all', 'exec')
+    const result = buildTotalData(solves, 'all')
     expect(result[0].solveId).toBe(42)
   })
 
@@ -72,10 +80,10 @@ describe('buildTotalData', () => {
       makeSolve(2, [makePhase('A', 2000, 0)]),
       makeSolve(3, [makePhase('A', 3000, 0)]),
     ]
-    const result = buildTotalData(solves, 2, 'exec')
+    const result = buildTotalData(solves, 2)
     expect(result).toHaveLength(2)
-    expect(result[0].value).toBe(2000)
-    expect(result[1].value).toBe(3000)
+    expect(result[0].exec).toBe(2000)
+    expect(result[1].exec).toBe(3000)
   })
 
   it('excludes example solves from data and from window count', () => {
@@ -84,9 +92,9 @@ describe('buildTotalData', () => {
       makeSolve(2, [makePhase('A', 2000, 0)]),
       makeSolve(3, [makePhase('A', 3000, 0)]),
     ]
-    const result = buildTotalData(solves, 'all', 'exec')
+    const result = buildTotalData(solves, 'all')
     expect(result).toHaveLength(2)
-    expect(result[0].value).toBe(2000)
+    expect(result[0].exec).toBe(2000)
   })
 
   it('excludes example solves when applying window slice', () => {
@@ -97,52 +105,56 @@ describe('buildTotalData', () => {
       makeSolve(4, [makePhase('A', 4000, 0)]),
     ]
     // 3 real solves (1, 3, 4), window=2 → last 2 real = solves 3 and 4
-    const result = buildTotalData(solves, 2, 'exec')
+    const result = buildTotalData(solves, 2)
     expect(result).toHaveLength(2)
-    expect(result[0].value).toBe(3000)
-    expect(result[1].value).toBe(4000)
+    expect(result[0].exec).toBe(3000)
+    expect(result[1].exec).toBe(4000)
   })
 
-  it('ao5 is null when fewer than 5 solves are in the window', () => {
+  it('execAo5 is null when fewer than 5 solves are in the window', () => {
     const solves = Array.from({ length: 4 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000, 0)])
     )
-    const result = buildTotalData(solves, 'all', 'exec')
-    expect(result.every(p => p.ao5 === null)).toBe(true)
+    const result = buildTotalData(solves, 'all')
+    expect(result.every(p => p.execAo5 === null)).toBe(true)
   })
 
-  it('ao5 is computed from value (trimmed mean) once 5+ solves available', () => {
-    // values: 1000, 2000, 3000, 4000, 5000 → trim 1000 and 5000 → mean(2000,3000,4000) = 3000
+  it('execAo5 is computed (trimmed mean) once 5+ solves available', () => {
+    // exec values: 1000, 2000, 3000, 4000, 5000 → trim 1000 and 5000 → mean(2000,3000,4000) = 3000
     const values = [1000, 2000, 3000, 4000, 5000]
     const solves = values.map((v, i) => makeSolve(i + 1, [makePhase('A', v, 0)]))
-    const result = buildTotalData(solves, 'all', 'exec')
-    expect(result[4].ao5).toBeCloseTo(3000)
+    const result = buildTotalData(solves, 'all')
+    expect(result[4].execAo5).toBeCloseTo(3000)
   })
 
-  it('ao12 is null when fewer than 12 solves', () => {
+  it('execAo12 is null when fewer than 12 solves', () => {
     const solves = Array.from({ length: 11 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000, 0)])
     )
-    const result = buildTotalData(solves, 'all', 'exec')
-    expect(result.every(p => p.ao12 === null)).toBe(true)
+    const result = buildTotalData(solves, 'all')
+    expect(result.every(p => p.execAo12 === null)).toBe(true)
   })
 
-  it('ao12 is non-null once 12+ solves available', () => {
+  it('execAo12 is non-null once 12+ solves available', () => {
     const solves = Array.from({ length: 12 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000 * (i + 1), 0)])
     )
-    const result = buildTotalData(solves, 'all', 'exec')
-    expect(result[11].ao12).not.toBeNull()
+    const result = buildTotalData(solves, 'all')
+    expect(result[11].execAo12).not.toBeNull()
   })
 
-  it('ao5/ao12 computed from value not from timeMs', () => {
-    // exec values all 2000, but timeMs would include recogMs too
+  it('ao5/ao12 are computed independently per type', () => {
+    // exec=2000, recog=9999 for all 5 solves
     const solves = Array.from({ length: 5 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 2000, 9999)])
     )
-    const result = buildTotalData(solves, 'all', 'exec')
-    // ao5 of five 2000s: trim best (2000) and worst (2000), mean([2000,2000,2000]) = 2000
-    expect(result[4].ao5).toBeCloseTo(2000)
+    const result = buildTotalData(solves, 'all')
+    // execAo5 of five 2000s → 2000
+    expect(result[4].execAo5).toBeCloseTo(2000)
+    // recogAo5 of five 9999s → 9999
+    expect(result[4].recogAo5).toBeCloseTo(9999)
+    // totalAo5 of five 11999s → 11999
+    expect(result[4].totalAo5).toBeCloseTo(11999)
   })
 })
 
@@ -194,6 +206,15 @@ describe('buildPhaseData', () => {
     ]
     const result = buildPhaseData(solves, 'all', 'recog', false)
     expect(result[0]['Cross']).toBe(500)
+  })
+
+  it('uses exec+recog when timeType is total', () => {
+    const solves = [
+      makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 2000, 300)]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'total', false)
+    expect(result[0]['Cross']).toBe(1500)  // 1000 + 500
+    expect(result[0]['F2L']).toBe(2300)    // 2000 + 300
   })
 
   it('slices to last N non-example solves', () => {
