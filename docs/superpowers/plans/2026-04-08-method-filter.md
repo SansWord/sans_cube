@@ -1,0 +1,564 @@
+# Method Filter Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Add a method filter dropdown to `SolveHistorySidebar` so users can filter stats and the solve list by All / CFOP / Roux, and remove the now-redundant `stats` prop from the component.
+
+**Architecture:** The filter is local `useState` inside `SolveHistorySidebar`. The component imports `computeStats` from `useSolveHistory` and derives its own stats from the filtered solve pool. `TimerScreen` stops passing `stats`, and `useSolveHistory` stops returning it.
+
+**Tech Stack:** React 19 + TypeScript, Vitest + Testing Library
+
+---
+
+## File Map
+
+| File | Change |
+|------|--------|
+| `src/components/SolveHistorySidebar.tsx` | Add `MethodFilter` type, `methodFilter` state, dropdown UI in both modes, filtered stats/list derivation; import `computeStats`; remove `stats` from `Props` |
+| `src/components/TimerScreen.tsx` | Remove `stats={stats}` from both `SolveHistorySidebar` usages; remove `stats` from the `useSolveHistory` destructure |
+| `src/hooks/useSolveHistory.ts` | Remove `stats` from the return value |
+| `tests/components/SolveHistorySidebar.test.tsx` | Remove `stats` from `baseProps`; add tests for dropdown presence, default selection, list filtering, and stats filtering |
+
+---
+
+### Task 1: Update SolveHistorySidebar tests — remove stats prop and add filter tests
+
+**Files:**
+- Modify: `tests/components/SolveHistorySidebar.test.tsx`
+
+- [ ] **Step 1: Replace the file with the updated test suite**
+
+```tsx
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi } from 'vitest'
+import { SolveHistorySidebar } from '../../src/components/SolveHistorySidebar'
+import type { SolveRecord } from '../../src/types/solve'
+
+function makeSolve(id: number, method?: string, isExample?: boolean): SolveRecord {
+  return {
+    id,
+    scramble: '',
+    timeMs: 10000 + id * 1000,
+    moves: [],
+    phases: [],
+    date: 0,
+    seq: id > 0 ? id : undefined,
+    isExample,
+    method,
+  }
+}
+
+const baseProps = {
+  solves: [],
+  onSelectSolve: vi.fn(),
+  width: 160,
+  onWidthChange: vi.fn(),
+}
+
+describe('SolveHistorySidebar', () => {
+  it('does not render a close button in sidebar mode', () => {
+    render(<SolveHistorySidebar {...baseProps} />)
+    expect(screen.queryByRole('button', { name: '✕' })).not.toBeInTheDocument()
+  })
+
+  it('renders a close button when onClose is provided', () => {
+    render(<SolveHistorySidebar {...baseProps} onClose={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '✕' })).toBeInTheDocument()
+  })
+
+  it('calls onClose when close button is clicked', async () => {
+    const onClose = vi.fn()
+    render(<SolveHistorySidebar {...baseProps} onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: '✕' }))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('renders a method filter combobox defaulting to All', () => {
+    render(<SolveHistorySidebar {...baseProps} />)
+    const select = screen.getByRole('combobox')
+    expect(select).toHaveValue('all')
+  })
+
+  it('filter combobox has All, CFOP, and Roux options', () => {
+    render(<SolveHistorySidebar {...baseProps} />)
+    const select = screen.getByRole('combobox')
+    const options = within(select).getAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual(['All', 'CFOP', 'Roux'])
+  })
+
+  it('shows all real solves when filter is All', () => {
+    const solves = [
+      makeSolve(1, 'cfop'),
+      makeSolve(2, 'roux'),
+      makeSolve(3, undefined), // legacy — treated as cfop
+    ]
+    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    // All three rows appear: seq numbers 1, 2, 3
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+  })
+
+  it('hides roux solves when CFOP filter is selected', async () => {
+    const solves = [
+      makeSolve(1, 'cfop'),
+      makeSolve(2, 'roux'),
+      makeSolve(3, undefined), // legacy cfop
+    ]
+    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'cfop')
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.queryByText('2')).not.toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+  })
+
+  it('hides cfop solves when Roux filter is selected', async () => {
+    const solves = [
+      makeSolve(1, 'cfop'),
+      makeSolve(2, 'roux'),
+      makeSolve(3, undefined), // legacy cfop
+    ]
+    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
+    expect(screen.queryByText('1')).not.toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.queryByText('3')).not.toBeInTheDocument()
+  })
+
+  it('always shows example solves regardless of filter', async () => {
+    const solves = [
+      makeSolve(-1, 'cfop', true),  // example
+      makeSolve(1, 'cfop'),
+      makeSolve(2, 'roux'),
+    ]
+    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
+    // example row shows ★ not a seq number
+    expect(screen.getByText('★')).toBeInTheDocument()
+    // cfop real solve is gone
+    expect(screen.queryByText('1')).not.toBeInTheDocument()
+    // roux real solve is shown
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
+  it('also renders the filter in overlay (mobile) mode', () => {
+    render(<SolveHistorySidebar {...baseProps} onClose={vi.fn()} />)
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+  })
+})
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube && npm run test -- tests/components/SolveHistorySidebar.test.tsx
+```
+
+Expected: Multiple FAIL — `stats` in baseProps no longer matches Props (TypeScript error once we update the component), combobox not found, etc. At minimum the new filter tests fail because the dropdown doesn't exist yet.
+
+- [ ] **Step 3: Commit the failing tests**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube
+git add tests/components/SolveHistorySidebar.test.tsx
+git commit -m "test: update SolveHistorySidebar tests for method filter and removed stats prop"
+```
+
+---
+
+### Task 2: Implement method filter in SolveHistorySidebar
+
+**Files:**
+- Modify: `src/components/SolveHistorySidebar.tsx`
+
+- [ ] **Step 1: Replace the full file content**
+
+```tsx
+import { useState, useCallback, useRef } from 'react'
+import type { SolveRecord } from '../types/solve'
+import { formatSeconds } from '../utils/formatting'
+import { getMethod } from '../methods/index'
+import { computeStats } from '../hooks/useSolveHistory'
+
+type MethodFilter = 'all' | 'cfop' | 'roux'
+
+interface StatEntry {
+  current: number | null
+  best: number | null
+}
+
+interface SolveStats {
+  single: StatEntry
+  ao5: StatEntry
+  ao12: StatEntry
+  ao100: StatEntry
+}
+
+interface Props {
+  solves: SolveRecord[]
+  onSelectSolve: (solve: SolveRecord) => void
+  width: number
+  onWidthChange: (w: number) => void
+  onClose?: () => void
+  cloudLoading?: boolean
+}
+
+const MIN_WIDTH = 120
+const MAX_WIDTH = 320
+const DEFAULT_WIDTH = 160
+
+function calcFontSize(width: number): number {
+  const t = (width - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH)
+  return Math.round(11 + t * 5)
+}
+
+function fmtTps(solve: SolveRecord): string {
+  const secs = solve.timeMs / 1000
+  if (secs === 0) return '—'
+  return (solve.moves.length / secs).toFixed(2)
+}
+
+function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
+  if (methodFilter === 'all') return solves
+  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
+}
+
+function filterStatsPool(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
+  const realSolves = solves.filter(s => !s.isExample)
+  if (methodFilter === 'all') return realSolves
+  return realSolves.filter(s => (s.method ?? 'cfop') === methodFilter)
+}
+
+const filterSelectStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid #333',
+  color: '#888',
+  fontSize: 11,
+  padding: '1px 4px',
+  borderRadius: 3,
+  cursor: 'pointer',
+}
+
+function StatsSection({ solves, methodFilter, onFilterChange, fontSize }: {
+  solves: SolveRecord[]
+  methodFilter: MethodFilter
+  onFilterChange: (f: MethodFilter) => void
+  fontSize?: number
+}) {
+  const statsPool = filterStatsPool(solves, methodFilter)
+  const stats: SolveStats = computeStats(statsPool)
+  const rows: Array<{ label: string; entry: StatEntry }> = [
+    { label: 'Single', entry: stats.single },
+    { label: 'Ao5', entry: stats.ao5 },
+    { label: 'Ao12', entry: stats.ao12 },
+    { label: 'Ao100', entry: stats.ao100 },
+  ]
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <span style={{ fontWeight: 'bold', color: '#888' }}>Statistics</span>
+        <select
+          value={methodFilter}
+          onChange={e => onFilterChange(e.target.value as MethodFilter)}
+          style={filterSelectStyle}
+        >
+          <option value="all">All</option>
+          <option value="cfop">CFOP</option>
+          <option value="roux">Roux</option>
+        </select>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ color: '#555', fontSize: fontSize ? fontSize - 2 : 11 }}>
+            <td></td>
+            <td style={{ textAlign: 'right' }}>Current</td>
+            <td style={{ textAlign: 'right' }}>Best</td>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ label, entry }) => (
+            <tr key={label}>
+              <td style={{ color: '#888' }}>{label}</td>
+              <td style={{ textAlign: 'right' }}>{formatSeconds(entry.current)}</td>
+              <td style={{ textAlign: 'right', color: '#2ecc71' }}>{formatSeconds(entry.best)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}
+
+export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading }: Props) {
+  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(DEFAULT_WIDTH)
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true
+    startX.current = e.clientX
+    startWidth.current = width
+    e.preventDefault()
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragging.current) return
+      const delta = ev.clientX - startX.current
+      onWidthChange(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)))
+    }
+    const onMouseUp = () => {
+      dragging.current = false
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [width, onWidthChange])
+
+  const filteredSolves = filterSolves(solves, methodFilter)
+  const reversedSolves = [...filteredSolves].reverse()
+
+  // Overlay mode (mobile): full-screen fixed panel
+  if (onClose) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#0a0a1a', display: 'flex', flexDirection: 'column', fontSize: 13, color: '#ccc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
+          <span style={{ fontWeight: 'bold', color: '#888' }}>Solves</span>
+          <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
+        </div>
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} />
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+          <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
+          {cloudLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ color: '#555', fontSize: 11 }}>
+                  <td style={{ padding: '2px 12px' }}>#</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                  <td style={{ textAlign: 'right', padding: '2px 12px' }}>Method</td>
+                </tr>
+              </thead>
+              <tbody>
+                {reversedSolves.map((s) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => onSelectSolve(s)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Sidebar mode (desktop): existing layout
+  const fontSize = calcFontSize(width)
+
+  return (
+    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative' }}>
+      <div style={{
+        width,
+        background: '#0a0a1a',
+        borderRight: '1px solid #222',
+        display: 'flex',
+        flexDirection: 'column',
+        fontSize,
+        color: '#ccc',
+      }}>
+        <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} fontSize={fontSize} />
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+          <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>
+          {cloudLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
+                  <td style={{ padding: '2px 8px' }}>#</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
+                  <td style={{ textAlign: 'right', padding: '2px 4px' }}>TPS</td>
+                  <td style={{ textAlign: 'right', padding: '2px 8px' }}>Method</td>
+                </tr>
+              </thead>
+              <tbody>
+                {reversedSolves.map((s) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => onSelectSolve(s)}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+      <div
+        onMouseDown={onMouseDown}
+        style={{
+          position: 'absolute',
+          right: -3,
+          top: 0,
+          bottom: 0,
+          width: 6,
+          cursor: 'col-resize',
+          zIndex: 10,
+        }}
+      />
+    </div>
+  )
+}
+```
+
+- [ ] **Step 2: Run the tests**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube && npm run test -- tests/components/SolveHistorySidebar.test.tsx
+```
+
+Expected: All tests PASS.
+
+- [ ] **Step 3: Commit**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube
+git add src/components/SolveHistorySidebar.tsx
+git commit -m "feat: add method filter dropdown to SolveHistorySidebar, derive stats locally"
+```
+
+---
+
+### Task 3: Remove stats from TimerScreen and useSolveHistory
+
+**Files:**
+- Modify: `src/components/TimerScreen.tsx:60,238-244,305-315`
+- Modify: `src/hooks/useSolveHistory.ts:188-190`
+
+- [ ] **Step 1: Update useSolveHistory — remove stats from return value**
+
+In `src/hooks/useSolveHistory.ts`, change lines 188–190:
+
+```ts
+// Before:
+  const stats = computeStats(solves)
+
+  return { solves: allSolves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading: isCloudLoading }
+```
+
+```ts
+// After:
+  return { solves: allSolves, addSolve, deleteSolve, nextSolveIds, cloudLoading: isCloudLoading }
+```
+
+(Delete the `const stats = computeStats(solves)` line and remove `stats,` from the return.)
+
+- [ ] **Step 2: Update TimerScreen — remove stats from destructure and both JSX usages**
+
+In `src/components/TimerScreen.tsx`, change line 60:
+
+```ts
+// Before:
+  const { solves, addSolve, deleteSolve, stats, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
+```
+
+```ts
+// After:
+  const { solves, addSolve, deleteSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
+```
+
+In `src/components/TimerScreen.tsx`, the first `SolveHistorySidebar` usage (desktop, ~line 237):
+
+```tsx
+// Before:
+      <SolveHistorySidebar
+        solves={solves}
+        stats={stats}
+        onSelectSolve={setSelectedSolve}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+        cloudLoading={cloudLoading}
+      />
+```
+
+```tsx
+// After:
+      <SolveHistorySidebar
+        solves={solves}
+        onSelectSolve={setSelectedSolve}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+        cloudLoading={cloudLoading}
+      />
+```
+
+The second `SolveHistorySidebar` usage (mobile overlay, ~line 305):
+
+```tsx
+// Before:
+        <SolveHistorySidebar
+          solves={solves}
+          stats={stats}
+          onSelectSolve={(s) => setSelectedSolve(s)}
+          width={sidebarWidth}
+          onWidthChange={setSidebarWidth}
+          onClose={() => setShowHistory(false)}
+          cloudLoading={cloudLoading}
+        />
+```
+
+```tsx
+// After:
+        <SolveHistorySidebar
+          solves={solves}
+          onSelectSolve={(s) => setSelectedSolve(s)}
+          width={sidebarWidth}
+          onWidthChange={setSidebarWidth}
+          onClose={() => setShowHistory(false)}
+          cloudLoading={cloudLoading}
+        />
+```
+
+- [ ] **Step 3: Run full test suite and TypeScript build**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube && npm run test && npm run build
+```
+
+Expected: All tests PASS, build succeeds with no TypeScript errors.
+
+- [ ] **Step 4: Commit**
+
+```bash
+cd /Users/sansword/Source/github/sans_cube
+git add src/hooks/useSolveHistory.ts src/components/TimerScreen.tsx
+git commit -m "refactor: remove stats prop — SolveHistorySidebar now derives stats internally"
+```
