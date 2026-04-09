@@ -24,7 +24,8 @@ main.tsx
             ├── MethodSelector
             ├── PhaseBar
             ├── SolveHistorySidebar  ← mobile overlay (rendered when showHistory=true)
-            └── SolveDetailModal     ← rendered when a solve is selected
+            ├── TrendsModal          ← rendered when showTrends=true
+            └── SolveDetailModal     ← rendered when a solve is selected (can overlay TrendsModal)
                 ├── PhaseBar
                 └── CubeCanvas
 ```
@@ -57,6 +58,8 @@ Each hook is owned by a single component; data flows down as props.
 | `useScrambleTracker` | `stepStates`, `trackingState`, `wrongSegments`, `reset` |
 | `useTimer` | `status`, `elapsedMs`, `phaseRecords`, `recordedMoves`, `quaternionSnapshots`, `reset` |
 | `useMethod` | `method`, `setMethod` |
+| `methodFilter` / `setMethodFilter` | Lifted MethodFilter state — shared between sidebar and TrendsModal |
+| `showTrends` / `setShowTrends` | Controls TrendsModal visibility |
 
 `TimerScreen` receives `driver`, `facelets`, `quaternion`, `driverType`, and the reset callbacks from `App` as props. It owns its own `rendererRef` for animating moves in timer mode.
 
@@ -94,6 +97,8 @@ These components are purely presentational — they receive data as props and fi
 | `OrientationConfig` | `config`, `disabled` | `onSave`, `onUseCurrentOrientation` |
 | `MoveHistory` | `moves` | — |
 | `FaceletDebug` | `facelets` | — |
+| `SolveHistorySidebar` | `solves`, `width`, `cloudLoading`, `methodFilter`, `setMethodFilter`, `onOpenTrends` | `onSelectSolve`, `onWidthChange`, `onClose` |
+| `TrendsModal` | `solves`, `methodFilter`, `setMethodFilter`, `onSelectSolve`, `onClose` | — |
 
 ---
 

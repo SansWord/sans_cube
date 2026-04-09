@@ -18,6 +18,7 @@ import { TimerDisplay } from './TimerDisplay'
 import { PhaseBar } from './PhaseBar'
 import { SolveHistorySidebar } from './SolveHistorySidebar'
 import { SolveDetailModal } from './SolveDetailModal'
+import { TrendsModal } from './TrendsModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
@@ -327,6 +328,19 @@ export function TimerScreen({
           methodFilter={methodFilter}
           setMethodFilter={setMethodFilter}
           onOpenTrends={() => { setShowTrends(true); setShowHistory(false) }}
+        />
+      )}
+
+      {showTrends && (
+        <TrendsModal
+          solves={solves}
+          methodFilter={methodFilter}
+          setMethodFilter={setMethodFilter}
+          onSelectSolve={setSelectedSolve}
+          onClose={() => {
+            setShowTrends(false)
+            setSelectedSolve(null)
+          }}
         />
       )}
 
