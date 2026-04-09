@@ -1,0 +1,226 @@
+import { describe, it, expect } from 'vitest'
+import { buildTotalData, buildPhaseData } from '../../src/utils/trends'
+import type { SolveRecord, PhaseRecord } from '../../src/types/solve'
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function makePhase(
+  label: string,
+  execMs: number,
+  recogMs: number,
+  group?: string,
+): PhaseRecord {
+  return { label, group, executionMs: execMs, recognitionMs: recogMs, turns: 0 }
+}
+
+function makeSolve(
+  id: number,
+  phases: PhaseRecord[],
+  opts: { method?: string; isExample?: boolean } = {},
+): SolveRecord {
+  return {
+    id,
+    seq: id,
+    scramble: '',
+    timeMs: phases.reduce((s, p) => s + p.executionMs + p.recognitionMs, 0),
+    moves: [],
+    phases,
+    date: 0,
+    method: opts.method ?? 'cfop',
+    isExample: opts.isExample,
+  }
+}
+
+// ─── buildTotalData ──────────────────────────────────────────────────────────
+
+describe('buildTotalData', () => {
+  it('returns one entry per solve with exec value = sum(executionMs)', () => {
+    const solves = [
+      makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
+      makeSolve(2, [makePhase('Cross', 1200, 600), makePhase('F2L', 2800, 300)]),
+    ]
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result).toHaveLength(2)
+    expect(result[0].value).toBe(4000)  // 1000 + 3000
+    expect(result[1].value).toBe(4000)  // 1200 + 2800
+  })
+
+  it('returns recog value = sum(recognitionMs) when timeType is recog', () => {
+    const solves = [
+      makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
+    ]
+    const result = buildTotalData(solves, 'all', 'recog')
+    expect(result[0].value).toBe(900)  // 500 + 400
+  })
+
+  it('assigns sequential seq numbers starting from 1', () => {
+    const solves = [makeSolve(10, [makePhase('A', 1000, 0)]), makeSolve(11, [makePhase('A', 1000, 0)])]
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result[0].seq).toBe(1)
+    expect(result[1].seq).toBe(2)
+  })
+
+  it('stores the solve id in solveId', () => {
+    const solves = [makeSolve(42, [makePhase('A', 1000, 0)])]
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result[0].solveId).toBe(42)
+  })
+
+  it('slices to last N solves when window is a number', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)]),
+      makeSolve(2, [makePhase('A', 2000, 0)]),
+      makeSolve(3, [makePhase('A', 3000, 0)]),
+    ]
+    const result = buildTotalData(solves, 2, 'exec')
+    expect(result).toHaveLength(2)
+    expect(result[0].value).toBe(2000)
+    expect(result[1].value).toBe(3000)
+  })
+
+  it('excludes example solves from data and from window count', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)], { isExample: true }),
+      makeSolve(2, [makePhase('A', 2000, 0)]),
+      makeSolve(3, [makePhase('A', 3000, 0)]),
+    ]
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result).toHaveLength(2)
+    expect(result[0].value).toBe(2000)
+  })
+
+  it('excludes example solves when applying window slice', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)]),
+      makeSolve(2, [makePhase('A', 2000, 0)], { isExample: true }),
+      makeSolve(3, [makePhase('A', 3000, 0)]),
+      makeSolve(4, [makePhase('A', 4000, 0)]),
+    ]
+    // 3 real solves (1, 3, 4), window=2 → last 2 real = solves 3 and 4
+    const result = buildTotalData(solves, 2, 'exec')
+    expect(result).toHaveLength(2)
+    expect(result[0].value).toBe(3000)
+    expect(result[1].value).toBe(4000)
+  })
+
+  it('ao5 is null when fewer than 5 solves are in the window', () => {
+    const solves = Array.from({ length: 4 }, (_, i) =>
+      makeSolve(i + 1, [makePhase('A', 1000, 0)])
+    )
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result.every(p => p.ao5 === null)).toBe(true)
+  })
+
+  it('ao5 is computed from value (trimmed mean) once 5+ solves available', () => {
+    // values: 1000, 2000, 3000, 4000, 5000 → trim 1000 and 5000 → mean(2000,3000,4000) = 3000
+    const values = [1000, 2000, 3000, 4000, 5000]
+    const solves = values.map((v, i) => makeSolve(i + 1, [makePhase('A', v, 0)]))
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result[4].ao5).toBeCloseTo(3000)
+  })
+
+  it('ao12 is null when fewer than 12 solves', () => {
+    const solves = Array.from({ length: 11 }, (_, i) =>
+      makeSolve(i + 1, [makePhase('A', 1000, 0)])
+    )
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result.every(p => p.ao12 === null)).toBe(true)
+  })
+
+  it('ao12 is non-null once 12+ solves available', () => {
+    const solves = Array.from({ length: 12 }, (_, i) =>
+      makeSolve(i + 1, [makePhase('A', 1000 * (i + 1), 0)])
+    )
+    const result = buildTotalData(solves, 'all', 'exec')
+    expect(result[11].ao12).not.toBeNull()
+  })
+
+  it('ao5/ao12 computed from value not from timeMs', () => {
+    // exec values all 2000, but timeMs would include recogMs too
+    const solves = Array.from({ length: 5 }, (_, i) =>
+      makeSolve(i + 1, [makePhase('A', 2000, 9999)])
+    )
+    const result = buildTotalData(solves, 'all', 'exec')
+    // ao5 of five 2000s: trim best (2000) and worst (2000), mean([2000,2000,2000]) = 2000
+    expect(result[4].ao5).toBeCloseTo(2000)
+  })
+})
+
+// ─── buildPhaseData ──────────────────────────────────────────────────────────
+
+describe('buildPhaseData', () => {
+  it('ungrouped: uses phase labels as keys', () => {
+    const solves = [
+      makeSolve(1, [
+        makePhase('Cross', 1000, 0),
+        makePhase('F2L Slot 1', 2000, 0, 'F2L'),
+      ]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'exec', false)
+    expect(result[0]['Cross']).toBe(1000)
+    expect(result[0]['F2L Slot 1']).toBe(2000)
+    expect('F2L' in result[0]).toBe(false)
+  })
+
+  it('grouped: sums phases with the same group into one key', () => {
+    const solves = [
+      makeSolve(1, [
+        makePhase('Cross', 1000, 0),
+        makePhase('F2L Slot 1', 2000, 0, 'F2L'),
+        makePhase('F2L Slot 2', 1500, 0, 'F2L'),
+      ]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'exec', true)
+    expect(result[0]['Cross']).toBe(1000)    // no group → use label
+    expect(result[0]['F2L']).toBe(3500)       // 2000 + 1500
+    expect('F2L Slot 1' in result[0]).toBe(false)
+  })
+
+  it('grouped: ungrouped phases still use their label', () => {
+    const solves = [
+      makeSolve(1, [
+        makePhase('Cross', 800, 0),           // no group
+        makePhase('EOLL', 1200, 0, 'OLL'),
+      ]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'exec', true)
+    expect(result[0]['Cross']).toBe(800)
+    expect(result[0]['OLL']).toBe(1200)
+  })
+
+  it('uses recognitionMs when timeType is recog', () => {
+    const solves = [
+      makeSolve(1, [makePhase('Cross', 1000, 500)]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'recog', false)
+    expect(result[0]['Cross']).toBe(500)
+  })
+
+  it('slices to last N non-example solves', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)]),
+      makeSolve(2, [makePhase('A', 2000, 0)]),
+      makeSolve(3, [makePhase('A', 3000, 0)]),
+    ]
+    const result = buildPhaseData(solves, 2, 'exec', false)
+    expect(result).toHaveLength(2)
+    expect(result[0]['A']).toBe(2000)
+  })
+
+  it('excludes example solves', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)], { isExample: true }),
+      makeSolve(2, [makePhase('A', 2000, 0)]),
+    ]
+    const result = buildPhaseData(solves, 'all', 'exec', false)
+    expect(result).toHaveLength(1)
+    expect(result[0]['A']).toBe(2000)
+  })
+
+  it('includes seq (1-indexed) and solveId', () => {
+    const solves = [makeSolve(99, [makePhase('A', 1000, 0)])]
+    const result = buildPhaseData(solves, 'all', 'exec', false)
+    expect(result[0].seq).toBe(1)
+    expect(result[0].solveId).toBe(99)
+  })
+})
