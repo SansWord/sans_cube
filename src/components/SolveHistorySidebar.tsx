@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import type { SolveRecord, MethodFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
@@ -23,6 +23,9 @@ interface Props {
   onWidthChange: (w: number) => void
   onClose?: () => void
   cloudLoading?: boolean
+  methodFilter: MethodFilter
+  setMethodFilter: (f: MethodFilter) => void
+  onOpenTrends?: () => void
 }
 
 const MIN_WIDTH = 120
@@ -61,10 +64,11 @@ const filterSelectStyle: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-function StatsSection({ solves, methodFilter, onFilterChange, fontSize }: {
+function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, fontSize }: {
   solves: SolveRecord[]
   methodFilter: MethodFilter
   onFilterChange: (f: MethodFilter) => void
+  onOpenTrends?: () => void
   fontSize?: number
 }) {
   const statsPool = filterStatsPool(solves, methodFilter)
@@ -79,15 +83,33 @@ function StatsSection({ solves, methodFilter, onFilterChange, fontSize }: {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <span style={{ fontWeight: 'bold', color: '#888' }}>Statistics</span>
-        <select
-          value={methodFilter}
-          onChange={e => onFilterChange(e.target.value as MethodFilter)}
-          style={filterSelectStyle}
-        >
-          <option value="all">All</option>
-          <option value="cfop">CFOP</option>
-          <option value="roux">Roux</option>
-        </select>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          {onOpenTrends && (
+            <button
+              onClick={onOpenTrends}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#888',
+                fontSize: 11,
+                padding: '1px 6px',
+                borderRadius: 3,
+                cursor: 'pointer',
+              }}
+            >
+              Trends
+            </button>
+          )}
+          <select
+            value={methodFilter}
+            onChange={e => onFilterChange(e.target.value as MethodFilter)}
+            style={filterSelectStyle}
+          >
+            <option value="all">All</option>
+            <option value="cfop">CFOP</option>
+            <option value="roux">Roux</option>
+          </select>
+        </div>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
@@ -111,8 +133,7 @@ function StatsSection({ solves, methodFilter, onFilterChange, fontSize }: {
   )
 }
 
-export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading }: Props) {
-  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
+export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading, methodFilter, setMethodFilter, onOpenTrends }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -149,7 +170,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
           <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
         </div>
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} />
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
@@ -204,7 +225,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         color: '#ccc',
       }}>
         <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} fontSize={fontSize} />
+          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} fontSize={fontSize} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>

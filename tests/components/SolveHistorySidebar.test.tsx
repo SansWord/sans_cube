@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
+import { useState } from 'react'
 import { SolveHistorySidebar } from '../../src/components/SolveHistorySidebar'
-import type { SolveRecord } from '../../src/types/solve'
+import type { SolveRecord, MethodFilter } from '../../src/types/solve'
 
 function makeSolve(id: number, method?: string, isExample?: boolean): SolveRecord {
   return {
@@ -18,6 +19,11 @@ function makeSolve(id: number, method?: string, isExample?: boolean): SolveRecor
   }
 }
 
+function SidebarWrapper(props: Omit<React.ComponentProps<typeof SolveHistorySidebar>, 'methodFilter' | 'setMethodFilter'>) {
+  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
+  return <SolveHistorySidebar {...props} methodFilter={methodFilter} setMethodFilter={setMethodFilter} />
+}
+
 const baseProps = {
   solves: [],
   onSelectSolve: vi.fn(),
@@ -27,30 +33,30 @@ const baseProps = {
 
 describe('SolveHistorySidebar', () => {
   it('does not render a close button in sidebar mode', () => {
-    render(<SolveHistorySidebar {...baseProps} />)
+    render(<SidebarWrapper {...baseProps} />)
     expect(screen.queryByRole('button', { name: '✕' })).not.toBeInTheDocument()
   })
 
   it('renders a close button when onClose is provided', () => {
-    render(<SolveHistorySidebar {...baseProps} onClose={vi.fn()} />)
+    render(<SidebarWrapper {...baseProps} onClose={vi.fn()} />)
     expect(screen.getByRole('button', { name: '✕' })).toBeInTheDocument()
   })
 
   it('calls onClose when close button is clicked', async () => {
     const onClose = vi.fn()
-    render(<SolveHistorySidebar {...baseProps} onClose={onClose} />)
+    render(<SidebarWrapper {...baseProps} onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: '✕' }))
     expect(onClose).toHaveBeenCalledOnce()
   })
 
   it('renders a method filter combobox defaulting to All', () => {
-    render(<SolveHistorySidebar {...baseProps} />)
+    render(<SidebarWrapper {...baseProps} />)
     const select = screen.getByRole('combobox')
     expect(select).toHaveValue('all')
   })
 
   it('filter combobox has All, CFOP, and Roux options', () => {
-    render(<SolveHistorySidebar {...baseProps} />)
+    render(<SidebarWrapper {...baseProps} />)
     const select = screen.getByRole('combobox')
     const options = within(select).getAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual(['All', 'CFOP', 'Roux'])
@@ -60,10 +66,9 @@ describe('SolveHistorySidebar', () => {
     const solves = [
       makeSolve(1, 'cfop'),
       makeSolve(2, 'roux'),
-      makeSolve(3, undefined), // legacy — treated as cfop
+      makeSolve(3, undefined),
     ]
-    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
-    // All three rows appear: seq numbers 1, 2, 3
+    render(<SidebarWrapper {...baseProps} solves={solves} />)
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
@@ -73,9 +78,9 @@ describe('SolveHistorySidebar', () => {
     const solves = [
       makeSolve(1, 'cfop'),
       makeSolve(2, 'roux'),
-      makeSolve(3, undefined), // legacy cfop
+      makeSolve(3, undefined),
     ]
-    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    render(<SidebarWrapper {...baseProps} solves={solves} />)
     await userEvent.selectOptions(screen.getByRole('combobox'), 'cfop')
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.queryByText('2')).not.toBeInTheDocument()
@@ -86,9 +91,9 @@ describe('SolveHistorySidebar', () => {
     const solves = [
       makeSolve(1, 'cfop'),
       makeSolve(2, 'roux'),
-      makeSolve(3, undefined), // legacy cfop
+      makeSolve(3, undefined),
     ]
-    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    render(<SidebarWrapper {...baseProps} solves={solves} />)
     await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
     expect(screen.queryByText('1')).not.toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
@@ -97,22 +102,19 @@ describe('SolveHistorySidebar', () => {
 
   it('always shows example solves regardless of filter', async () => {
     const solves = [
-      makeSolve(-1, 'cfop', true),  // example
+      makeSolve(-1, 'cfop', true),
       makeSolve(1, 'cfop'),
       makeSolve(2, 'roux'),
     ]
-    render(<SolveHistorySidebar {...baseProps} solves={solves} />)
+    render(<SidebarWrapper {...baseProps} solves={solves} />)
     await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
-    // example row shows ★ not a seq number
     expect(screen.getByText('★')).toBeInTheDocument()
-    // cfop real solve is gone
     expect(screen.queryByText('1')).not.toBeInTheDocument()
-    // roux real solve is shown
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   it('also renders the filter in overlay (mobile) mode', () => {
-    render(<SolveHistorySidebar {...baseProps} onClose={vi.fn()} />)
+    render(<SidebarWrapper {...baseProps} onClose={vi.fn()} />)
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 })
