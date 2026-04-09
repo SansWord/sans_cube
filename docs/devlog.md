@@ -4,8 +4,36 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## Stats Trends — Design Session (2026-04-09)
+## v1.9 — Stats Trends (2026-04-09)
 **Review:** not yet
+
+**What was built:**
+- `src/utils/trends.ts` — pure `buildTotalData` / `buildPhaseData` functions with trimmed rolling Ao5/Ao12; fully unit-tested (19 tests, TDD)
+- `src/components/TrendsModal.tsx` — full-screen fixed overlay with Total tab (scatter dots + Ao5/Ao12 lines) and Phases tab (one line per phase/group); Exec/Recog time type toggle; Group/Split toggle; window size selector (25/50/100/All); URL hash sync; dot-click → SolveDetailModal on top
+- `src/components/TimerScreen.tsx` — lifted `methodFilter` state; added `showTrends`; fixed URL cloud timing bug (deferred hash resolution until cloud data loads)
+- `src/components/SolveHistorySidebar.tsx` — added "Trends" button to stats header; `methodFilter` now a controlled prop from `TimerScreen`
+
+**Key technical learnings:**
+
+- **Recharts `activeDot.onClick` does not receive the data payload.** When you pass `activeDot={{ r: 5, onClick: fn }}`, Recharts' `adaptEventHandlers` binds the activeDot config object as the first argument — not the chart data point. The `as never` cast hides the type error. Fix: use a render function `activeDot={(props) => <circle onClick={() => use(props.payload)} />}` that closes over `props.payload`.
+
+- **`<Scatter>` inside `<ComposedChart>` does not reliably use the chart's top-level `data` prop.** Using `dataKey="value"` alone produces invisible dots. Either pass `data={...}` directly to `<Scatter>`, or use a `<Line stroke="none" dot={...}>` — the Line approach is simpler and definitely works.
+
+- **zIndex layering for stacked overlays needs a clear hierarchy.** When SolveDetailModal (zIndex 100) needed to appear on top of TrendsModal (zIndex 200), it rendered behind. Fixed by bumping SolveDetailModal to zIndex 300. Rule: establish the overlay z-stack explicitly when adding a new overlay.
+
+- **State lifting + controlled props breaks tests that use interaction events.** Lifting `methodFilter` from local state to a prop means `userEvent.selectOptions` no longer causes re-renders (the mock `setMethodFilter` doesn't update state). Fix: a `SidebarWrapper` test helper that holds real state — keeps tests testing real behavior without coupling to the parent.
+
+- **`phaseKeys` should union all data points, not just the first.** If the first solve in the window has incomplete phases, later phase keys are missing from the chart. Use `Array.from(phaseData.reduce((set, pt) => { Object.keys(pt).forEach(...) }, new Set()))`.
+
+**Process learnings:**
+- The final code review by the most capable model (opus) caught the `activeDot` and zIndex bugs that all prior reviews missed — both are easy to overlook because they're runtime-only failures with no TypeScript error
+- Subagent-driven development with 7 tasks + two-stage review per task produced clean, well-reviewed code at each step; the review loops were worth it
+- The plan self-review step (spec coverage + placeholder scan + type consistency check) caught the test wrapper gap before execution, saving a rework cycle
+
+---
+
+## Stats Trends — Design Session (2026-04-09)
+**Review:** complete
 
 **What was designed:**
 - Full spec for the stats trends feature — `docs/superpowers/specs/2026-04-09-stats-trends-design.md`
