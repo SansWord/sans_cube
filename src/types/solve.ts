@@ -45,3 +45,5 @@ export interface SolveMethod {
   label: string
   phases: Phase[]
 }
+
+export type MethodFilter = 'all' | 'cfop' | 'roux'

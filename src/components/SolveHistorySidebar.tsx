@@ -1,10 +1,8 @@
 import { useState, useCallback, useRef } from 'react'
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, MethodFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
 import { computeStats } from '../hooks/useSolveHistory'
-
-type MethodFilter = 'all' | 'cfop' | 'roux'
 
 interface StatEntry {
   current: number | null
