@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { SolveRecord, MethodFilter } from '../types/solve'
-import { getMethod } from '../methods/index'
+import { getMethod, CFOP, ROUX } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
@@ -117,12 +117,7 @@ function parseHashParams(): {
   return { tab, windowSize, grouped, totalToggle, phaseToggle }
 }
 
-function buildColorMap(
-  methodFilter: MethodFilter,
-  grouped: boolean,
-): Record<string, string> {
-  const method = getMethod(methodFilter === 'all' ? 'cfop' : methodFilter)
-
+function buildColorMapForMethod(method: ReturnType<typeof getMethod>, grouped: boolean): Record<string, string> {
   if (grouped) {
     const map: Record<string, string> = {}
     for (const phase of method.phases) {
@@ -150,12 +145,26 @@ function buildColorMap(
       const [h, s, l] = hexToHsl(phase.color)
       const idx = group.indexOf(phase.label)
       const n = group.length
-      const range = 24  // total lightness spread in %
+      const range = 24
       const lNew = l - range / 2 + (range / (n - 1)) * idx
       map[phase.label] = hslToHex(h, s, Math.max(20, Math.min(80, lNew)))
     }
   }
   return map
+}
+
+function buildColorMap(
+  methodFilter: MethodFilter,
+  grouped: boolean,
+): Record<string, string> {
+  if (methodFilter === 'all') {
+    // Merge colors from all methods so Roux phase names don't fall back to gray
+    return {
+      ...buildColorMapForMethod(ROUX, grouped),
+      ...buildColorMapForMethod(CFOP, grouped),
+    }
+  }
+  return buildColorMapForMethod(getMethod(methodFilter), grouped)
 }
 
 function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
@@ -386,7 +395,7 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
     setZoomStack([])
     setRefAreaLeft(null)
     setRefAreaRight(null)
-  }, [tab, windowSize])
+  }, [windowSize])
 
   // Sync URL hash
   useEffect(() => {
