@@ -19,8 +19,9 @@ This feature also fixes an existing bug where URL-encoded solve/trends state fai
 | Entry point | "Trends" button in the stats section header of the sidebar |
 | Chart library | Recharts (`npm install recharts`) |
 | Tabs | Total \| Phases |
-| Total tab | Scatter dots (individual solves) + Ao5 line + Ao12 line |
-| Phases tab | One line per phase group (Exec / Recog toggle) |
+| Total tab | Scatter dots + Ao5 line + Ao12 line. Data source switches with time type toggle. |
+| Phases tab | One line per phase group. Data source switches with time type toggle. |
+| Time type toggle | Both tabs. Toggle: Exec \| Recog. Default: Exec. Total tab: `sum(phase.executionMs)` or `sum(phase.recognitionMs)` per solve. Phases tab: `phase.executionMs` or `phase.recognitionMs` per phase. Note: raw wall-clock `timeMs` is not shown when toggle is active — `sum(execMs) + sum(recogMs) ≈ timeMs`. |
 | Group toggle | Default: grouped. Toggle: Grouped \| Split |
 | Groups | CFOP: F2L (4→1), OLL (2→1), PLL (2→1). Roux: LSE (3→1). Derived from `group` field on `Phase`, not hardcoded. |
 | Window toggle | 25 / 50 / 100 / All |
@@ -79,9 +80,9 @@ Pure functions, no React, fully testable.
 // Total time data — one entry per solve in the window
 export interface TotalDataPoint {
   seq: number           // solve seq (x-axis label)
-  timeMs: number        // individual solve time
-  ao5: number | null    // rolling Ao5 ending at this solve
-  ao12: number | null   // rolling Ao12 ending at this solve
+  value: number         // sum(execMs) or sum(recogMs) depending on timeType
+  ao5: number | null    // rolling Ao5 of value
+  ao12: number | null   // rolling Ao12 of value
   solveId: number       // for click → SolveDetailModal lookup
 }
 
@@ -92,7 +93,11 @@ export interface PhaseDataPoint {
   solveId: number
 }
 
-export function buildTotalData(solves: SolveRecord[], window: number | 'all'): TotalDataPoint[]
+export function buildTotalData(
+  solves: SolveRecord[],
+  window: number | 'all',
+  timeType: 'exec' | 'recog'
+): TotalDataPoint[]
 export function buildPhaseData(
   solves: SolveRecord[],
   window: number | 'all',
@@ -116,7 +121,7 @@ export function buildPhaseData(
 │ Trends    [CFOP ▼]               [✕]    │  ← header
 ├─────────────────────────────────────────┤
 │ [Total] [Phases]    [25][50][100][All]  │  ← tab + window row
-│                   [Exec][Recog] [Grp][Split] │  ← (phases tab only)
+│              [Exec][Recog] [Grp][Split] │  ← time type (both tabs) + group toggle (phases tab only)
 ├─────────────────────────────────────────┤
 │                                         │
 │           Recharts chart area           │
@@ -126,12 +131,12 @@ export function buildPhaseData(
 
 ### Total tab — `ComposedChart`
 
-- `<Scatter>` — individual solve dots, `dataKey="timeMs"`, colored `#555`
+- `<Scatter>` — individual solve dots, `dataKey="value"`, colored `#555`. Value = `sum(execMs)` or `sum(recogMs)` per active time type.
 - `<Line>` — Ao5, `dataKey="ao5"`, `stroke="#e94560"`, hidden dots, only rendered when window ≥ 5
 - `<Line>` — Ao12, `dataKey="ao12"`, `stroke="#3498db"`, dashed, only rendered when window ≥ 12
-- Y-axis: seconds (format `timeMs / 1000` with 2dp)
+- Y-axis: seconds (format `value / 1000` with 2dp)
 - X-axis: solve seq number
-- `<Tooltip>` custom: shows solve #, time, date. "▶ tap to replay" hint.
+- `<Tooltip>` custom: shows solve #, value in seconds, time type label (Exec / Recog), date. "▶ tap to replay" hint.
 - `<Scatter onClick>` / `activeDot onClick`: calls `onSelectSolve(solve)`
 
 ### Phases tab — `LineChart`
@@ -229,8 +234,10 @@ When cloud is off, `isCloudLoading` is always `false` so this resolves immediate
 - `src/utils/trends.test.ts` — unit tests for `buildTotalData` and `buildPhaseData`:
   - window slicing (exact N, fewer than N, 'all')
   - Ao5/Ao12 returns null when fewer than 5/12 solves
-  - grouped vs split phase keys
-  - exec vs recog time selection
+  - `buildTotalData` exec: value = sum(execMs); recog: value = sum(recogMs)
+  - `buildTotalData` Ao5/Ao12 computed from `value`, not raw `timeMs`
+  - grouped vs split phase keys in `buildPhaseData`
+  - exec vs recog time selection in `buildPhaseData`
   - excludes example solves from data and from Ao calculation
 - `TrendsModal.tsx` — no unit tests (pure rendering); covered by manual test checklist
 
