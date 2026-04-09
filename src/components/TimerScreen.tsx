@@ -3,7 +3,7 @@ import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
 import { STORAGE_KEYS } from '../utils/storageKeys'
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, MethodFilter } from '../types/solve'
 import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
 import type { TrackingState } from '../hooks/useScrambleTracker'
@@ -69,32 +69,44 @@ export function TimerScreen({
 
   const { scramble, steps, regenerate, load: loadScramble } = useScramble()
   const [armed, setArmed] = useState(false)
-  const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(() => {
-    const m = window.location.hash.match(/^#solve-(-?\d+)$/)
-    if (m) {
-      const id = parseInt(m[1], 10)
-      return solves.find((s) => s.id === id) ?? null
-    }
-    return null
-  })
+  const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
   const [regeneratePending, setRegeneratePending] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)
     return saved ? parseInt(saved, 10) : 160
   })
   const [showHistory, setShowHistory] = useState(false)
+  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
+  const [showTrends, setShowTrends] = useState(false)
+  const urlResolvedRef = useRef(false)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth))
   }, [sidebarWidth])
 
+  // Resolve URL hash once cloud data is ready (fixes cloud timing bug)
   useEffect(() => {
+    if (cloudLoading || urlResolvedRef.current) return
+    urlResolvedRef.current = true
+    const hash = window.location.hash
+    if (hash.startsWith('#trends')) {
+      setShowTrends(true)
+    } else if (hash.startsWith('#solve-')) {
+      const id = parseInt(hash.replace('#solve-', ''), 10)
+      const solve = solves.find(s => s.id === id)
+      if (solve) setSelectedSolve(solve)
+    }
+  }, [cloudLoading, solves])
+
+  // Write URL hash for selectedSolve (only when TrendsModal is not open)
+  useEffect(() => {
+    if (showTrends) return  // TrendsModal manages the hash while open
     if (selectedSolve) {
       window.location.hash = `solve-${selectedSolve.id}`
     } else {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
-  }, [selectedSolve])
+  }, [selectedSolve, showTrends])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
@@ -240,6 +252,9 @@ export function TimerScreen({
         width={sidebarWidth}
         onWidthChange={setSidebarWidth}
         cloudLoading={cloudLoading}
+        methodFilter={methodFilter}
+        setMethodFilter={setMethodFilter}
+        onOpenTrends={() => setShowTrends(true)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -309,6 +324,9 @@ export function TimerScreen({
           onWidthChange={setSidebarWidth}
           onClose={() => setShowHistory(false)}
           cloudLoading={cloudLoading}
+          methodFilter={methodFilter}
+          setMethodFilter={setMethodFilter}
+          onOpenTrends={() => { setShowTrends(true); setShowHistory(false) }}
         />
       )}
 
