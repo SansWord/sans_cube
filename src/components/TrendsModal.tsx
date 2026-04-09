@@ -667,17 +667,17 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                   <Line dataKey="execAo12" name="Ao12 (Exec)" stroke={TYPE_COLORS.exec.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
                 )}
 
-                {/* Recog lines */}
+                {/* Recog lines — tune: RECOG_OPACITY (0–1), RECOG_WIDTH (px) */}
                 {totalToggle.recog && (
                   <Line dataKey="recog" name="Recog" stroke="none"
-                    dot={{ r: 3, fill: TYPE_COLORS.recog.line }}
-                    activeDot={{ r: 6, fill: TYPE_COLORS.recog.line, cursor: 'pointer' }} />
+                    dot={{ r: 3, fill: TYPE_COLORS.recog.line, fillOpacity: 0.45 }}
+                    activeDot={{ r: 6, fill: TYPE_COLORS.recog.line, fillOpacity: 0.45, cursor: 'pointer' }} />
                 )}
                 {totalToggle.recog && visibleTotalData.length >= 5 && (
-                  <Line dataKey="recogAo5" name="Ao5 (Recog)" stroke={TYPE_COLORS.recog.ao5} dot={false} strokeWidth={2} connectNulls />
+                  <Line dataKey="recogAo5" name="Ao5 (Recog)" stroke={TYPE_COLORS.recog.ao5} strokeOpacity={0.45} dot={false} strokeWidth={2} connectNulls />
                 )}
                 {totalToggle.recog && visibleTotalData.length >= 12 && (
-                  <Line dataKey="recogAo12" name="Ao12 (Recog)" stroke={TYPE_COLORS.recog.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
+                  <Line dataKey="recogAo12" name="Ao12 (Recog)" stroke={TYPE_COLORS.recog.ao12} strokeOpacity={0.45} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
                 )}
 
                 {/* Total lines */}
@@ -755,12 +755,13 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                       key={key}
                       dataKey={key}
                       stroke={color}
+                      strokeOpacity={timeType === 'recog' ? 0.45 : undefined}
                       dot={false}
                       strokeWidth={2}
                       strokeDasharray={strokeDasharray}
                       connectNulls
                       hide={hiddenPhases.has(key)}
-                      activeDot={{ r: 6, fill: color, cursor: 'pointer' }}
+                      activeDot={{ r: 6, fill: color, fillOpacity: timeType === 'recog' ? 0.45 : undefined, cursor: 'pointer' }}
                     />
                   )
                 })}
