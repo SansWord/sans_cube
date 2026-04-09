@@ -19,6 +19,12 @@ A record of what was built and what was learned, especially around co-working wi
 **Key technical learnings:**
 - **Recharts `onMouseMove` does not populate `activePayload` at chart level.** Only the `Tooltip` component receives the correct payload via internal context. Tracking hover state must happen inside the custom tooltip render, not in `onMouseMove`.
 - **Multiple `window.addEventListener` handlers fire simultaneously** — `stopPropagation` has no effect between them. Guard with a prop (`detailOpen`) to let the lower modal yield to the upper one.
+- **Windowed index ≠ solve sequence number.** `buildTotalData` / `buildPhaseData` assigns `seq: i + 1` as the x-axis position within the current window — not the real solve number. Always use `solveMap.get(solveId).seq` for display.
+
+**Process learnings:**
+- **Add console.log before trying another fix.** The click-to-detail bug went through three fix attempts before we added logging. The log immediately revealed `hasPayload: false` in `onClick` and `activePayload: undefined` in `onMouseMove` — two distinct root causes that no amount of guessing would have found. Systematic debugging (Phase 1 evidence gathering) would have saved two cycles.
+- **When a Recharts event handler "should" have data but doesn't, suspect internal context.** Recharts distributes chart state through React context, not through every callback. `Tooltip` is a privileged consumer; chart-level handlers are not. Check the Recharts source or add logging before assuming an event should carry payload.
+- **Refs across event sequences don't need state.** `didZoomRef` and `hoveredSolveIdRef` both needed to survive from one event (mousedown/mousemove) to a later one (click) without triggering re-renders in between. Refs are the right tool — state would reset the value by re-rendering before the click handler reads it.
 
 ---
 
