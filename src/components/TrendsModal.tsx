@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import {
   ComposedChart,
   LineChart,
-  Scatter,
   Line,
   XAxis,
   YAxis,
@@ -109,7 +108,7 @@ function PhaseTooltip({ active, payload }: { active?: boolean; payload?: Array<{
 }
 
 export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSolve, onClose }: Props) {
-  const isMobile = window.innerWidth < 640
+  const [isMobile] = useState(() => window.innerWidth < 640)
   const parsed = parseHashParams()
   const [tab, setTab] = useState<Tab>(parsed.tab)
   const [windowSize, setWindowSize] = useState<WindowSize>(isMobile ? 25 : parsed.windowSize)
@@ -124,9 +123,12 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   const phaseData = buildPhaseData(filtered, windowSize, timeType, grouped)
   const colorMap = buildColorMap(methodFilter, grouped)
 
-  const phaseKeys = phaseData.length > 0
-    ? Object.keys(phaseData[0]).filter(k => k !== 'seq' && k !== 'solveId')
-    : []
+  const phaseKeys = Array.from(
+    phaseData.reduce((set, pt) => {
+      Object.keys(pt).forEach(k => { if (k !== 'seq' && k !== 'solveId') set.add(k) })
+      return set
+    }, new Set<string>())
+  )
 
   useEffect(() => {
     const params = new URLSearchParams({
@@ -253,11 +255,11 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                 tickFormatter={v => (v / 1000).toFixed(2)}
               />
               <Tooltip content={<TotalTooltip />} />
-              <Scatter
+              <Line
                 dataKey="value"
-                fill="#555"
-                onClick={handleDotClick as never}
-                style={{ cursor: 'pointer' }}
+                stroke="none"
+                dot={{ r: 3, fill: '#555' }}
+                activeDot={{ r: 5, fill: '#777', onClick: handleDotClick as never }}
               />
               {totalData.length >= 5 && (
                 <Line
