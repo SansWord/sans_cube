@@ -1,6 +1,6 @@
 # sans_cube
 
-A Rubik's cube solve analyzer for speedcubers. Connects to GAN smart cubes via Web Bluetooth, records solves in real time, and breaks them down phase by phase (CFOP).
+A Rubik's cube solve analyzer for speedcubers. Connects to GAN smart cubes via Web Bluetooth, records solves in real time, and breaks them down phase by phase (CFOP and Roux).
 
 ## Who is working on this
 
@@ -11,6 +11,7 @@ SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conv
 - React 19 + TypeScript + Vite
 - Three.js for 3D cube rendering
 - Web Bluetooth API via `gan-web-bluetooth` npm library (handles AES decryption for GAN Gen4 protocol)
+- Firebase Authentication + Firestore (opt-in cloud sync)
 - Vitest + Testing Library
 
 **Important:** Web Bluetooth only works in Chromium-based browsers (Chrome/Edge). Keep this in mind for any browser-compatibility decisions.
@@ -35,6 +36,7 @@ See `docs/ui-architecture.md` for the full component tree, hook ownership, and d
 
 When creating any new `docs/*.md` file, always add it to this list with a one-line description.
 
+- `devlog.md` — session-by-session record of what was built and learned; update at end of each session
 - `debug-mode.md` — what's in debug mode: diagnostic views, Firebase panel, maintenance buttons; update when buttons change
 - `firebase-cloud-sync.md` — cloud sync architecture, security, migration behavior, ID design
 - `animation-system.md` — Three.js animation details
@@ -65,6 +67,7 @@ npm run lint      # ESLint
 - **v1.7** complete — URL deep link fixes for cloud sync (#solve-N, #trends), hashchange listener, loading overlay, code dedup
 - **v1.6** complete — Hardware clock timing fix (BLE delay), retroactive recalibration buttons, copy solve list as TSV, sidebar scroll fix
 - **v1.51** — Stats Trends polish (click-to-detail, Esc chain, phases multi-toggle)
+- **v1.5** — Stats Trends modal (Total + Phases tabs, Ao5/Ao12, zoom, day lines, URL sync)
 - **v1.4** — method filter in solve history sidebar
 - **v1.3** — Firebase cloud sync (opt-in), GitHub Pages deploy workflow
 
@@ -74,7 +77,7 @@ See `future.md` for the full backlog (single source of truth).
 
 ## End of Session
 
-At the end of each session, remind SansWord to update `docs/devlog.md` with learnings from the session. If he forgets, prompt him: "Want me to add today's learnings to the devlog?"
+Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format).
 
 ## GitHub Upload Safety
 
