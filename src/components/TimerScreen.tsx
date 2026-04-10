@@ -246,7 +246,7 @@ export function TimerScreen({
   }, [driver, steps, onResetState, tracker, resetTimer])
 
   return (
-    <div style={{ display: 'flex', height: '100%', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <SolveHistorySidebar
         solves={solves}
         onSelectSolve={setSelectedSolve}

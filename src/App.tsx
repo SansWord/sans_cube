@@ -80,7 +80,10 @@ export default function App() {
   const isConnected = status === 'connected'
 
   return (
-    <div style={{ maxWidth: mode === 'timer' ? '100%' : '600px', margin: '0 auto', minHeight: '100vh' }}>
+    <div style={mode === 'timer'
+      ? { height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }
+      : { maxWidth: '600px', margin: '0 auto', minHeight: '100vh' }
+    }>
       <ConnectionBar
         status={status}
         onConnect={connect}

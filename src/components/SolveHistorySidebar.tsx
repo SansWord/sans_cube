@@ -142,10 +142,11 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, clou
   )
 }
 
-function CopyButton({ solves }: { solves: SolveRecord[] }) {
+function CopyButton({ solves, disabled }: { solves: SolveRecord[]; disabled?: boolean }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
+      disabled={disabled || copied}
       onClick={() => {
         navigator.clipboard.writeText(buildCopySolveList(solves)).then(() => {
           setCopied(true)
@@ -155,9 +156,9 @@ function CopyButton({ solves }: { solves: SolveRecord[] }) {
       style={{
         background: 'transparent',
         border: '1px solid #444',
-        color: copied ? '#2ecc71' : '#aaa',
+        color: disabled ? '#444' : copied ? '#2ecc71' : '#aaa',
         fontSize: 11,
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
         padding: '1px 6px',
         borderRadius: 3,
         lineHeight: 1.4,
@@ -211,7 +212,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 2px', flexShrink: 0 }}>
           <span style={{ color: '#555', fontSize: 11 }}>Last Solves</span>
-          <CopyButton solves={reversedSolves} />
+          <CopyButton solves={reversedSolves} disabled={cloudLoading} />
         </div>
         {cloudLoading ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
@@ -254,7 +255,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
   const fontSize = calcFontSize(width)
 
   return (
-    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative', height: '100vh' }}>
+    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative', height: '100%' }}>
       <div style={{
         width,
         height: '100%',
@@ -270,7 +271,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 2px', flexShrink: 0 }}>
           <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
-          <CopyButton solves={reversedSolves} />
+          <CopyButton solves={reversedSolves} disabled={cloudLoading} />
         </div>
         {cloudLoading ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
