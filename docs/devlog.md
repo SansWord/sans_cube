@@ -13,12 +13,18 @@ A record of what was built and what was learned, especially around co-working wi
 - Fixes `timeMs`, `executionMs`, and `recognitionMs` — all phase timing is now hardware-accurate
 - Specifically fixes the ~1s inflation on Roux solves where the final M/M' arrives via the retro BLE path in `SliceMoveDetector`
 - Two new tests in `tests/hooks/useTimer.test.ts` verifying both the normal path and the `replacePreviousMove` path
+- `recalibrateSolveTimes()` utility to retroactively fix stored solve records from `moves[].cubeTimestamp`
+- Debug mode buttons for recalibrating both localStorage and Firestore solves
+- Fixed `exampleSolves.ts` timeMs for id=-2 (−217ms) and id=-3 (−340ms)
+- `docs/debug-mode.md` added to document all debug mode tools
 
 **Key technical learnings:**
 - **BLE delivery delay ≠ move timestamp.** The GAN cube records `cubeTimestamp` when the physical move happens. BLE can deliver that event 1+ second later. `Date.now()` at event arrival was inflating solve times. The fix is to trust the hardware timestamp, not the delivery time.
 - **Per-solve calibration is cleaner than querying hardware clock at connect time.** Calibrating `hwOffset` on the first move is simpler, self-contained, and resets drift each solve. No need to send a hardware time request at connection.
 - **The retro M-move path needs the same fix.** `SliceMoveDetector` emits `replacePreviousMove` when the second half of a slice arrives late. `onReplacePreviousMove` in `useTimer` also had `Date.now()` — same fix applies there.
 - **`ButtonDriver`/`MouseDriver` are unaffected.** They set `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — behavior unchanged for non-hardware drivers.
+- **Retroactive fix is possible without re-simulation.** Stored `moves[].cubeTimestamp` spans give the true `timeMs` directly. Phase timing could also be recalculated using `phase.turns` to attribute move indices, but `timeMs` was the priority.
+- **One-time migration as a debug button beats a localStorage flag.** No startup overhead, no extra key, user controls when it runs. Good pattern for infrequent data migrations that don't need to be automatic.
 
 ---
 
