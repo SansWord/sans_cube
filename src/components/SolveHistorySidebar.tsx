@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { SolveRecord, MethodFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
 import { computeStats } from '../hooks/useSolveHistory'
+import { buildCopySolveList } from '../utils/copySolveList'
 
 interface StatEntry {
   current: number | null
@@ -141,6 +142,32 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, clou
   )
 }
 
+function CopyButton({ solves, fontSize }: { solves: SolveRecord[]; fontSize?: number }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(buildCopySolveList(solves)).then(() => {
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1500)
+        })
+      }}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        color: copied ? '#2ecc71' : '#444',
+        fontSize: fontSize ?? 11,
+        cursor: 'pointer',
+        padding: '0 2px',
+        lineHeight: 1,
+      }}
+      title="Copy solve list"
+    >
+      {copied ? '✓' : '⎘'}
+    </button>
+  )
+}
+
 export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading, methodFilter, setMethodFilter, onOpenTrends }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
@@ -181,7 +208,10 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
           <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-          <div style={{ color: '#555', fontSize: 11, padding: '0 12px 4px' }}>Last Solves</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px 4px' }}>
+            <span style={{ color: '#555', fontSize: 11 }}>Last Solves</span>
+            <CopyButton solves={reversedSolves} />
+          </div>
           {cloudLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
@@ -236,7 +266,10 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
           <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} fontSize={fontSize} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-          <div style={{ color: '#555', fontSize: fontSize - 2, padding: '0 8px 4px' }}>Last Solves</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 4px' }}>
+            <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
+            <CopyButton solves={reversedSolves} fontSize={fontSize - 2} />
+          </div>
           {cloudLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
