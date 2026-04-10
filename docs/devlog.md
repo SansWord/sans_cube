@@ -4,6 +4,26 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.6 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09)
+**Review:** not yet
+
+**What was built:**
+- **Hardware clock timing fix** (`useTimer`): all solve and phase timing now uses `cubeTimestamp + hwOffset` instead of `Date.now()`. Eliminates ~1s inflation on Roux solves where the final M/M' arrives late via the `SliceMoveDetector` retro BLE path. Both normal and `replacePreviousMove` paths fixed.
+- **Per-solve hwOffset calibration**: `hwOffset = Date.now() - move.cubeTimestamp` computed on the first move of each solve — self-contained, resets drift each solve, no hardware clock query needed at connect time.
+- **Retroactive recalibration**: `recalibrateSolveTimes()` utility recomputes `timeMs` from stored `moves[].cubeTimestamp` spans. Available as debug mode buttons for both localStorage and Firestore solves.
+- **Example solve timeMs corrected**: id=-2 (−217ms), id=-3 (−340ms).
+- **Copy solve list button**: "copy" button next to "Last Solves" copies #, Time, TPS, Method as TSV — paste-ready for spreadsheets or notes. Disabled while cloud solves are loading.
+- **Sidebar scroll fix**: page no longer scrolls vertically; solve list scrolls internally with a sticky `# Time TPS Method` header. Fixed by proper flex height chain: `height: 100vh` + `overflow: hidden` at App root → `flex: 1 / minHeight: 0` at TimerScreen → `height: 100%` at sidebar wrapper → `flex: 1 / overflow-y: auto / minHeight: 0` at scroll container.
+- `docs/debug-mode.md` added to document all debug mode tools and buttons.
+
+**Key technical learnings:**
+- **BLE delivery time ≠ move timestamp.** `cubeTimestamp` records when the physical move happened on the hardware clock. BLE can deliver the event 1+ second later. `Date.now()` at arrival inflates solve times — always prefer `cubeTimestamp + hwOffset`.
+- **`minHeight: 0` is required on flex scroll containers.** Flex items default to `min-height: auto`, which prevents overflow from engaging. Without it, `overflow-y: auto` does nothing — the child just grows past the viewport.
+- **`height: 100vh` on a sidebar that starts below the top of the page causes overflow.** The sidebar was below `ConnectionBar`, so `100vh` overflowed by ConnectionBar's height. The fix is `height: 100%` — fill the flex parent, not the full viewport.
+- **Sticky `<thead>` works inside `overflow-y: auto` in Chromium.** `position: sticky; top: 0` on `<thead>` within a scrolling `<div>` works correctly — no wrapper gymnastics needed.
+
+---
+
 ## v1.52 — Hardware Clock Timing Fix (2026-04-09)
 **Review:** not yet
 
