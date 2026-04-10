@@ -62,6 +62,7 @@ npm run lint      # ESLint
 
 ## Current State (as of 2026-04-09)
 
+- **v1.7** complete — URL deep link fixes for cloud sync (#solve-N, #trends), hashchange listener, loading overlay, code dedup
 - **v1.6** complete — Hardware clock timing fix (BLE delay), retroactive recalibration buttons, copy solve list as TSV, sidebar scroll fix
 - **v1.51** — Stats Trends polish (click-to-detail, Esc chain, phases multi-toggle)
 - **v1.4** — method filter in solve history sidebar

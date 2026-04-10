@@ -4,6 +4,25 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09)
+**Review:** not yet
+
+**What was built:**
+- **URL deep link fix (cloud sync)**: visiting `#solve-N` or `#trends?...` while cloud sync is loading now correctly opens the modal after solves load. Root cause: the hash-write effect (`selectedSolve` → URL) ran on initial mount and called `history.replaceState` to clear the hash — before the resolve effect could read it. Fix: gate the hash-write effect on `urlResolvedRef.current` so it does nothing until after the initial URL has been resolved.
+- **hashchange listener**: after initial load, user-typed URL changes (address bar, browser back/forward) now navigate the app. Typing `#solve-N` opens that solve; `#trends?...` opens TrendsModal; empty hash closes both. Uses `window.addEventListener('hashchange', ...)` re-registered whenever `solves` changes to keep a fresh reference.
+- **`window.location.hash =` → `history.replaceState`**: the hash-write effect was using `window.location.hash = ...` which fires a `hashchange` event — would have looped back into the new listener. Switched to `history.replaceState` (silent URL update).
+- **Cloud sync loading overlay**: when arriving at `#solve-N` or `#trends?...` with cloud sync enabled, a semi-transparent overlay blocks interaction and shows "Syncing solve from cloud…" / "Syncing trends from cloud…" until the data is ready. Implemented by capturing the initial hash in `initialHashRef` at mount and showing the overlay while `cloudLoading` is true.
+- **Code deduplication**: extracted `filterSolves` to `useSolveHistory.ts` (was duplicated in `SolveHistorySidebar.tsx` and `TrendsModal.tsx`); exported `StatEntry` and `SolveStats` interfaces from `useSolveHistory.ts` (were redefined in `SolveHistorySidebar.tsx`).
+- **Manual test checklist expanded**: added sections for Connection, Core Timer Flow, Solve History Sidebar, Solve Detail Modal, Cloud Sync, and Debug Mode — previously the checklist only covered Scramble Tracker and Trends.
+
+**Key technical learnings:**
+- **`useEffect` runs on initial mount unconditionally.** A hash-write effect with no guard will fire on first render — even before any async data loads. If that effect clears the URL when state is empty, it wipes the hash that a later effect was meant to read. Always gate side effects that touch the URL on a "resolved" flag.
+- **`window.location.hash =` fires `hashchange`; `history.replaceState` does not.** When adding a `hashchange` listener, any code that writes the hash via `window.location.hash =` will trigger its own listener. Use `history.replaceState` for programmatic URL updates to avoid the loop.
+- **Capturing initial hash in a ref at mount is the safest pattern.** `window.location.hash` read inside a `useEffect` may be stale if another effect already cleared it. A ref initialized with `useRef(window.location.hash)` captures the value synchronously before any effects run.
+- **A single `hashchange` listener replaces repeated "resolve on load" logic.** Rather than multiple effects each trying to read the URL at different lifecycle moments, one listener handles all post-load navigation uniformly.
+
+---
+
 ## v1.6 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09)
 **Review:** not yet
 

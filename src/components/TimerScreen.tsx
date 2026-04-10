@@ -80,6 +80,7 @@ export function TimerScreen({
   const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
   const [showTrends, setShowTrends] = useState(false)
   const urlResolvedRef = useRef(false)
+  const initialHashRef = useRef(window.location.hash)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth))
@@ -99,15 +100,37 @@ export function TimerScreen({
     }
   }, [cloudLoading, solves])
 
-  // Write URL hash for selectedSolve (only when TrendsModal is not open)
+  // Write URL hash for selectedSolve (only when TrendsModal is not open).
+  // Uses replaceState (not window.location.hash=) to avoid firing a hashchange event.
   useEffect(() => {
+    if (!urlResolvedRef.current) return  // don't clear hash before initial URL is resolved
     if (showTrends) return  // TrendsModal manages the hash while open
     if (selectedSolve) {
-      window.location.hash = `solve-${selectedSolve.id}`
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
     } else {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }, [selectedSolve, showTrends])
+
+  // Respond to user-initiated hash changes (e.g. typing a URL in the address bar)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash.startsWith('#trends')) {
+        setSelectedSolve(null)
+        setShowTrends(true)
+      } else if (hash.startsWith('#solve-')) {
+        const id = parseInt(hash.replace('#solve-', ''), 10)
+        const solve = solves.find(s => s.id === id)
+        if (solve) { setShowTrends(false); setSelectedSolve(solve) }
+      } else {
+        setSelectedSolve(null)
+        setShowTrends(false)
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [solves])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
@@ -353,6 +376,35 @@ export function TimerScreen({
           onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
         />
       )}
+
+      {cloudLoading && (() => {
+        const h = initialHashRef.current
+        const label = h.startsWith('#trends') ? 'Syncing trends from cloud…'
+          : h.startsWith('#solve-') ? 'Syncing solve from cloud…'
+          : null
+        if (!label) return null
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'all',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#111', border: '1px solid #333', borderRadius: 8,
+              padding: '10px 18px', color: '#888', fontSize: 13,
+            }}>
+              <div style={{
+                width: 14, height: 14, borderRadius: '50%',
+                border: '2px solid #333', borderTopColor: '#888',
+                animation: 'spin 0.8s linear infinite', flexShrink: 0,
+              }} />
+              {label}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

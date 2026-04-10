@@ -4,7 +4,7 @@
 - SolveRecord update - in SolveDetailModal
 
 ## Known bugs
-- cloud sync mode with url into solves or stats-trend
+- ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
 
 ## Solving Methods
 - ZZ method support
