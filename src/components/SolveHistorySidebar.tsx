@@ -2,20 +2,8 @@ import { useCallback, useRef, useState } from 'react'
 import type { SolveRecord, MethodFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
-import { computeStats } from '../hooks/useSolveHistory'
+import { computeStats, filterSolves, type StatEntry, type SolveStats } from '../hooks/useSolveHistory'
 import { buildCopySolveList } from '../utils/copySolveList'
-
-interface StatEntry {
-  current: number | null
-  best: number | null
-}
-
-interface SolveStats {
-  single: StatEntry
-  ao5: StatEntry
-  ao12: StatEntry
-  ao100: StatEntry
-}
 
 interface Props {
   solves: SolveRecord[]
@@ -42,11 +30,6 @@ function fmtTps(solve: SolveRecord): string {
   const secs = solve.timeMs / 1000
   if (secs === 0) return '—'
   return (solve.moves.length / secs).toFixed(2)
-}
-
-function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
-  if (methodFilter === 'all') return solves
-  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
 }
 
 function filterStatsPool(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {

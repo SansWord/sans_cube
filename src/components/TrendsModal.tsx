@@ -17,6 +17,7 @@ import { getMethod, CFOP, ROUX } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
+import { filterSolves } from '../hooks/useSolveHistory'
 
 type Tab = 'total' | 'phases'
 type WindowSize = 25 | 50 | 100 | 'all'
@@ -165,11 +166,6 @@ function buildColorMap(
     }
   }
   return buildColorMapForMethod(getMethod(methodFilter), grouped)
-}
-
-function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
-  if (methodFilter === 'all') return solves
-  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
 }
 
 function buildMergedPhaseData(

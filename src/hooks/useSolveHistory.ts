@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { User } from 'firebase/auth'
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, MethodFilter } from '../types/solve'
 import { EXAMPLE_SOLVES } from '../data/exampleSolves'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
@@ -72,16 +72,21 @@ function bestAo(solves: SolveRecord[], n: number): number | null {
   return best
 }
 
-interface StatEntry {
+export interface StatEntry {
   current: number | null
   best: number | null
 }
 
-interface SolveStats {
+export interface SolveStats {
   single: StatEntry
   ao5: StatEntry
   ao12: StatEntry
   ao100: StatEntry
+}
+
+export function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
+  if (methodFilter === 'all') return solves
+  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
 }
 
 // Exported for tests
