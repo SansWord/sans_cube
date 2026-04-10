@@ -173,9 +173,14 @@ export function TimerScreen({
 
   // Keep last solve's phase bar visible until next solve starts
   const lastPhaseRecordsRef = useRef(phaseRecords)
+  const lastPhaseMethodRef = useRef(method)
   if (status === 'solving') lastPhaseRecordsRef.current = []
-  if (phaseRecords.length > 0) lastPhaseRecordsRef.current = phaseRecords
+  if (phaseRecords.length > 0) {
+    lastPhaseRecordsRef.current = phaseRecords
+    lastPhaseMethodRef.current = method
+  }
   const displayedPhaseRecords = phaseRecords.length > 0 ? phaseRecords : lastPhaseRecordsRef.current
+  const displayedPhaseMethod = phaseRecords.length > 0 ? method : lastPhaseMethodRef.current
 
   // Save solve when timer reaches solved
   const prevStatusRef = useRef(status)
@@ -336,7 +341,7 @@ export function TimerScreen({
             disabled={status === 'solving'}
           />
 
-          <PhaseBar phaseRecords={displayedPhaseRecords} method={method} />
+          <PhaseBar phaseRecords={displayedPhaseRecords} method={displayedPhaseMethod} />
         </div>
       </div>
 
