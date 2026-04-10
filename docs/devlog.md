@@ -4,7 +4,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09)
+## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09 23:24)
 **Review:** not yet
 
 **What was built:**
@@ -23,7 +23,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.6 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09)
+## v1.6 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09 22:40)
 **Review:** not yet
 
 **What was built:**
@@ -43,7 +43,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.52 — Hardware Clock Timing Fix (2026-04-09)
+## v1.52 — Hardware Clock Timing Fix (2026-04-09 22:21)
 **Review:** not yet
 
 **What was built:**
@@ -67,7 +67,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.51 — Stats Trends Polish (2026-04-09)
+## v1.51 — Stats Trends Polish (2026-04-09 14:01)
 **Review:** not yet
 
 **What was built:**
@@ -91,7 +91,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.5 — Stats Trends Enhancements (2026-04-09)
+## v1.5 — Stats Trends Enhancements (2026-04-09 14:01)
 **Review:** not yet
 
 **What was built:**
@@ -124,7 +124,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.5 — Stats Trends Initial Implementation (2026-04-09)
+## v1.5 — Stats Trends Initial Implementation (2026-04-09 05:18)
 **Review:** not yet
 
 **What was built:**
@@ -149,7 +149,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.5 — Stats Trends Design Session (2026-04-09)
+## v1.5 — Stats Trends Design Session (2026-04-09 01:59)
 **Review:** complete
 
 **What was designed:**
@@ -173,7 +173,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## Meta — Using Claude More Effectively (2026-04-08)
+## Meta — Using Claude More Effectively (2026-04-08 13:30)
 **Review:** not yet
 
 ### /clear reloads CLAUDE.md
@@ -196,7 +196,7 @@ Adding a short instruction or doc reference to CLAUDE.md has negligible context 
 
 ---
 
-## Meta — Using CLAUDE.md as a Process Brain (2026-04-08)
+## Meta — Using CLAUDE.md as a Process Brain (2026-04-08 13:33)
 **Review:** not yet
 
 The biggest workflow shift this session wasn't a feature — it was realising that CLAUDE.md can act as a persistent process brain that removes the need to remember conventions, reminders, and decisions across sessions.
@@ -251,7 +251,7 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
-## v1.4 — Method Filter in Solve History Sidebar (2026-04-08)
+## v1.4 — Method Filter in Solve History Sidebar (2026-04-08 23:05)
 **Review:** not yet
 
 **What was built:**
@@ -276,7 +276,7 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
-## v1.3 post — Cloud Loading UX (2026-04-08)
+## v1.3 post — Cloud Loading UX (2026-04-08 15:10)
 **Review:** not yet
 
 **What was built:**
@@ -305,7 +305,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v1.3 — Firebase Cloud Sync (2026-04-08)
+## v1.3 — Firebase Cloud Sync (2026-04-08 13:29)
 **Review:** not yet
 
 **What was built:**
