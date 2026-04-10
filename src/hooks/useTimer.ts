@@ -46,6 +46,7 @@ export function useTimer(
   const prevFaceletsRef = useRef(SOLVED_FACELETS)
   const latestQuaternionRef = useRef<Quaternion | undefined>(undefined)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const hwOffsetRef = useRef(0)   // wall-clock offset from cube hardware clock: Date.now() - cubeTimestamp at first move
   const methodRef = useRef(method)
   methodRef.current = method
 
@@ -125,7 +126,6 @@ export function useTimer(
 
     const onMove = (move: Move) => {
       const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
-      const now = Date.now()
 
       if (statusRef.current === 'solved') return
 
@@ -135,11 +135,12 @@ export function useTimer(
 
       if (statusRef.current === 'idle') {
         if (!armedRef.current) return
-        // First move after armed → start timer
+        // First move after armed → calibrate hardware clock offset and start timer
+        hwOffsetRef.current = Date.now() - move.cubeTimestamp
         statusRef.current = 'solving'
-        startTimeRef.current = now
-        phaseStartTimeRef.current = now
-        phaseFirstMoveTimeRef.current = now  // Cross has no recognition
+        startTimeRef.current = move.cubeTimestamp + hwOffsetRef.current
+        phaseStartTimeRef.current = move.cubeTimestamp + hwOffsetRef.current
+        phaseFirstMoveTimeRef.current = move.cubeTimestamp + hwOffsetRef.current
         phaseIndexRef.current = 0
         phaseMoveCountRef.current = 0
         completedPhasesRef.current = []
@@ -149,6 +150,8 @@ export function useTimer(
       }
 
       if (statusRef.current !== 'solving') return
+
+      const now = move.cubeTimestamp + hwOffsetRef.current
 
       movesRef.current = [...movesRef.current, moveWithQ]
       phaseMoveCountRef.current++
@@ -224,7 +227,7 @@ export function useTimer(
 
       // Check if the replacement move solves the cube
       if (isSolvedFacelets(faceletsRef.current)) {
-        const now = Date.now()
+        const now = move.cubeTimestamp + hwOffsetRef.current
         while (phaseIndexRef.current < methodRef.current.phases.length) {
           completePhase(now)
         }

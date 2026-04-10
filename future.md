@@ -1,14 +1,16 @@
 # Future Work
 
 ## On-going, Next
-- Hardware Clock
+- SolveRecord update - in SolveDetailModal
 
 ## Solving Methods
 - ZZ method support
+- allow to update and changes methods of a SolveRecord and calculate its correct phase during update
 
-## Hardware Clocking
-- when connect hardware, getting its time and identifiy the difference with wall-clock time. after that, use timestamp from hardware with adjusted difference as clock time. trust time on event instead of Date.now() to calculate overall solving time.
-- Use cubeTimestamp instead of wall-clock for phase timing (recognitionMs, executionMs) — wall clock can jitter on BLE events; hardware clock may be more accurate. Needs empirical testing to verify drift characteristics.
+## ~~Hardware Clock~~ — done in v1.52
+- ~~when connect hardware, getting its time and identify the difference with wall-clock time. after that, use timestamp from hardware with adjusted difference as clock time. trust time on event instead of Date.now() to calculate overall solving time.~~
+- ~~Use cubeTimestamp instead of wall-clock for phase timing (recognitionMs, executionMs)~~
+- Implemented via per-solve calibration on first move: `hwOffset = Date.now() - move.cubeTimestamp`, then all timing uses `move.cubeTimestamp + hwOffset`
 
 ## Hardware
 - Support for non-GAN cubes (MoYu, QiYi, etc.)

@@ -42,9 +42,24 @@ A decreasing `sum(recognitionMs)` trend means look-ahead is improving even if `t
 
 ## cubeTimestamp vs wall clock
 
-The GAN cube reports a `cubeTimestamp` with each move event. This is used for replay (animating moves at the right pace) rather than timing phases, because:
+The GAN cube reports a `cubeTimestamp` with each move event. This is used for both replay and live timing:
 
-- Wall clock can jitter slightly between BLE events
-- `cubeTimestamp` reflects the actual physical intervals between moves as the cube recorded them
+- **Replay**: animates moves at the right pace using inter-move intervals
+- **Live timing**: `useTimer` uses `cubeTimestamp` for all timing to avoid BLE delivery jitter
 
-Phase timing (`recognitionMs`, `executionMs`) uses wall clock, not `cubeTimestamp`, because phases are bounded by solve state transitions (facelets), not individual moves.
+### Hardware clock calibration
+
+On the first move of each solve, `useTimer` calibrates an offset:
+
+```
+hwOffset = Date.now() - move.cubeTimestamp
+```
+
+All subsequent time values use `move.cubeTimestamp + hwOffset` instead of `Date.now()`. This means:
+
+- If BLE delays the last move by 1 second, `timeMs` is not inflated — the cube's hardware timestamp reflects when the physical move happened
+- Phase boundaries (`recognitionMs`, `executionMs`) are derived from hardware timestamps too, so mid-solve BLE jitter doesn't distort phase timing
+- The offset recalibrates automatically each solve, so hardware clock drift is reset per solve
+- For `ButtonDriver` and `MouseDriver`, `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — no behavior change for non-hardware drivers
+
+This specifically fixes the ~1s inflation seen in Roux solves where the final M/M' move arrives via the retro BLE path in `SliceMoveDetector`.

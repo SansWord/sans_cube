@@ -4,6 +4,24 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.52 — Hardware Clock Timing Fix (2026-04-09)
+**Review:** not yet
+
+**What was built:**
+- `useTimer` now uses `cubeTimestamp + hwOffset` instead of `Date.now()` for all timing
+- On the first move of each solve, `hwOffset = Date.now() - move.cubeTimestamp` is calibrated once
+- Fixes `timeMs`, `executionMs`, and `recognitionMs` — all phase timing is now hardware-accurate
+- Specifically fixes the ~1s inflation on Roux solves where the final M/M' arrives via the retro BLE path in `SliceMoveDetector`
+- Two new tests in `tests/hooks/useTimer.test.ts` verifying both the normal path and the `replacePreviousMove` path
+
+**Key technical learnings:**
+- **BLE delivery delay ≠ move timestamp.** The GAN cube records `cubeTimestamp` when the physical move happens. BLE can deliver that event 1+ second later. `Date.now()` at event arrival was inflating solve times. The fix is to trust the hardware timestamp, not the delivery time.
+- **Per-solve calibration is cleaner than querying hardware clock at connect time.** Calibrating `hwOffset` on the first move is simpler, self-contained, and resets drift each solve. No need to send a hardware time request at connection.
+- **The retro M-move path needs the same fix.** `SliceMoveDetector` emits `replacePreviousMove` when the second half of a slice arrives late. `onReplacePreviousMove` in `useTimer` also had `Date.now()` — same fix applies there.
+- **`ButtonDriver`/`MouseDriver` are unaffected.** They set `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — behavior unchanged for non-hardware drivers.
+
+---
+
 ## v1.51 — Stats Trends Polish (2026-04-09)
 **Review:** not yet
 
