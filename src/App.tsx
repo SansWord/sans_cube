@@ -17,7 +17,7 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
-import { renumberSolvesInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 
@@ -37,6 +37,8 @@ export default function App() {
   const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
   const [recalibratedCount, setRecalibratedCount] = useState(0)
+  const [recalibratingCloud, setRecalibratingCloud] = useState<'idle' | 'running' | 'done'>('idle')
+  const [recalibratedCloudCount, setRecalibratedCloudCount] = useState(0)
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
@@ -169,6 +171,20 @@ export default function App() {
                   style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: renumbering !== 'idle' ? 'default' : 'pointer', background: '#222', color: renumbering === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${renumbering === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
                 >
                   {renumbering === 'running' ? 'Renumbering...' : renumbering === 'done' ? 'Done! Reloading...' : 'Renumber solves (fix seq)'}
+                </button>
+                <button
+                  disabled={recalibratingCloud !== 'idle'}
+                  onClick={async () => {
+                    if (!cloudSync.user) return
+                    setRecalibratingCloud('running')
+                    const count = await recalibrateSolvesInFirestore(cloudSync.user.uid)
+                    setRecalibratedCloudCount(count)
+                    setRecalibratingCloud('done')
+                    setTimeout(() => setRecalibratingCloud('idle'), 3000)
+                  }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: recalibratingCloud !== 'idle' ? 'default' : 'pointer', background: '#222', color: recalibratingCloud === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${recalibratingCloud === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
+                >
+                  {recalibratingCloud === 'running' ? 'Recalibrating...' : recalibratingCloud === 'done' ? `Done — ${recalibratedCloudCount} solve${recalibratedCloudCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
                 </button>
               </div>
             ) : (

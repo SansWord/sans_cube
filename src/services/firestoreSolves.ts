@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { SolveRecord } from '../types/solve'
+import { recalibrateSolveTimes } from '../utils/recalibrate'
 
 function solvesRef(uid: string) {
   return collection(db, 'users', uid, 'solves')
@@ -62,4 +63,17 @@ export async function renumberSolvesInFirestore(uid: string): Promise<number> {
     updateCounterInFirestore(uid, nextSeq),
   ])
   return nextSeq
+}
+
+/**
+ * Recalibrates timeMs for all Firestore solves using hardware cubeTimestamps.
+ * Only updates solves where the hardware span is shorter than the stored timeMs.
+ * Returns the number of solves updated.
+ */
+export async function recalibrateSolvesInFirestore(uid: string): Promise<number> {
+  const solves = await loadSolvesFromFirestore(uid)
+  const recalibrated = recalibrateSolveTimes(solves)
+  const changed = recalibrated.filter((s, i) => s.timeMs !== solves[i].timeMs)
+  await Promise.all(changed.map((s) => setDoc(solveDocRef(uid, s), sanitize(s))))
+  return changed.length
 }
