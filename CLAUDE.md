@@ -4,7 +4,7 @@ A Rubik's cube solve analyzer for speedcubers. Connects to GAN smart cubes via W
 
 ## Who is working on this
 
-SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conventions (CFOP, notation, orientations like green front / yellow bottom). New to web development. Prefers guided decisions with clear options and recommendations rather than open-ended questions.
+SansWord — a speedcuber who owns a GAN 12 UI Maglev. Familiar with cubing conventions (CFOP, notation, orientations like green front / yellow bottom). Growing web development skills — comfortable with React/TypeScript patterns and can follow architectural reasoning, but benefits from clear options and recommendations on design decisions rather than open-ended questions. Cares about code quality and documentation hygiene beyond just shipping features: proactively reviews for duplication, asks for code scans, and thinks about cross-project conventions.
 
 ## Tech Stack
 
