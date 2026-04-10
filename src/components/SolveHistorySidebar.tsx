@@ -142,7 +142,7 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, clou
   )
 }
 
-function CopyButton({ solves, fontSize }: { solves: SolveRecord[]; fontSize?: number }) {
+function CopyButton({ solves }: { solves: SolveRecord[] }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -154,16 +154,18 @@ function CopyButton({ solves, fontSize }: { solves: SolveRecord[]; fontSize?: nu
       }}
       style={{
         background: 'transparent',
-        border: 'none',
-        color: copied ? '#2ecc71' : '#444',
-        fontSize: fontSize ?? 11,
+        border: '1px solid #444',
+        color: copied ? '#2ecc71' : '#aaa',
+        fontSize: 11,
         cursor: 'pointer',
-        padding: '0 2px',
-        lineHeight: 1,
+        padding: '1px 6px',
+        borderRadius: 3,
+        lineHeight: 1.4,
+        flexShrink: 0,
       }}
       title="Copy solve list"
     >
-      {copied ? '✓' : '⎘'}
+      {copied ? '✓ copied' : 'copy'}
     </button>
   )
 }
@@ -268,7 +270,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 4px' }}>
             <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
-            <CopyButton solves={reversedSolves} fontSize={fontSize - 2} />
+            <CopyButton solves={reversedSolves} />
           </div>
           {cloudLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
