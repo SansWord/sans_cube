@@ -18,6 +18,8 @@ import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { renumberSolvesInFirestore } from './services/firestoreSolves'
+import { recalibrateSolveTimes } from './utils/recalibrate'
+import { loadFromStorage, saveToStorage } from './utils/storage'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -33,6 +35,8 @@ export default function App() {
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
   const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
+  const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
+  const [recalibratedCount, setRecalibratedCount] = useState(0)
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
@@ -179,7 +183,7 @@ export default function App() {
               </div>
             )}
           </div>
-          <div style={{ padding: '12px 0', textAlign: 'center', display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <div style={{ padding: '12px 0', textAlign: 'center', display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => { localStorage.clear(); window.location.reload() }}
               style={{ padding: '6px 14px', color: '#e74c3c', border: '1px solid #e74c3c', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
@@ -191,6 +195,21 @@ export default function App() {
               style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
             >
               Restore example solves
+            </button>
+            <button
+              disabled={recalibrating !== 'idle'}
+              onClick={() => {
+                const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                const recalibrated = recalibrateSolveTimes(solves)
+                const count = recalibrated.filter((s, i) => s.timeMs !== solves[i].timeMs).length
+                saveToStorage(STORAGE_KEYS.SOLVES, recalibrated)
+                setRecalibratedCount(count)
+                setRecalibrating('done')
+                setTimeout(() => setRecalibrating('idle'), 3000)
+              }}
+              style={{ padding: '6px 14px', color: recalibrating === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${recalibrating === 'done' ? '#4c4' : '#e8a020'}`, background: 'transparent', borderRadius: 4, cursor: recalibrating !== 'idle' ? 'default' : 'pointer' }}
+            >
+              {recalibrating === 'done' ? `Done — ${recalibratedCount} solve${recalibratedCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
             </button>
           </div>
           {lastSession && (
