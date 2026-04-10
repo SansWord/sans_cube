@@ -21,6 +21,8 @@ See `docs/ui-architecture.md` for the full component tree, hook ownership, and d
 
 **Keep `docs/ui-architecture.md` up to date** whenever you add a component, remove a component, change which hooks a component owns, or change what props/callbacks a component exposes.
 
+**Keep `docs/debug-mode.md` up to date** whenever you add, remove, or change a button or panel in the debug mode section of `App.tsx`.
+
 **Drivers** (`src/drivers/`) — `CubeDriver` (abstract), `GanCubeDriver` (BLE), `MouseDriver`, `ButtonDriver`, `SliceMoveDetector`
 
 **Services** (`src/services/`) — `firebase.ts` (app init), `firestoreSolves.ts` (Firestore CRUD)
@@ -33,6 +35,7 @@ See `docs/ui-architecture.md` for the full component tree, hook ownership, and d
 
 When creating any new `docs/*.md` file, always add it to this list with a one-line description.
 
+- `debug-mode.md` — what's in debug mode: diagnostic views, Firebase panel, maintenance buttons; update when buttons change
 - `firebase-cloud-sync.md` — cloud sync architecture, security, migration behavior, ID design
 - `animation-system.md` — Three.js animation details
 - `manual-test-checklist.md` — manual QA checklist
