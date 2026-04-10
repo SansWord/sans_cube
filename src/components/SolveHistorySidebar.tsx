@@ -209,19 +209,19 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
           <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} />
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px 4px' }}>
-            <span style={{ color: '#555', fontSize: 11 }}>Last Solves</span>
-            <CopyButton solves={reversedSolves} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 2px', flexShrink: 0 }}>
+          <span style={{ color: '#555', fontSize: 11 }}>Last Solves</span>
+          <CopyButton solves={reversedSolves} />
+        </div>
+        {cloudLoading ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
           </div>
-          {cloudLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
-              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
-            </div>
-          ) : (
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, background: '#0a0a1a', zIndex: 1 }}>
                 <tr style={{ color: '#555', fontSize: 11 }}>
                   <td style={{ padding: '2px 12px' }}>#</td>
                   <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
@@ -244,8 +244,8 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -254,9 +254,10 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
   const fontSize = calcFontSize(width)
 
   return (
-    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative' }}>
+    <div className="sidebar-wrapper" style={{ display: 'flex', flexShrink: 0, position: 'relative', height: '100vh' }}>
       <div style={{
         width,
+        height: '100%',
         background: '#0a0a1a',
         borderRight: '1px solid #222',
         display: 'flex',
@@ -264,22 +265,22 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         fontSize,
         color: '#ccc',
       }}>
-        <div style={{ padding: '10px 8px', borderBottom: '1px solid #222' }}>
+        <div style={{ padding: '10px 8px', borderBottom: '1px solid #222', flexShrink: 0 }}>
           <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} fontSize={fontSize} />
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 4px' }}>
-            <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
-            <CopyButton solves={reversedSolves} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 2px', flexShrink: 0 }}>
+          <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
+          <CopyButton solves={reversedSolves} />
+        </div>
+        {cloudLoading ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
           </div>
-          {cloudLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px 0', gap: 12 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#888', animation: 'spin 0.8s linear infinite' }} />
-              <span style={{ color: '#555', fontSize: 13 }}>Loading…</span>
-            </div>
-          ) : (
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, background: '#0a0a1a', zIndex: 1 }}>
                 <tr style={{ color: '#555', fontSize: fontSize - 2 }}>
                   <td style={{ padding: '2px 8px' }}>#</td>
                   <td style={{ textAlign: 'right', padding: '2px 4px' }}>Time</td>
@@ -304,8 +305,8 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <div
         onMouseDown={onMouseDown}
