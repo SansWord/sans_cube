@@ -43,7 +43,7 @@ Wired in `useCloudSync` where `onAuthStateChanged` is already handled.
 | `solve_shared` | `SolveDetailModal` | After share succeeds; passes `method` param |
 | `solve_recorded` | `useSolveRecorder` | On solve complete; passes `method` param |
 | `cube_connected` | `useCubeDriver` | On Bluetooth connect |
-| `cube_first_move` | `useSolveRecorder` | First cube move per page load; guarded by a `useRef` session flag |
+| `cube_first_move` | `useSolveRecorder` | First cube move per page load; guarded by a `useRef` session flag; passes `driver` param (`"ble"`, `"mouse"`, `"button"`) |
 | `cloud_sync_enabled` | `TimerScreen` | When user toggles cloud sync on |
 
 ### `analytics.ts` API
@@ -53,7 +53,7 @@ export function logSharedSolveViewed(shareId: string): void
 export function logSolveShared(method: string): void
 export function logSolveRecorded(method: string): void
 export function logCubeConnected(): void
-export function logCubeFirstMove(): void
+export function logCubeFirstMove(driver: 'ble' | 'mouse' | 'button'): void
 export function logCloudSyncEnabled(): void
 export function setAnalyticsUser(uid: string | null): void
 ```
