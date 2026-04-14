@@ -11,12 +11,16 @@ import { parseScramble } from '../utils/scramble'
 import { formatTime } from '../utils/formatting'
 import { IDENTITY_QUATERNION } from '../utils/quaternion'
 import { useReplayController, SPEED_OPTIONS } from '../hooks/useReplayController'
+import { MethodSelector } from './MethodSelector'
+import { recomputePhases } from '../utils/recomputePhases'
+import type { SolveMethod } from '../types/solve'
 
 interface Props {
   solve: SolveRecord
   onClose: () => void
   onDelete: (id: number) => void
   onUseScramble: (scramble: string) => void
+  onUpdate: (solve: SolveRecord) => Promise<void>
 }
 
 function formatDate(ts: number): string {
@@ -52,11 +56,14 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
 
 const AUTO_PLAY_DELAY_MS = 500
 
-export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Props) {
+export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUpdate }: Props) {
+  const [localSolve, setLocalSolve] = useState(solve)
+  const [saving, setSaving] = useState(false)
+  const [methodError, setMethodError] = useState<string | null>(null)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const [orbitChanged, setOrbitChanged] = useState(false)
-  const scrambledFacelets = computeScrambledFacelets(solve.scramble)
-  const method = getMethod(solve.method)
+  const scrambledFacelets = computeScrambledFacelets(localSolve.scramble)
+  const method = getMethod(localSolve.method)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copiedSteps, setCopiedSteps] = useState(false)
   const [copiedExample, setCopiedExample] = useState(false)
@@ -72,7 +79,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     speed, setSpeed, gyroEnabled, setGyroEnabled,
     playFrom, play, pause, seekTo,
     stepForward, stepBackward, fastForward, fastBackward,
-  } = useReplayController(solve, rendererRef)
+  } = useReplayController(localSolve, rendererRef)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -85,16 +92,16 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     return () => clearTimeout(t)
   }, [play])
 
-  const totalMs = solve.timeMs
+  const totalMs = localSolve.timeMs
 
-  const totalTurns = solve.moves.length
+  const totalTurns = localSolve.moves.length
   const tps = totalTurns / (totalMs / 1000)
-  const totalExecMs = solve.phases.reduce((s, p) => s + p.executionMs, 0)
+  const totalExecMs = localSolve.phases.reduce((s, p) => s + p.executionMs, 0)
 
   // Indices of moves that cancel each other (same face, opposite direction, consecutive)
   const cancelledIndices = useMemo(() => {
     const set = new Set<number>()
-    const moves = solve.moves
+    const moves = localSolve.moves
     for (let i = 0; i < moves.length - 1; i++) {
       if (moves[i].face === moves[i + 1].face && moves[i].direction !== moves[i + 1].direction) {
         set.add(i)
@@ -103,22 +110,22 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
       }
     }
     return set
-  }, [solve.moves])
+  }, [localSolve.moves])
 
   // Cumulative totals for analysis table, with move slice per phase
   let cumMs = 0
   let cumTurns = 0
-  const tableRows = solve.phases.map((p) => {
+  const tableRows = localSolve.phases.map((p) => {
     const stepMs = p.recognitionMs + p.executionMs
     cumMs += stepMs
     const moveStart = cumTurns
     cumTurns += p.turns
-    return { ...p, stepMs, cumMs, moveStart, moves: solve.moves.slice(moveStart, cumTurns) }
+    return { ...p, stepMs, cumMs, moveStart, moves: localSolve.moves.slice(moveStart, cumTurns) }
   })
 
   function copySteps() {
     const moveStr = (m: Move) => m.face + (m.direction === 'CCW' ? "'" : '')
-    const lines = [`Scramble: ${solve.scramble}`, '']
+    const lines = [`Scramble: ${localSolve.scramble}`, '']
     for (const row of tableRows) {
       const moves = row.moves.length > 0 ? row.moves.map(moveStr).join(' ') : '—'
       lines.push(`${row.label}: ${moves}`)
@@ -130,10 +137,31 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
 
   function copyAsExample() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, isExample: _ie, ...data } = solve
+    const { id: _id, isExample: _ie, ...data } = localSolve
     navigator.clipboard.writeText(JSON.stringify(data, null, 2))
     setCopiedExample(true)
     setTimeout(() => setCopiedExample(false), 1500)
+  }
+
+  async function handleMethodChange(newMethod: SolveMethod) {
+    const newPhases = recomputePhases(localSolve, newMethod)
+    if (newPhases === null) {
+      setMethodError('Could not recompute phases — solve record appears incomplete.')
+      setTimeout(() => setMethodError(null), 4000)
+      return
+    }
+    const updated = { ...localSolve, method: newMethod.id, phases: newPhases }
+    setLocalSolve(updated)
+    setSaving(true)
+    try {
+      await onUpdate(updated)
+    } catch {
+      setMethodError('Failed to save — please try again.')
+      setTimeout(() => setMethodError(null), 4000)
+      setLocalSolve(localSolve)  // roll back optimistic update on save failure
+    } finally {
+      setSaving(false)
+    }
   }
 
   // Which phase and move-within-phase is currently active during replay
@@ -174,7 +202,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
     modal.scrollTo({ top: rowTopInModal - phaseBarBottom, behavior: 'smooth' })
   }, [activePhaseIndex, isPlaying])
 
-  const totalRecMs = solve.phases.reduce((s, p) => s + p.recognitionMs, 0)
+  const totalRecMs = localSolve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
   const execPct = totalMs > 0 ? ((totalExecMs / totalMs) * 100).toFixed(0) : '0'
 
@@ -199,9 +227,9 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
       }}>
         {/* Header */}
         <div className="solve-detail-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontWeight: 'bold', fontSize: 16 }}>{solve.isExample ? 'Example Solve' : `Solve #${solve?.seq ?? solve.id}`}</span>
+          <span style={{ fontWeight: 'bold', fontSize: 16 }}>{localSolve.isExample ? 'Example Solve' : `Solve #${localSolve?.seq ?? localSolve.id}`}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {solve.isExample && (
+            {localSolve.isExample && (
               <a
                 href="https://www.linkedin.com/in/sansword/"
                 target="_blank"
@@ -221,11 +249,11 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
         {/* General statistics */}
         <div className="solve-stats" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           {[
-            { label: 'Time', value: formatTime(solve.timeMs) },
+            { label: 'Time', value: formatTime(localSolve.timeMs) },
             { label: 'Turns', value: String(totalTurns) },
             { label: 'TPS', value: tps.toFixed(2) },
-            { label: 'Date', value: formatDate(solve.date) },
-            { label: 'Driver', value: solve.driver === 'cube' ? 'Cube' : solve.driver === 'mouse' ? 'Mouse' : '—' },
+            { label: 'Date', value: formatDate(localSolve.date) },
+            { label: 'Driver', value: localSolve.driver === 'cube' ? 'Cube' : localSolve.driver === 'mouse' ? 'Mouse' : '—' },
             { label: 'Method', value: method.label },
           ].map(({ label, value }) => (
             <div key={label} style={{ flex: 1, background: '#161626', borderRadius: 4, padding: '8px 12px' }}>
@@ -237,9 +265,9 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
 
         {/* Scramble row */}
         <div className="solve-scramble" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#161626', borderRadius: 4, padding: '8px 12px', marginBottom: 16 }}>
-          <span style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{solve.scramble}</span>
+          <span style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{localSolve.scramble}</span>
           <button
-            onClick={() => navigator.clipboard.writeText(solve.scramble)}
+            onClick={() => navigator.clipboard.writeText(localSolve.scramble)}
             style={{ padding: '4px 8px', fontSize: 11 }}
             title="Copy scramble"
           >📋</button>
@@ -250,7 +278,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
             {copiedSteps ? 'Copied!' : 'Copy steps'}
           </button>
           <button
-            onClick={() => { onUseScramble(solve.scramble); onClose() }}
+            onClick={() => { onUseScramble(localSolve.scramble); onClose() }}
             style={{ padding: '4px 10px', fontSize: 11, background: '#2ecc71', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer' }}
           >
             Use this scramble
@@ -278,12 +306,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
             </div>
             <div style={{ position: 'relative' }}>
               <CubeCanvas
-                facelets={computeFaceletsAtIndex(scrambledFacelets, solve.moves, currentIndex)}
+                facelets={computeFaceletsAtIndex(scrambledFacelets, localSolve.moves, currentIndex)}
                 quaternion={IDENTITY_QUATERNION}
                 interactive
                 onRendererReady={(r) => {
                   rendererRef.current = r
-                  if (!solve.moves.some((m) => m.quaternion) || !gyroEnabled) {
+                  if (!localSolve.moves.some((m) => m.quaternion) || !gyroEnabled) {
                     r.setCameraPosition(4.5, 5, 5.5)
                   }
                 }}
@@ -338,7 +366,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               ))}
             </div>
             <div style={{ fontSize: 11, color: '#666', textAlign: 'center', marginTop: 4 }}>
-              {getPhaseLabelAtIndex(solve, currentIndex)} — {formatTime(indicatorMs)} / {formatTime(totalMs)}
+              {getPhaseLabelAtIndex(localSolve, currentIndex)} — {formatTime(indicatorMs)} / {formatTime(totalMs)}
             </div>
           </div>
 
@@ -346,11 +374,14 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
           <div className="analysis-section" style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
-              <span style={{ color: '#888', fontSize: 12 }}>{method.label}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                <MethodSelector method={method} onChange={handleMethodChange} disabled={saving} />
+                {methodError && <span style={{ color: '#e74c3c', fontSize: 11 }}>{methodError}</span>}
+              </div>
             </div>
             <div ref={phaseBarRef} className="analysis-phasebar">
               <PhaseBar
-                phaseRecords={solve.phases}
+                phaseRecords={localSolve.phases}
                 method={method}
                 interactive={false}
                 indicatorPct={totalMs > 0 ? Math.min(100, (indicatorMs / totalMs) * 100) : 0}
@@ -411,7 +442,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
                                       key={mi}
                                       onClick={() => {
                                         const globalIdx = row.moveStart + mi
-                                        rendererRef.current?.animateMove(solve.moves[globalIdx].face, solve.moves[globalIdx].direction, 150)
+                                        rendererRef.current?.animateMove(localSolve.moves[globalIdx].face, localSolve.moves[globalIdx].direction, 150)
                                         playFrom(globalIdx + 1)
                                       }}
                                       style={{
@@ -443,7 +474,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               <span style={{ color: '#e74c3c', fontSize: 12, marginRight: 8, alignSelf: 'center' }}>
                 Delete this solve?
               </span>
-              <button onClick={() => onDelete(solve.id)} style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 6 }}>
+              <button onClick={() => onDelete(localSolve.id)} style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 6 }}>
                 Confirm
               </button>
               <button onClick={() => setConfirmDelete(false)} style={{ padding: '6px 14px' }}>
@@ -452,7 +483,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
             </>
           ) : (
             <>
-              {!solve.isExample && (
+              {!localSolve.isExample && (
                 <button
                   onClick={copyAsExample}
                   style={{ padding: '6px 14px', background: copiedExample ? '#27ae60' : '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 8, transition: 'background 0.2s' }}
@@ -463,7 +494,8 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble }: Pr
               )}
               <button
                 onClick={() => setConfirmDelete(true)}
-                style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                disabled={saving}
+                style={{ padding: '6px 14px', background: saving ? '#555' : '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer' }}
               >
                 Delete
               </button>

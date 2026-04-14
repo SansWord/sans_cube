@@ -379,6 +379,7 @@ export function TimerScreen({
           onClose={() => setSelectedSolve(null)}
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
           onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
+          onUpdate={async () => {}}
         />
       )}
 
