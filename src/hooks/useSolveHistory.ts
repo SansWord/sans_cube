@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { User } from 'firebase/auth'
-import type { SolveRecord, MethodFilter } from '../types/solve'
+import type { SolveRecord, SolveFilter } from '../types/solve'
 import { EXAMPLE_SOLVES } from '../data/exampleSolves'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
@@ -86,9 +86,13 @@ export interface SolveStats {
   ao100: StatEntry
 }
 
-export function filterSolves(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
-  if (methodFilter === 'all') return solves
-  return solves.filter(s => s.isExample || (s.method ?? 'cfop') === methodFilter)
+export function filterSolves(solves: SolveRecord[], filter: SolveFilter): SolveRecord[] {
+  let result = solves
+  if (filter.method !== 'all')
+    result = result.filter(s => s.isExample || (s.method ?? 'cfop') === filter.method)
+  if (filter.driver !== 'all')
+    result = result.filter(s => s.isExample || (s.driver ?? 'cube') === filter.driver)
+  return result
 }
 
 // Exported for tests
