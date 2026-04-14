@@ -85,7 +85,8 @@ export function TimerScreen({
   const [regeneratePending, setRegeneratePending] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)
-    return saved ? parseInt(saved, 10) : 160
+    const parsed = saved ? parseInt(saved, 10) : 200
+    return Math.max(220, parsed)
   })
   const [showHistory, setShowHistory] = useState(false)
   const [solveFilter, setSolveFilter] = useState<SolveFilter>(() => {

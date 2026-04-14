@@ -17,9 +17,9 @@ interface Props {
   onOpenTrends?: () => void
 }
 
-const MIN_WIDTH = 120
+const MIN_WIDTH = 220
 const MAX_WIDTH = 320
-const DEFAULT_WIDTH = 160
+const DEFAULT_WIDTH = 220
 
 function calcFontSize(width: number): number {
   const t = (width - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH)
@@ -60,9 +60,9 @@ function StatsSection({ solves, solveFilter, updateSolveFilter, onOpenTrends, cl
   ]
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <span style={{ fontWeight: 'bold', color: '#888' }}>Statistics</span>
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontWeight: 'bold', color: '#888' }}>Statistics</span>
           {onOpenTrends && (
             <button
               onClick={onOpenTrends}
@@ -81,6 +81,8 @@ function StatsSection({ solves, solveFilter, updateSolveFilter, onOpenTrends, cl
               Trends
             </button>
           )}
+        </div>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             <span style={{ color: '#555', fontSize: 10 }}>Method</span>
             <select
