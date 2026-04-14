@@ -117,6 +117,8 @@ export function TimerScreen({
       setSharedSolveLoading(false)
       if (solve) {
         setSharedSolve(solve)
+        // Restore the hash — the URL-update effect may have cleared it while the fetch was in flight
+        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#shared-${shareId}`)
       } else {
         setSharedSolveNotFound(true)
         history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -129,13 +131,13 @@ export function TimerScreen({
   // Uses replaceState (not window.location.hash=) to avoid firing a hashchange event.
   useEffect(() => {
     if (!urlResolvedRef.current) return  // don't clear hash before initial URL is resolved
-    if (showTrends || !!sharedSolve) return
+    if (showTrends || !!sharedSolve || sharedSolveLoading) return
     if (selectedSolve) {
       history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
     } else {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
-  }, [selectedSolve, showTrends, sharedSolve])
+  }, [selectedSolve, showTrends, sharedSolve, sharedSolveLoading])
 
   // Respond to user-initiated hash changes (e.g. typing a URL in the address bar)
   useEffect(() => {

@@ -154,13 +154,20 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   async function handleShare() {
     if (!onShare || shareState !== 'idle') return
     setShareState('sharing')
+    let shareId: string | undefined
     try {
-      const shareId = await onShare(localSolve)
-      const updated = { ...localSolve, shareId }
-      setLocalSolve(updated)
+      shareId = await onShare(localSolve)
+    } catch (e) {
+      console.error('[share] onShare failed:', e)
+      setShareState('idle')
+      return
+    }
+    const updated = { ...localSolve, shareId }
+    setLocalSolve(updated)
+    try {
       await onUpdate(updated)
     } catch (e) {
-      console.error('[share] failed to persist shareId after sharing:', e)
+      console.error('[share] onUpdate failed:', e)
     } finally {
       setShareState('idle')
     }
