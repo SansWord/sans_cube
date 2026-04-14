@@ -18,6 +18,7 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
+import { logCubeConnected, logCubeFirstMove } from './services/analytics'
 import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
@@ -39,6 +40,30 @@ export default function App() {
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
+
+  const prevStatusRef = useRef<string>('')
+  useEffect(() => {
+    if (status === 'connected' && prevStatusRef.current !== 'connected') {
+      logCubeConnected()
+    }
+    prevStatusRef.current = status
+  }, [status])
+
+  const hasFiredFirstMoveRef = useRef(false)
+  useEffect(() => {
+    const d = driver.current
+    if (!d) return
+    const onMove = () => {
+      if (hasFiredFirstMoveRef.current) return
+      hasFiredFirstMoveRef.current = true
+      const isTouch = window.matchMedia('(pointer: coarse)').matches
+      const driverParam = driverType === 'cube' ? 'ble' : isTouch ? 'touch' : 'mouse'
+      logCubeFirstMove(driverParam)
+    }
+    d.on('move', onMove)
+    return () => d.off('move', onMove)
+  }, [driver, driverVersion, driverType])
+
   const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
   const [recalibratedCount, setRecalibratedCount] = useState(0)
