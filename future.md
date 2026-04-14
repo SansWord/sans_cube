@@ -1,16 +1,15 @@
 # Future Work
 
 ## On-going, Next
-- ~~SolveRecord update - in SolveDetailModal~~
 
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
-- Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
 - ~~[trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection~~ — fixed in v1.13
 
 ## Solving Methods
 - ZZ method support
 - ~~allow to update and changes methods of a SolveRecord and calculate its correct phase during update~~
+- Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
 
 ## ~~Hardware Clock~~ — done in v1.52
 - ~~when connect hardware, getting its time and identify the difference with wall-clock time. after that, use timestamp from hardware with adjusted difference as clock time. trust time on event instead of Date.now() to calculate overall solving time.~~
