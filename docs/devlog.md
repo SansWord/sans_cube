@@ -6,7 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
-| v1.13 | Extract `useSharedSolve` hook; fix spinner stuck on Firestore error; show "not found" for invalid share IDs |
+| v1.13 | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
 | v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
 | v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
 | v1.10 | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
@@ -37,19 +37,22 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.13 — useSharedSolve extraction + shared link bug fixes (2026-04-14 01:36)
+## v1.13 — useSharedSolve extraction, shared link fixes, drag-to-zoom fix (2026-04-14 01:36)
 **Review:** not yet
 
 **What was built:**
+- **`App.tsx` `useCubeDriverEvent` migration** — 4 remaining raw `useEffect` listeners in `App.tsx` converted to `useCubeDriverEvent`, completing the migration started in v1.12.
 - **`useSharedSolve` hook** (`src/hooks/useSharedSolve.ts`): extracted 3 state fields (`sharedSolve`, `sharedSolveLoading`, `sharedSolveNotFound`) and both fetch effects (boot + hashchange) from `TimerScreen`. Returns `clearSharedSolve()` which clears state and resets the URL hash. Reduces `TimerScreen` from 10 to 7 `useState` declarations.
 - **Fix: Firestore error no longer leaves spinner frozen** — `.catch(() => null)` added to `loadSharedSolve(shareId)` in the `Promise.race`. Previously, any Firestore rejection (network error, permissions, ad blocker in incognito) would reject the race silently, leaving `sharedSolveLoading = true` forever with no "not found" feedback.
 - **Fix: invalid-format share IDs now show "not found" banner** — previously `#shared-notavalidid` (fails the 20-char regex) silently did nothing. Now `doLoad` calls `showNotFound()` immediately for bad-format IDs — no spinner, no Firestore fetch.
 - **`showNotFound` helper** inside `useSharedSolve`: deduplicates the `setSharedSolveNotFound` + `history.replaceState` + `setTimeout` pattern used in three places.
-- **Analytics call moved inside `doLoad`** with a `logAnalytics` flag — fires only on boot (not on hashchange navigation), and only after the regex check passes (not for malformed IDs).
+- **Fix: drag-to-zoom completes when mouse releases outside the window** — `TrendsModal` now registers a `document`-level `mouseup` listener while a drag is in progress. Uses `refAreaRightRef` (synced on every mousemove) so the handler always reads the latest position regardless of closure capture timing.
+- **Code quality backlog closed** — `playFrom` (#6) skipped (low ROI); TrendsModal refactor (#3) moved to Statistic section as a future-when-needed item.
 
 **Key technical learnings:**
-- `[gotcha]` `Promise.race` rejects if the winning promise rejects — if you don't `.catch()` the individual promises, a Firestore error can silently freeze loading state indefinitely. Always wrap individual race contestants with `.catch(() => fallback)`.
+- `[gotcha]` `Promise.race` rejects if any contestant rejects — if you don't `.catch()` each promise individually, a Firestore error silently freezes loading state indefinitely. Always wrap race contestants with `.catch(() => fallback)`.
 - `[insight]` Silent no-op for invalid input feels like a bug to users who landed on a `#shared-` URL — even a regex-rejected ID should give visible feedback ("not found"), just skip the spinner and the Firestore round-trip.
+- `[insight]` For drag interactions, `onMouseUp` on the element never fires if the mouse leaves the window — register a `document`-level listener for the duration of the drag only, and use a ref (not state) to track the latest drag position so a stale closure can't produce wrong results.
 
 ---
 
