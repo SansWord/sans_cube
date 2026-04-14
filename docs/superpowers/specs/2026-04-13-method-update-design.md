@@ -32,9 +32,10 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
    - If EOLL completed OLL on the same move (COLL has 0 turns): absorb EOLL into COLL
    - If CPLL and EPLL finished on the same move (EPLL has 0 turns): absorb CPLL into EPLL
 
+**Return value:** `PhaseRecord[] | null` — returns `null` if the cube is not in a solved state after replaying all moves (signals a corrupt or incomplete solve record). The caller must handle `null` by aborting the update.
+
 **Notes:**
 - The function is pure (no side effects) and method-agnostic — works for any `SolveMethod` with any number of phases
-- If the cube was not fully solved by the end of `solve.moves`, remaining phases get `recognitionMs = 0`, `executionMs = 0`, `turns = 0`
 
 ---
 
@@ -76,6 +77,7 @@ onUpdate: (solve: SolveRecord) => Promise<void>
 ```ts
 const [localSolve, setLocalSolve] = useState(solve)
 const [saving, setSaving] = useState(false)
+const [methodError, setMethodError] = useState<string | null>(null)
 ```
 
 All existing references to `solve` inside the modal switch to `localSolve`. `method` is derived from `localSolve.method` (already done via `getMethod`).
@@ -85,6 +87,11 @@ All existing references to `solve` inside the modal switch to `localSolve`. `met
 ```ts
 async function handleMethodChange(newMethod: SolveMethod) {
   const newPhases = recomputePhases(localSolve, newMethod)
+  if (newPhases === null) {
+    setMethodError('Could not recompute phases — solve record appears incomplete.')
+    setTimeout(() => setMethodError(null), 4000)
+    return  // abort: do not update localSolve or call onUpdate
+  }
   const updated = { ...localSolve, method: newMethod.id, phases: newPhases }
   setLocalSolve(updated)   // optimistic update for immediate UI feedback
   setSaving(true)
@@ -104,7 +111,10 @@ In the "Detailed Analysis" header, replace:
 ```
 With:
 ```tsx
-<MethodSelector method={method} onChange={handleMethodChange} disabled={saving} />
+<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+  <MethodSelector method={method} onChange={handleMethodChange} disabled={saving} />
+  {methodError && <span style={{ color: '#e74c3c', fontSize: 11 }}>{methodError}</span>}
+</div>
 ```
 
 ### Disabled during save
