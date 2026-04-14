@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { SolveRecord, MethodFilter } from '../types/solve'
+import type { SolveRecord, SolveFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
 import { computeStats, filterSolves, type StatEntry, type SolveStats } from '../hooks/useSolveHistory'
@@ -12,8 +12,8 @@ interface Props {
   onWidthChange: (w: number) => void
   onClose?: () => void
   cloudLoading?: boolean
-  methodFilter: MethodFilter
-  setMethodFilter: (f: MethodFilter) => void
+  solveFilter: SolveFilter
+  updateSolveFilter: (updater: (f: SolveFilter) => SolveFilter) => void
   onOpenTrends?: () => void
 }
 
@@ -32,12 +32,6 @@ function fmtTps(solve: SolveRecord): string {
   return (solve.moves.length / secs).toFixed(2)
 }
 
-function filterStatsPool(solves: SolveRecord[], methodFilter: MethodFilter): SolveRecord[] {
-  const realSolves = solves.filter(s => !s.isExample)
-  if (methodFilter === 'all') return realSolves
-  return realSolves.filter(s => (s.method ?? 'cfop') === methodFilter)
-}
-
 const filterSelectStyle: React.CSSProperties = {
   background: 'transparent',
   border: '1px solid #333',
@@ -48,15 +42,15 @@ const filterSelectStyle: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, cloudLoading, fontSize }: {
+function StatsSection({ solves, solveFilter, updateSolveFilter, onOpenTrends, cloudLoading, fontSize }: {
   solves: SolveRecord[]
-  methodFilter: MethodFilter
-  onFilterChange: (f: MethodFilter) => void
+  solveFilter: SolveFilter
+  updateSolveFilter: (updater: (f: SolveFilter) => SolveFilter) => void
   onOpenTrends?: () => void
   cloudLoading?: boolean
   fontSize?: number
 }) {
-  const statsPool = filterStatsPool(solves, methodFilter)
+  const statsPool = filterSolves(solves, solveFilter).filter(s => !s.isExample)
   const stats: SolveStats = computeStats(statsPool)
   const rows: Array<{ label: string; entry: StatEntry }> = [
     { label: 'Single', entry: stats.single },
@@ -88,8 +82,8 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, clou
             </button>
           )}
           <select
-            value={methodFilter}
-            onChange={e => onFilterChange(e.target.value as MethodFilter)}
+            value={solveFilter.method}
+            onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
             disabled={cloudLoading}
             style={{
               ...filterSelectStyle,
@@ -100,6 +94,20 @@ function StatsSection({ solves, methodFilter, onFilterChange, onOpenTrends, clou
             <option value="all">All</option>
             <option value="cfop">CFOP</option>
             <option value="roux">Roux</option>
+          </select>
+          <select
+            value={solveFilter.driver}
+            onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
+            disabled={cloudLoading}
+            style={{
+              ...filterSelectStyle,
+              cursor: cloudLoading ? 'not-allowed' : 'pointer',
+              opacity: cloudLoading ? 0.5 : 1,
+            }}
+          >
+            <option value="all">All</option>
+            <option value="cube">Cube</option>
+            <option value="mouse">Mouse</option>
           </select>
         </div>
       </div>
@@ -154,7 +162,7 @@ function CopyButton({ solves, disabled }: { solves: SolveRecord[]; disabled?: bo
   )
 }
 
-export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading, methodFilter, setMethodFilter, onOpenTrends }: Props) {
+export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChange, onClose, cloudLoading, solveFilter, updateSolveFilter, onOpenTrends }: Props) {
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_WIDTH)
@@ -179,7 +187,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
     window.addEventListener('mouseup', onMouseUp)
   }, [width, onWidthChange])
 
-  const filteredSolves = filterSolves(solves, methodFilter)
+  const filteredSolves = filterSolves(solves, solveFilter)
   const reversedSolves = [...filteredSolves].reverse()
 
   // Overlay mode (mobile): full-screen fixed panel
@@ -191,7 +199,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
           <button onClick={onClose} style={{ background: 'transparent', color: '#e94560', fontSize: 18, padding: '0 4px', border: 'none' }}>✕</button>
         </div>
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #222', flexShrink: 0 }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} />
+          <StatsSection solves={solves} solveFilter={solveFilter} updateSolveFilter={updateSolveFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 2px', flexShrink: 0 }}>
           <span style={{ color: '#555', fontSize: 11 }}>Last Solves</span>
@@ -250,7 +258,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
         color: '#ccc',
       }}>
         <div style={{ padding: '10px 8px', borderBottom: '1px solid #222', flexShrink: 0 }}>
-          <StatsSection solves={solves} methodFilter={methodFilter} onFilterChange={setMethodFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} fontSize={fontSize} />
+          <StatsSection solves={solves} solveFilter={solveFilter} updateSolveFilter={updateSolveFilter} onOpenTrends={onOpenTrends} cloudLoading={cloudLoading} fontSize={fontSize} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 2px', flexShrink: 0 }}>
           <span style={{ color: '#555', fontSize: fontSize - 2 }}>Last Solves</span>
