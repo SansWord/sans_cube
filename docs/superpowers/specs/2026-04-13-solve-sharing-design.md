@@ -167,9 +167,37 @@ async function loadSharedSolve(shareId: string): Promise<SolveRecord | null>
 
 Extend the existing hash routing in `App.tsx` (already handles `#solve-N` and `#trends`):
 
-- On boot and on `hashchange`: check if hash matches `#shared-{shareId}`
-- If matched: call `loadSharedSolve(shareId)`, then open `SolveDetailModal` in read-only mode
-- If `loadSharedSolve` returns null: show a brief inline message "Solve not found or no longer shared", then clear the hash and show the normal app
+### Format validation
+
+Before touching Firestore, validate the shareId extracted from the hash:
+
+```ts
+const SHARE_ID_RE = /^[A-Za-z0-9]{20}$/
+```
+
+If the hash matches `#shared-` but the trailing ID fails this regex, treat it as a bad URL immediately — show the "not found" message and clear the hash without making a Firestore read.
+
+### Loading overlay
+
+Reuse the existing loading overlay pattern in `TimerScreen.tsx` (already handles `#solve-` and `#trends`). Extend the label check to include `#shared-`:
+
+```ts
+: h.startsWith('#shared-') ? 'Loading shared solve…'
+```
+
+The overlay is shown while the fetch is in flight and dismissed when the modal opens or the not-found message appears.
+
+### Timeout
+
+Wrap `loadSharedSolve` in a 3-second timeout using `Promise.race`. If the fetch does not resolve within 3 seconds, treat it as a failure — show "Solve not found or no longer shared", clear the hash, and dismiss the overlay.
+
+### On boot and `hashchange`
+
+1. Extract `shareId` from hash; validate with `SHARE_ID_RE` — bail immediately if invalid
+2. Show loading overlay
+3. Race `loadSharedSolve(shareId)` against a 3-second timeout
+4. If solve returned: open `SolveDetailModal` in read-only mode, dismiss overlay
+5. If null or timeout: show "Solve not found or no longer shared", clear hash, dismiss overlay
 
 ---
 
