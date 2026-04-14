@@ -24,6 +24,12 @@ type WindowSize = 25 | 50 | 100 | 'all'
 type TimeKey = 'exec' | 'recog' | 'total'
 type TimeToggle = Record<TimeKey, boolean>
 
+// tune: line draw-in animation duration in ms (set to 0 to disable)
+const LINE_ANIMATION_DURATION_MS = 200
+// tune: easing for the draw-in animation — "ease" (default) starts slow which looks like
+// vertical drift; try "ease-out" (fast start, soft stop) or "linear" (no drift effect)
+const LINE_ANIMATION_EASING = 'ease-out'
+
 // Colors per time type for Total tab
 const TYPE_COLORS: Record<TimeKey, { line: string; ao5: string; ao12: string }> = {
   exec:  { line: '#4fc3f7', ao5: '#0288d1', ao12: '#01579b' },
@@ -666,39 +672,42 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                 {totalToggle.exec && (
                   <Line dataKey="exec" name="Exec" stroke="none"
                     dot={{ r: 3, fill: TYPE_COLORS.exec.line }}
-                    activeDot={{ r: 6, fill: TYPE_COLORS.exec.line, cursor: 'pointer' }} />
+                    activeDot={{ r: 6, fill: TYPE_COLORS.exec.line, cursor: 'pointer' }}
+                    animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.exec && visibleTotalData.length >= 5 && (
-                  <Line dataKey="execAo5" name="Ao5 (Exec)" stroke={TYPE_COLORS.exec.ao5} dot={false} strokeWidth={2} connectNulls />
+                  <Line dataKey="execAo5" name="Ao5 (Exec)" stroke={TYPE_COLORS.exec.ao5} dot={false} strokeWidth={2} connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.exec && visibleTotalData.length >= 12 && (
-                  <Line dataKey="execAo12" name="Ao12 (Exec)" stroke={TYPE_COLORS.exec.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
+                  <Line dataKey="execAo12" name="Ao12 (Exec)" stroke={TYPE_COLORS.exec.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
 
                 {/* Recog lines — tune: RECOG_OPACITY (0–1), RECOG_WIDTH (px) */}
                 {totalToggle.recog && (
                   <Line dataKey="recog" name="Recog" stroke="none"
                     dot={{ r: 3, fill: TYPE_COLORS.recog.line, fillOpacity: 0.45 }}
-                    activeDot={{ r: 6, fill: TYPE_COLORS.recog.line, fillOpacity: 0.45, cursor: 'pointer' }} />
+                    activeDot={{ r: 6, fill: TYPE_COLORS.recog.line, fillOpacity: 0.45, cursor: 'pointer' }}
+                    animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.recog && visibleTotalData.length >= 5 && (
-                  <Line dataKey="recogAo5" name="Ao5 (Recog)" stroke={TYPE_COLORS.recog.ao5} strokeOpacity={0.45} dot={false} strokeWidth={2} connectNulls />
+                  <Line dataKey="recogAo5" name="Ao5 (Recog)" stroke={TYPE_COLORS.recog.ao5} strokeOpacity={0.45} dot={false} strokeWidth={2} connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.recog && visibleTotalData.length >= 12 && (
-                  <Line dataKey="recogAo12" name="Ao12 (Recog)" stroke={TYPE_COLORS.recog.ao12} strokeOpacity={0.45} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
+                  <Line dataKey="recogAo12" name="Ao12 (Recog)" stroke={TYPE_COLORS.recog.ao12} strokeOpacity={0.45} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
 
                 {/* Total lines */}
                 {totalToggle.total && (
                   <Line dataKey="total" name="Total" stroke="none"
                     dot={{ r: 3, fill: TYPE_COLORS.total.line }}
-                    activeDot={{ r: 6, fill: TYPE_COLORS.total.line, cursor: 'pointer' }} />
+                    activeDot={{ r: 6, fill: TYPE_COLORS.total.line, cursor: 'pointer' }}
+                    animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.total && visibleTotalData.length >= 5 && (
-                  <Line dataKey="totalAo5" name="Ao5 (Total)" stroke={TYPE_COLORS.total.ao5} dot={false} strokeWidth={2} connectNulls />
+                  <Line dataKey="totalAo5" name="Ao5 (Total)" stroke={TYPE_COLORS.total.ao5} dot={false} strokeWidth={2} connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
                 {totalToggle.total && visibleTotalData.length >= 12 && (
-                  <Line dataKey="totalAo12" name="Ao12 (Total)" stroke={TYPE_COLORS.total.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />
+                  <Line dataKey="totalAo12" name="Ao12 (Total)" stroke={TYPE_COLORS.total.ao12} dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls animationDuration={LINE_ANIMATION_DURATION_MS} animationEasing={LINE_ANIMATION_EASING} />
                 )}
 
                 {/* Zoom selection area */}
@@ -770,6 +779,8 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
                       connectNulls
                       hide={hiddenPhases.has(key)}
                       activeDot={{ r: 6, fill: color, fillOpacity: timeType === 'recog' ? 0.45 : undefined, cursor: 'pointer' }}
+                      animationDuration={LINE_ANIMATION_DURATION_MS}
+                      animationEasing={LINE_ANIMATION_EASING}
                     />
                   )
                 })}

@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| v1.14 | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
 | v1.13 | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
 | v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
 | v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
@@ -34,6 +35,22 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.14 — Trends chart animation tuning (2026-04-14)
+
+**Review:** not yet
+
+**What was built:**
+- **`LINE_ANIMATION_DURATION_MS`** (default 200 ms) — replaces Recharts' default ~1500 ms draw-in animation on all `<Line>` components in both the total and phase charts.
+- **`LINE_ANIMATION_EASING`** (default `"ease-out"`) — exposes the Recharts `animationEasing` prop as a tunable constant; fixes the "vertical drift" appearance caused by the default `"ease"` easing starting slow.
+- **Phase chart fix** — phase chart `<Line>` components in the `.map()` were missing `animationDuration` entirely (still using the 1500 ms default); both props are now applied there too.
+- Both constants live at `TrendsModal.tsx:28–31` with inline comments for tuning.
+
+**Key technical learnings:**
+- `[insight]` Recharts animates lines using SVG `stroke-dashoffset`. The animation has two tunable props: `animationDuration` (speed) and `animationEasing` (shape). The default `"ease"` easing starts slow, which reads visually as data points "drifting" vertically into position — `"ease-out"` eliminates this.
+- `[gotcha]` When `<Line>` components are generated in a `.map()`, they're easy to miss when adding props to sibling static lines — always check both static and dynamic line renders.
 
 ---
 
