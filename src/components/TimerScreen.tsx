@@ -480,7 +480,7 @@ export function TimerScreen({
         </div>
       )}
 
-      {cloudLoading && (() => {
+      {cloudLoading && !sharedSolveLoading && (() => {
         const h = initialHashRef.current
         const label = h.startsWith('#trends') ? 'Syncing trends from cloud…'
           : h.startsWith('#solve-') ? 'Syncing solve from cloud…'
