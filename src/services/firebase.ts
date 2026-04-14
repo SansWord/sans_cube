@@ -17,4 +17,6 @@ export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const googleProvider = new GoogleAuthProvider()
-export const analytics = getAnalytics(app)
+export const analytics = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  ? getAnalytics(app)
+  : null
