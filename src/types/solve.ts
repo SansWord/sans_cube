@@ -31,6 +31,7 @@ export interface SolveRecord {
   driver?: 'cube' | 'mouse'
   isExample?: boolean
   method?: string       // 'cfop' | 'roux'; absent on old solves, treated as 'cfop'
+  shareId?: string      // Firestore doc ID in public_solves; absent = not shared
 }
 
 export interface Phase {
