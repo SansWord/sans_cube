@@ -9,7 +9,8 @@
 | `sans_cube_dismissed_examples` | `number[]` (JSON) | IDs of example solves the user has dismissed. |
 | `cubeOrientationConfig` | `{ front: string, bottom: string }` (JSON) | Front and bottom face color config for cube orientation. |
 | `sidebarWidth` | `number` | Width of the solve history sidebar in pixels. |
-| `sans_cube_method` | `string` | Selected solve method (`'cfop'` or `'roux'`). |
+| `sans_cube_method` | `string` | Selected method filter (`'all'`, `'cfop'`, or `'roux'`). |
+| `sans_cube_driver` | `string` | Selected driver filter (`'all'`, `'cube'`, or `'mouse'`). |
 | `sans_cube_cloud_sync_enabled` | `boolean` (JSON) | Whether cloud sync is enabled. Auth state is managed by Firebase SDK separately. |
 | `sans_cube_analytics_acknowledged` | `"true"` | Set when user dismisses the analytics consent banner |
 
@@ -75,7 +76,8 @@ Private ownership registry. Empty document — its existence proves the authenti
 | Dismissed examples | `sans_cube_dismissed_examples` | — | localStorage only. Not synced. |
 | Orientation config | `cubeOrientationConfig` | — | localStorage only. Not synced. |
 | Sidebar width | `sidebarWidth` | — | localStorage only. Not synced. |
-| Solve method | `sans_cube_method` | — | localStorage only. Not synced. |
+| Solve method filter | `sans_cube_method` | — | localStorage only. Not synced. |
+| Driver filter | `sans_cube_driver` | — | localStorage only. Not synced. |
 | Cloud sync enabled | `sans_cube_cloud_sync_enabled` | — | localStorage only. Firebase Auth session is managed by the Firebase SDK independently. |
 
 ### Sync rules for the seq counter

@@ -53,19 +53,45 @@ export function filterSolves(solves: SolveRecord[], filter: SolveFilter): SolveR
 
 ---
 
-## State (`src/components/TimerScreen.tsx`)
+## Persistence (`src/components/TimerScreen.tsx`)
 
-Replace `methodFilter: MethodFilter` state with a single unified filter:
+Both filter values persist to localStorage so they survive page reloads:
+
+| Key | Type | Values |
+|-----|------|--------|
+| `sans_cube_method` | `string` | `'all'` \| `'cfop'` \| `'roux'` (already exists) |
+| `sans_cube_driver` | `string` | `'all'` \| `'cube'` \| `'mouse'` (new) |
+
+`TimerScreen` reads both keys on mount to initialize `solveFilter`, and writes them on every change:
 
 ```ts
-const [solveFilter, setSolveFilter] = useState<SolveFilter>({ method: 'all', driver: 'all' })
+function readSolveFilter(): SolveFilter {
+  const method = (localStorage.getItem('sans_cube_method') ?? 'all') as MethodFilter
+  const driver = (localStorage.getItem('sans_cube_driver') ?? 'all') as DriverFilter
+  return { method, driver }
+}
+
+const [solveFilter, setSolveFilter] = useState<SolveFilter>(readSolveFilter)
 ```
 
-Pass `solveFilter` and `setSolveFilter` to `SolveHistorySidebar` and `TrendsModal`. Each component updates only its slice:
+On change, the setter also writes to localStorage:
 
 ```ts
-setSolveFilter(f => ({ ...f, method: newMethod }))
-setSolveFilter(f => ({ ...f, driver: newDriver }))
+function updateSolveFilter(updater: (f: SolveFilter) => SolveFilter) {
+  setSolveFilter(prev => {
+    const next = updater(prev)
+    localStorage.setItem('sans_cube_method', next.method)
+    localStorage.setItem('sans_cube_driver', next.driver)
+    return next
+  })
+}
+```
+
+Pass `solveFilter` and `updateSolveFilter` to `SolveHistorySidebar` and `TrendsModal`. Each component updates only its slice:
+
+```ts
+updateSolveFilter(f => ({ ...f, method: newMethod }))
+updateSolveFilter(f => ({ ...f, driver: newDriver }))
 ```
 
 ---
