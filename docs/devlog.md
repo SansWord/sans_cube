@@ -4,6 +4,23 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.9 — Detect Method Mismatches Debug Tool (2026-04-13 21:17)
+**Review:** not yet
+
+**What was built:**
+- **`detectMethod.ts`** (`src/utils/detectMethod.ts`): pure utility that scans a list of `SolveRecord`s and returns any where the stored `method` field likely doesn't match how the cube was actually solved. Uses two heuristics: M-move count (≥ 8 confidently identifies Roux, since Roux LSE is exclusively M+U) and first-phase turn count under each method (recompute via `recomputePhases` — the wrong method produces a bloated first phase). Returns `null` (ambiguous, don't flag) if both methods produce plausible first phases.
+- **Debug mode: "Detect method mismatches" button (local)**: scans `localStorage` solves and shows results in an inline panel. Each flagged solve displays solve ID, stored method, suggested method, M-move count, and first-phase turns under both CFOP and Roux.
+- **Debug mode: "Detect method mismatches" button (cloud)**: loads all solves from Firestore first, then runs the same heuristic. Separate button in the Firebase panel, disabled while scanning.
+- **Fix flow reuses `SolveDetailModal`**: clicking a flagged solve opens it in `SolveDetailModal` with full `onUpdate`/`onDelete` wiring. After a method change, the mismatch panel re-runs `detectMethodMismatches` on just that solve — removes it from the list if fixed, updates in place if still flagged.
+
+**Key technical learnings:**
+- **M-move count is the strongest signal for BLE Roux solves.** Roux LSE uses only M and U moves — a typical solve has 10–20 M moves. CFOP almost never exceeds 4 M moves. Threshold ≥ 8 avoids false positives.
+- **Recomputing under the wrong method bloats the first phase.** CFOP Cross turns and Roux FB turns each have a natural ceiling (~15 and ~18 respectively). If a solve exceeds the ceiling under method A but not method B, it's a strong signal the solve was done with method B.
+- **Don't flag ambiguous cases.** If both methods produce a plausible first phase, `suggestMethod` returns `null` — the solve is skipped. False positives are more damaging than false negatives for a correction tool.
+- **Reusing `SolveDetailModal` for the fix flow avoids building new UI.** The modal already has `MethodSelector`, `onUpdate`, and `onDelete` — connecting it to the debug panel's `selectedDebugSolve` state was enough to make the full fix flow work.
+
+---
+
 ## v1.8 — Method Update in SolveDetailModal (2026-04-13 19:05)
 **Review:** not yet
 
