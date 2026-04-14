@@ -4,6 +4,7 @@ import type { User } from 'firebase/auth'
 import { auth, googleProvider } from '../services/firebase'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
+import { setAnalyticsUser, logCloudSyncEnabled } from '../services/analytics'
 
 export interface CloudSyncState {
   enabled: boolean
@@ -26,6 +27,7 @@ export function useCloudSync(): CloudSyncState {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setAuthLoading(false)
+      setAnalyticsUser(u ? u.uid : null)
     })
     return unsub
   }, [])
@@ -41,6 +43,7 @@ export function useCloudSync(): CloudSyncState {
   const enable = useCallback(() => {
     setEnabled(true)
     saveToStorage(STORAGE_KEYS.CLOUD_SYNC_ENABLED, true)
+    logCloudSyncEnabled()
   }, [])
 
   const disable = useCallback(() => {
