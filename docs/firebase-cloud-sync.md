@@ -69,6 +69,15 @@ Where `{date}` is `String(solve.date)` — the Unix timestamp (ms) when the solv
 
 Each document is a serialized `SolveRecord` object (see `src/types/solve.ts`).
 
+## Firestore operations
+
+| Function | Description |
+|----------|-------------|
+| `loadSolvesFromFirestore(uid)` | Load all solves ordered by date |
+| `addSolveToFirestore(uid, solve)` | Write a new solve doc (idempotent `setDoc`) |
+| `updateSolveInFirestore(uid, solve)` | Update an existing solve doc in place (same `setDoc`, uses `solve.date` as doc ID) |
+| `deleteSolveFromFirestore(uid, solve)` | Delete a solve doc |
+
 ## Deployment (GitHub Pages)
 
 Firebase config values are stored as GitHub Actions secrets (repo → Settings → Secrets and variables → Actions). The deploy workflow injects them at build time so they're baked into the JS bundle.

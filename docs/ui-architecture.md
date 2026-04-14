@@ -53,7 +53,7 @@ Each hook is owned by a single component; data flows down as props.
 
 | Hook | Provides |
 |---|---|
-| `useSolveHistory` | `solves`, `addSolve`, `deleteSolve`, `nextSolveIds`, `cloudLoading` |
+| `useSolveHistory` | `solves`, `addSolve`, `deleteSolve`, `updateSolve`, `nextSolveIds`, `cloudLoading` |
 | `useScramble` | `scramble`, `steps`, `regenerate`, `load` |
 | `useScrambleTracker` | `stepStates`, `trackingState`, `wrongSegments`, `reset` |
 | `useTimer` | `status`, `elapsedMs`, `phaseRecords`, `recordedMoves`, `quaternionSnapshots`, `reset` |
@@ -69,7 +69,9 @@ Each hook is owned by a single component; data flows down as props.
 |---|---|
 | `useReplayController` | `currentIndex`, `indicatorMs`, `isPlaying`, `speed`, `gyroEnabled`, `play`, `pause`, `seekTo`, `stepForward`, `stepBackward`, `fastForward`, `fastBackward`, `setSpeed`, `setGyroEnabled` |
 
-All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
+Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on method change), `saving` (disables `MethodSelector` and Delete during async save), `methodError` (inline error shown if phase recompute fails). All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
+
+Props: `onUpdate: (solve: SolveRecord) => Promise<void>` — called after method change with the updated record.
 
 ### `SolveReplayer` (`src/components/SolveReplayer.tsx`)
 
