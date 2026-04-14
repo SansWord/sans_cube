@@ -58,7 +58,7 @@ export function TimerScreen({
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
-  const { solves, addSolve, deleteSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
+  const { solves, addSolve, deleteSolve, updateSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
 
   useEffect(() => {
     const d = driver.current
@@ -379,7 +379,7 @@ export function TimerScreen({
           onClose={() => setSelectedSolve(null)}
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
           onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
-          onUpdate={async () => {}}
+          onUpdate={async (updated) => { await updateSolve(updated) }}
         />
       )}
 
