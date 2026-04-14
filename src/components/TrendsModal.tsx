@@ -12,7 +12,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
-import type { SolveRecord, MethodFilter } from '../types/solve'
+import type { SolveRecord, SolveFilter } from '../types/solve'
 import { getMethod, CFOP, ROUX } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
@@ -40,8 +40,8 @@ const TYPE_COLORS: Record<TimeKey, { line: string; ao5: string; ao12: string }> 
 
 interface Props {
   solves: SolveRecord[]
-  methodFilter: MethodFilter
-  setMethodFilter: (f: MethodFilter) => void
+  solveFilter: SolveFilter
+  updateSolveFilter: (updater: (f: SolveFilter) => SolveFilter) => void
   onSelectSolve: (solve: SolveRecord) => void
   onClose: () => void
   detailOpen?: boolean
@@ -161,17 +161,17 @@ function buildColorMapForMethod(method: ReturnType<typeof getMethod>, grouped: b
 }
 
 function buildColorMap(
-  methodFilter: MethodFilter,
+  method: SolveFilter['method'],
   grouped: boolean,
 ): Record<string, string> {
-  if (methodFilter === 'all') {
+  if (method === 'all') {
     // Merge colors from all methods so Roux phase names don't fall back to gray
     return {
       ...buildColorMapForMethod(ROUX, grouped),
       ...buildColorMapForMethod(CFOP, grouped),
     }
   }
-  return buildColorMapForMethod(getMethod(methodFilter), grouped)
+  return buildColorMapForMethod(getMethod(method), grouped)
 }
 
 function buildMergedPhaseData(
@@ -339,7 +339,7 @@ function PhaseTooltip({
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSolve, onClose, detailOpen }: Props) {
+export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSolve, onClose, detailOpen }: Props) {
   const [isMobile] = useState(() => window.innerWidth < 640)
 
   useEffect(() => {
@@ -359,8 +359,8 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   const refAreaRightRef = useRef<number | null>(null)
   const [zoomStack, setZoomStack] = useState<Array<[number, number]>>([])
 
-  const filtered = filterSolves(solves, methodFilter)
-  const method = getMethod(methodFilter === 'all' ? 'cfop' : methodFilter)
+  const filtered = filterSolves(solves, solveFilter)
+  const method = getMethod(solveFilter.method === 'all' ? 'cfop' : solveFilter.method)
   const hasGroups = method.phases.some(p => p.group)
 
   const currentDomain: [number, number] | null = zoomStack.length > 0 ? zoomStack[zoomStack.length - 1] : null
@@ -384,7 +384,7 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
 
   const firstVisSeq = visibleSeqData[0]?.seq ?? 1
   const lastVisSeq = visibleSeqData[visibleSeqData.length - 1]?.seq ?? firstVisSeq
-  const colorMap = buildColorMap(methodFilter, grouped)
+  const colorMap = buildColorMap(solveFilter.method, grouped)
 
   const phaseKeys = Array.from(
     phaseData.reduce((set, pt) => {
@@ -405,7 +405,8 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
     const activeTotalTypes = (Object.keys(totalToggle) as TimeKey[]).filter(k => totalToggle[k]).join(',') || 'exec,recog,total'
     const activePhaseTypes = (Object.keys(phaseToggle) as TimeKey[]).filter(k => phaseToggle[k]).join(',') || 'total'
     const params = new URLSearchParams({
-      method: methodFilter,
+      method: solveFilter.method,
+      driver: solveFilter.driver,
       tab,
       window: String(windowSize),
       group: grouped ? 'grouped' : 'split',
@@ -413,7 +414,7 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
       tphase: activePhaseTypes,
     })
     window.location.hash = `trends?${params.toString()}`
-  }, [methodFilter, tab, windowSize, grouped, totalToggle, phaseToggle])
+  }, [solveFilter, tab, windowSize, grouped, totalToggle, phaseToggle])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
@@ -541,8 +542,8 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontWeight: 'bold', color: '#888', fontSize: 15 }}>Trends</span>
           <select
-            value={methodFilter}
-            onChange={e => setMethodFilter(e.target.value as MethodFilter)}
+            value={solveFilter.method}
+            onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
             style={{
               background: 'transparent',
               border: '1px solid #333',
@@ -556,6 +557,23 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
             <option value="all">All</option>
             <option value="cfop">CFOP</option>
             <option value="roux">Roux</option>
+          </select>
+          <select
+            value={solveFilter.driver}
+            onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
+            style={{
+              background: 'transparent',
+              border: '1px solid #333',
+              color: '#888',
+              fontSize: 12,
+              padding: '1px 4px',
+              borderRadius: 3,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All</option>
+            <option value="cube">Cube</option>
+            <option value="mouse">Mouse</option>
           </select>
         </div>
         <button
