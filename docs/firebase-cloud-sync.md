@@ -32,13 +32,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Private solves — owner only
-    match /users/{userId}/solves/{solveId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Deny everything not matched below
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Private ownership registry for shared solves — owner only
-    match /users/{userId}/shared_solves/{shareId} {
+    // All user data — owner only
+    // Covers solves, shared_solves registry, meta/counter, and any future subcollections
+    match /users/{userId}/{collection}/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
@@ -180,18 +181,11 @@ A legitimate user could write extremely large solve records or documents missing
 Replace the basic security rule with this stricter version:
 
 ```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/solves/{solveId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null
-                && request.auth.uid == userId
-                && request.resource.data.keys().hasAll(['id', 'date', 'timeMs', 'moves', 'phases'])
-                && request.resource.size < 100000;
-    }
-  }
-}
+// Add to the /users/{userId}/{collection}/{docId} rule:
+allow write: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.keys().hasAll(['id', 'date', 'timeMs', 'moves', 'phases'])
+          && request.resource.size < 100000;
 ```
 
 This limits each solve document to 100KB and requires the core fields to be present.
