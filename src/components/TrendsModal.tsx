@@ -101,20 +101,20 @@ function parseToggle(raw: string | null): TimeToggle {
 
 function parseHashParams(): {
   tab: Tab
-  windowSize: WindowSize
+  windowSize: WindowSize | null
   grouped: boolean
   totalToggle: TimeToggle
   phaseToggle: TimeToggle
 } {
   const hash = window.location.hash
   if (!hash.startsWith('#trends')) {
-    return { tab: 'total', windowSize: 'all', grouped: true, totalToggle: { exec: false, recog: false, total: true }, phaseToggle: { exec: false, recog: false, total: true } }
+    return { tab: 'total', windowSize: null, grouped: true, totalToggle: { exec: false, recog: false, total: true }, phaseToggle: { exec: false, recog: false, total: true } }
   }
   const search = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
   const params = new URLSearchParams(search)
   const tab: Tab = params.get('tab') === 'phases' ? 'phases' : 'total'
   const w = params.get('window')
-  const windowSize: WindowSize = w === 'all' ? 'all' : w === '50' ? 50 : w === '100' ? 100 : 25
+  const windowSize: WindowSize | null = w === 'all' ? 'all' : w === '50' ? 50 : w === '100' ? 100 : w === '25' ? 25 : null
   const grouped: boolean = params.get('group') !== 'split'
   const totalToggle = parseToggle(params.get('ttotal'))
   const ptRaw = params.get('tphase') ?? 'total'
@@ -349,7 +349,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   }, [onClose, detailOpen])
   const parsed = parseHashParams()
   const [tab, setTab] = useState<Tab>(parsed.tab)
-  const [windowSize, setWindowSize] = useState<WindowSize>(isMobile ? 25 : (parsed.windowSize ?? 'all'))
+  const [windowSize, setWindowSize] = useState<WindowSize>(parsed.windowSize ?? (isMobile ? 25 : 'all'))
   const [grouped, setGrouped] = useState(parsed.grouped)
   const [totalToggle, setTotalToggle] = useState<TimeToggle>({ exec: false, recog: false, total: true })
   const [phaseToggle, setPhaseToggle] = useState<TimeToggle>(parsed.phaseToggle)
