@@ -72,15 +72,9 @@ Real solve records used in tests live in `tests/fixtures/solveFixtures.ts`. Quat
 
 All `it.each`-based tests in `recomputePhases.test.ts` expand automatically — no changes to the test file needed.
 
-## Current State (as of 2026-04-13)
+## Current State
 
-- **v1.8** complete — Method update in SolveDetailModal (CFOP ↔ Roux), recomputePhases utility, updateSolve persistence, round-trip tests
-- **v1.7** complete — URL deep link fixes for cloud sync (#solve-N, #trends), hashchange listener, loading overlay, code dedup
-- **v1.6** complete — Hardware clock timing fix (BLE delay), retroactive recalibration buttons, copy solve list as TSV, sidebar scroll fix
-- **v1.51** — Stats Trends polish (click-to-detail, Esc chain, phases multi-toggle)
-- **v1.5** — Stats Trends modal (Total + Phases tabs, Ao5/Ao12, zoom, day lines, URL sync)
-- **v1.4** — method filter in solve history sidebar
-- **v1.3** — Firebase cloud sync (opt-in), GitHub Pages deploy workflow
+See `docs/devlog.md` for the latest version and full history.
 
 ## Planned Future Work
 
