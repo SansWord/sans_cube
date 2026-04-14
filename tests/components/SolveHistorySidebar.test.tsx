@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { useState } from 'react'
 import { SolveHistorySidebar } from '../../src/components/SolveHistorySidebar'
-import type { SolveRecord, MethodFilter } from '../../src/types/solve'
+import type { SolveRecord, SolveFilter } from '../../src/types/solve'
 
 function makeSolve(id: number, method?: string, isExample?: boolean): SolveRecord {
   return {
@@ -19,9 +19,10 @@ function makeSolve(id: number, method?: string, isExample?: boolean): SolveRecor
   }
 }
 
-function SidebarWrapper(props: Omit<React.ComponentProps<typeof SolveHistorySidebar>, 'methodFilter' | 'setMethodFilter'>) {
-  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
-  return <SolveHistorySidebar {...props} methodFilter={methodFilter} setMethodFilter={setMethodFilter} />
+function SidebarWrapper(props: Omit<React.ComponentProps<typeof SolveHistorySidebar>, 'solveFilter' | 'updateSolveFilter'>) {
+  const [solveFilter, setSolveFilter] = useState<SolveFilter>({ method: 'all', driver: 'all' })
+  const updateSolveFilter = (updater: (f: SolveFilter) => SolveFilter) => setSolveFilter(updater)
+  return <SolveHistorySidebar {...props} solveFilter={solveFilter} updateSolveFilter={updateSolveFilter} />
 }
 
 const baseProps = {
@@ -51,14 +52,16 @@ describe('SolveHistorySidebar', () => {
 
   it('renders a method filter combobox defaulting to All', () => {
     render(<SidebarWrapper {...baseProps} />)
-    const select = screen.getByRole('combobox')
-    expect(select).toHaveValue('all')
+    const selects = screen.getAllByRole('combobox')
+    const methodSelect = selects[0]
+    expect(methodSelect).toHaveValue('all')
   })
 
   it('filter combobox has All, CFOP, and Roux options', () => {
     render(<SidebarWrapper {...baseProps} />)
-    const select = screen.getByRole('combobox')
-    const options = within(select).getAllByRole('option')
+    const selects = screen.getAllByRole('combobox')
+    const methodSelect = selects[0]
+    const options = within(methodSelect).getAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual(['All', 'CFOP', 'Roux'])
   })
 
@@ -81,7 +84,9 @@ describe('SolveHistorySidebar', () => {
       makeSolve(3, undefined),
     ]
     render(<SidebarWrapper {...baseProps} solves={solves} />)
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'cfop')
+    const selects = screen.getAllByRole('combobox')
+    const methodSelect = selects[0]
+    await userEvent.selectOptions(methodSelect, 'cfop')
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.queryByText('2')).not.toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
@@ -94,7 +99,9 @@ describe('SolveHistorySidebar', () => {
       makeSolve(3, undefined),
     ]
     render(<SidebarWrapper {...baseProps} solves={solves} />)
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
+    const selects = screen.getAllByRole('combobox')
+    const methodSelect = selects[0]
+    await userEvent.selectOptions(methodSelect, 'roux')
     expect(screen.queryByText('1')).not.toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.queryByText('3')).not.toBeInTheDocument()
@@ -107,7 +114,9 @@ describe('SolveHistorySidebar', () => {
       makeSolve(2, 'roux'),
     ]
     render(<SidebarWrapper {...baseProps} solves={solves} />)
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'roux')
+    const selects = screen.getAllByRole('combobox')
+    const methodSelect = selects[0]
+    await userEvent.selectOptions(methodSelect, 'roux')
     expect(screen.getByText('★')).toBeInTheDocument()
     expect(screen.queryByText('1')).not.toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
@@ -115,6 +124,6 @@ describe('SolveHistorySidebar', () => {
 
   it('also renders the filter in overlay (mobile) mode', () => {
     render(<SidebarWrapper {...baseProps} onClose={vi.fn()} />)
-    expect(screen.getByRole('combobox')).toBeInTheDocument()
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThanOrEqual(1)
   })
 })
