@@ -23,6 +23,7 @@ import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
+import { shareSolve, unshareSolve } from '../services/firestoreSharing'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -380,6 +381,14 @@ export function TimerScreen({
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
           onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
           onUpdate={async (updated) => { await updateSolve(updated) }}
+          onShare={cloudConfig?.enabled && cloudConfig?.user
+            ? async (solve) => shareSolve(cloudConfig.user!.uid, solve)
+            : undefined
+          }
+          onUnshare={cloudConfig?.enabled && cloudConfig?.user
+            ? async (shareId) => unshareSolve(cloudConfig.user!.uid, shareId)
+            : undefined
+          }
         />
       )}
 
