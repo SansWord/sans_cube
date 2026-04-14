@@ -24,6 +24,7 @@ import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
 import { shareSolve, unshareSolve, loadSharedSolve, SHARE_ID_RE } from '../services/firestoreSharing'
+import { logSharedSolveViewed, logSolveRecorded } from '../services/analytics'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -112,6 +113,7 @@ export function TimerScreen({
     if (!SHARE_ID_RE.test(shareId)) return
 
     setSharedSolveLoading(true)
+    logSharedSolveViewed(shareId)
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
     void Promise.race([loadSharedSolve(shareId), timeout]).then((solve) => {
       setSharedSolveLoading(false)
@@ -242,6 +244,7 @@ export function TimerScreen({
       driver: driverType,
       method: method.id,
     })
+    logSolveRecorded(method.id)
     // Generate next scramble after short delay
     setTimeout(() => {
       regenerate()
