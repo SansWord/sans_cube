@@ -4,6 +4,25 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.10 — Solve Sharing (2026-04-13 21:55)
+**Review:** not yet
+
+**What was built:**
+- **`src/services/firestoreSharing.ts`** (new): `shareSolve`, `unshareSolve`, `updateSharedSolve`, `loadSharedSolve`, `newShareId`. Share IDs are 20-char base62 strings generated with `crypto.getRandomValues()`.
+- **`SolveDetailModal` share UI**: Share button, shared URL display (read-only input + Copy button), Unshare button. Button is only shown when cloud sync is enabled. `readOnly` prop hides all action controls for viewer mode (method selector, delete, share, copy-as-example).
+- **`useSolveHistory.updateSolve`**: fire-and-forget `updateSharedSolve` call when the updated solve has a `shareId` set — keeps the public copy in sync on method changes.
+- **`#shared-{shareId}` hash routing in `TimerScreen`**: on boot and on `hashchange`, fetches the public solve and opens `SolveDetailModal` in read-only mode. 3-second timeout; "Solve not found or no longer shared" banner on failure. Loading overlay shown while fetch is in flight.
+- **Firestore data model**: `public_solves/{shareId}` (publicly readable by ID, not listable), `users/{uid}/shared_solves/{shareId}` (empty ownership registry — `exists()` check in rules avoids storing `ownerUid` in the public doc).
+
+**Key technical learnings:**
+- **`useEffect` ordering causes URL-hash clearing before async state applies.** Effects run synchronously in definition order on mount. A URL-update effect that clears the hash fires with `sharedSolveLoading = false` even though the boot effect's `setSharedSolveLoading(true)` call is batched and hasn't taken effect yet. Fix: explicitly restore the `#shared-{shareId}` hash after the fetch resolves, rather than relying on the guard alone.
+- **`request.resource.size` is not a valid Firestore rules property.** It evaluates to `null`, making `null < 200000` always `false` — silently denying all writes. Firestore enforces a 1 MB document limit at the storage layer; no explicit size check is needed in rules.
+- **Write ordering matters for `exists()` checks in security rules.** The registry doc (`users/{uid}/shared_solves/{shareId}`) must be written before the public doc (`public_solves/{shareId}`) — the `create` rule's `exists()` check reads the registry server-side. Unshare reverses the order: delete public doc first (while registry still exists for the `delete` rule), then delete registry.
+- **Wildcard user rule must cover `meta/counter`.** Explicit per-collection rules (`/users/{uid}/solves/{id}`, `/users/{uid}/shared_solves/{id}`) miss the counter doc at `users/{uid}/meta/counter`. The wildcard `match /users/{userId}/{collection}/{docId}` covers all two-segment paths under any user, including `meta/counter`.
+- **`crypto.getRandomValues()` not `Math.random()` for capability URLs.** Share IDs are unguessable tokens — their security depends on entropy. `Math.random()` is not cryptographically secure. `crypto.getRandomValues()` gives the same API surface with proper randomness.
+
+---
+
 ## v1.9 — Detect Method Mismatches Debug Tool (2026-04-13 21:17)
 **Review:** not yet
 
