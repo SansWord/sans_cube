@@ -13,6 +13,7 @@ import { MoveHistory } from './components/MoveHistory'
 import { FaceletDebug } from './components/FaceletDebug'
 import { SolveReplayer } from './components/SolveReplayer'
 import { TimerScreen } from './components/TimerScreen'
+import { AnalyticsBanner } from './components/AnalyticsBanner'
 import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
@@ -352,6 +353,7 @@ export default function App() {
           )}
         </>
       )}
+      <AnalyticsBanner />
     </div>
   )
 }
