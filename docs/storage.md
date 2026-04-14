@@ -11,7 +11,7 @@
 | `sidebarWidth` | `number` | Width of the solve history sidebar in pixels. |
 | `sans_cube_method` | `string` | Active recording method (`'cfop'` or `'roux'`). Controls what method tags the next solve. |
 | `sans_cube_method_filter` | `string` | Method display filter (`'all'`, `'cfop'`, or `'roux'`). Affects sidebar stats and Trends chart. |
-| `sans_cube_driver` | `string` | Driver display filter (`'all'`, `'cube'`, or `'mouse'`). Affects sidebar stats and Trends chart. |
+| `sans_cube_driver_filter` | `string` | Driver display filter (`'all'`, `'cube'`, or `'mouse'`). Affects sidebar stats and Trends chart. |
 | `sans_cube_cloud_sync_enabled` | `boolean` (JSON) | Whether cloud sync is enabled. Auth state is managed by Firebase SDK separately. |
 | `sans_cube_analytics_acknowledged` | `"true"` | Set when user dismisses the analytics consent banner |
 
@@ -79,7 +79,7 @@ Private ownership registry. Empty document — its existence proves the authenti
 | Sidebar width | `sidebarWidth` | — | localStorage only. Not synced. |
 | Active recording method | `sans_cube_method` | — | localStorage only. Not synced. |
 | Method display filter | `sans_cube_method_filter` | — | localStorage only. Not synced. |
-| Driver display filter | `sans_cube_driver` | — | localStorage only. Not synced. |
+| Driver display filter | `sans_cube_driver_filter` | — | localStorage only. Not synced. |
 | Cloud sync enabled | `sans_cube_cloud_sync_enabled` | — | localStorage only. Firebase Auth session is managed by the Firebase SDK independently. |
 
 ### Sync rules for the seq counter
