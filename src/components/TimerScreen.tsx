@@ -3,7 +3,7 @@ import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
 import { STORAGE_KEYS } from '../utils/storageKeys'
-import type { SolveRecord, MethodFilter } from '../types/solve'
+import type { SolveRecord, SolveFilter, MethodFilter, DriverFilter } from '../types/solve'
 import { useCubeDriverEvent } from '../hooks/useCubeDriverEvent'
 import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
@@ -75,7 +75,21 @@ export function TimerScreen({
     return saved ? parseInt(saved, 10) : 160
   })
   const [showHistory, setShowHistory] = useState(false)
-  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
+  const [solveFilter, setSolveFilter] = useState<SolveFilter>(() => {
+    const method = (localStorage.getItem(STORAGE_KEYS.METHOD_FILTER) ?? 'all') as MethodFilter
+    const driver = (localStorage.getItem(STORAGE_KEYS.DRIVER_FILTER) ?? 'all') as DriverFilter
+    return { method, driver }
+  })
+
+  function updateSolveFilter(updater: (f: SolveFilter) => SolveFilter) {
+    setSolveFilter(prev => {
+      const next = updater(prev)
+      localStorage.setItem(STORAGE_KEYS.METHOD_FILTER, next.method)
+      localStorage.setItem(STORAGE_KEYS.DRIVER_FILTER, next.driver)
+      return next
+    })
+  }
+
   const [showTrends, setShowTrends] = useState(false)
   const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve()
   const urlResolvedRef = useRef(false)
@@ -280,8 +294,8 @@ export function TimerScreen({
         width={sidebarWidth}
         onWidthChange={setSidebarWidth}
         cloudLoading={cloudLoading}
-        methodFilter={methodFilter}
-        setMethodFilter={setMethodFilter}
+        solveFilter={solveFilter}
+        updateSolveFilter={updateSolveFilter}
         onOpenTrends={() => setShowTrends(true)}
       />
 
@@ -352,8 +366,8 @@ export function TimerScreen({
           onWidthChange={setSidebarWidth}
           onClose={() => setShowHistory(false)}
           cloudLoading={cloudLoading}
-          methodFilter={methodFilter}
-          setMethodFilter={setMethodFilter}
+          solveFilter={solveFilter}
+          updateSolveFilter={updateSolveFilter}
           onOpenTrends={() => { setShowTrends(true); setShowHistory(false) }}
         />
       )}
@@ -361,8 +375,8 @@ export function TimerScreen({
       {showTrends && (
         <TrendsModal
           solves={solves}
-          methodFilter={methodFilter}
-          setMethodFilter={setMethodFilter}
+          solveFilter={solveFilter}
+          updateSolveFilter={updateSolveFilter}
           onSelectSolve={setSelectedSolve}
           onClose={() => {
             setShowTrends(false)
