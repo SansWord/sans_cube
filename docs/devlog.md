@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| v1.13 | Extract `useSharedSolve` hook; fix spinner stuck on Firestore error; show "not found" for invalid share IDs |
 | v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
 | v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
 | v1.10 | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
@@ -33,6 +34,22 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.13 — useSharedSolve extraction + shared link bug fixes (2026-04-14 01:36)
+**Review:** not yet
+
+**What was built:**
+- **`useSharedSolve` hook** (`src/hooks/useSharedSolve.ts`): extracted 3 state fields (`sharedSolve`, `sharedSolveLoading`, `sharedSolveNotFound`) and both fetch effects (boot + hashchange) from `TimerScreen`. Returns `clearSharedSolve()` which clears state and resets the URL hash. Reduces `TimerScreen` from 10 to 7 `useState` declarations.
+- **Fix: Firestore error no longer leaves spinner frozen** — `.catch(() => null)` added to `loadSharedSolve(shareId)` in the `Promise.race`. Previously, any Firestore rejection (network error, permissions, ad blocker in incognito) would reject the race silently, leaving `sharedSolveLoading = true` forever with no "not found" feedback.
+- **Fix: invalid-format share IDs now show "not found" banner** — previously `#shared-notavalidid` (fails the 20-char regex) silently did nothing. Now `doLoad` calls `showNotFound()` immediately for bad-format IDs — no spinner, no Firestore fetch.
+- **`showNotFound` helper** inside `useSharedSolve`: deduplicates the `setSharedSolveNotFound` + `history.replaceState` + `setTimeout` pattern used in three places.
+- **Analytics call moved inside `doLoad`** with a `logAnalytics` flag — fires only on boot (not on hashchange navigation), and only after the regex check passes (not for malformed IDs).
+
+**Key technical learnings:**
+- `[gotcha]` `Promise.race` rejects if the winning promise rejects — if you don't `.catch()` the individual promises, a Firestore error can silently freeze loading state indefinitely. Always wrap individual race contestants with `.catch(() => fallback)`.
+- `[insight]` Silent no-op for invalid input feels like a bug to users who landed on a `#shared-` URL — even a regex-rejected ID should give visible feedback ("not found"), just skip the spinner and the Firestore round-trip.
 
 ---
 
