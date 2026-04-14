@@ -119,6 +119,14 @@ These components are purely presentational — they receive data as props and fi
 
 ---
 
+## Shared Hooks (`src/hooks/`)
+
+| Hook | Role |
+|---|---|
+| `useCubeDriverEvent(driver, event, handler, driverVersion?)` | Registers a typed event handler on a `CubeDriver` and cleans it up on unmount or driver reconnect. Uses a handler ref internally — no `useCallback` required at call sites. Used by every hook/component that listens to cube events. |
+
+---
+
 ## Drivers (`src/drivers/`)
 
 | File | Role |

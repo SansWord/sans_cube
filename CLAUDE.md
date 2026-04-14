@@ -28,7 +28,7 @@ See `docs/ui-architecture.md` for the full component tree, hook ownership, and d
 
 **Services** (`src/services/`) — `firebase.ts` (app init), `firestoreSolves.ts` (Firestore CRUD)
 
-**Hooks** (`src/hooks/`) — `useCubeDriver`, `useCubeState`, `useGyro`, `useGestureDetector`, `useSolveRecorder`, `useSolveHistory`, `useCloudSync`, `useTimer`, `useScramble`, `useScrambleTracker`, `useReplayController`, `useMethod`
+**Hooks** (`src/hooks/`) — `useCubeDriver`, `useCubeDriverEvent`, `useCubeState`, `useGyro`, `useGestureDetector`, `useSolveRecorder`, `useSolveHistory`, `useCloudSync`, `useTimer`, `useScramble`, `useScrambleTracker`, `useReplayController`, `useMethod`
 
 **Components** (`src/components/`) — `TimerScreen`, `SolveDetailModal`, `SolveHistorySidebar`, `CubeCanvas`, `PhaseBar`, `ScrambleDisplay`, `SolveReplayer`, `ConnectionBar`, `OrientationConfig`, `TimerDisplay`, `ControlBar`, `MoveHistory`, `FaceletDebug`, `MethodSelector`
 
@@ -87,7 +87,7 @@ When writing promotional content (LinkedIn posts, social media, release announce
 
 ## End of Session
 
-Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format).
+Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format). When writing a new entry, also update the **TL;DR table** at the top of `docs/devlog.md` with a one-line summary of the new version.
 
 ## GitHub Upload Safety
 

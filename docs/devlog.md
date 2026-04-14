@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
 | v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
 | v1.10 | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
 | v1.9 | Debug tool — detect CFOP/Roux method mismatches across solve history |
@@ -32,6 +33,27 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.12 — Code quality sweep + bug fixes (2026-04-14)
+**Review:** not yet
+
+**What was built:**
+- **`useCubeDriverEvent` hook** (`src/hooks/useCubeDriverEvent.ts`): typed wrapper for `d.on(event, fn)` / `d.off(event, fn)` cleanup. Uses a handler ref internally so the handler is always the latest version without re-registering on every render — no `useCallback` required at call sites. Used by all 7 hooks/components that previously duplicated this pattern (`useTimer`, `useCubeState`, `useSolveRecorder`, `useScrambleTracker`, `useGestureDetector`, `App.tsx`, `TimerScreen.tsx`). Also exports `EventMap` from `CubeDriver.ts` to enable typed generic over event names.
+- **`absorbPhaseIntoNext` helper** in `useTimer.ts`: extracted from two near-identical EOLL→COLL and CPLL→EPLL absorption blocks (~26 lines → 2 one-liner calls).
+- **`CubieData` interface + `WeakMap`** in `CubeRenderer.ts`: replaced 7 `userData as { x, y, z }` unsafe casts with a typed `WeakMap<THREE.Mesh, CubieData>`. Also fixed `animateQuaternionTo` and `animateOrbitToDefaultView` — both started uncancellable RAF loops with no stored frame ID; concurrent calls would fight each other and `dispose()` couldn't cancel them.
+- **Removed dead `partialDirection` field** from `TrackerState` in `useScrambleTracker.ts` — field was set in one place and never read.
+- **Fix: method change no longer exits armed mode** — `setArmed(false)` removed from `MethodSelector.onChange` in `TimerScreen`. Method only affects phase analysis, not scramble completion.
+- **Fix: facelets baseline preserved on method change while armed** — `resetTimer()` was unconditionally called on method change, resetting `faceletsRef` to `SOLVED_FACELETS` even though the cube was physically scrambled. Now gated: `if (!armed) resetTimer()`.
+- **Fix: PhaseBar tooltip crash on stale `hoveredIndex`** — added `hoveredIndex < phaseRecords.length` guard before the tooltip IIFE. Pre-existing bug; method switching made it easier to hit by changing phase count between solves.
+- **5 new tests** for `useCubeDriverEvent`: handler fires, cleanup on unmount, re-registration on `driverVersion` change, latest-handler-without-re-registering, null driver.
+
+**Key technical learnings:**
+- `[insight]` **The handler-ref trick eliminates `useCallback` requirements at call sites.** Store `handlerRef.current = handler` on every render, register a stable wrapper `(payload) => handlerRef.current(payload)` in the effect. The wrapper never changes identity so the effect never re-runs due to handler churn. This is strictly better than requiring `useCallback` at every call site.
+- `[gotcha]` **`resetTimer()` resets the facelets baseline to `SOLVED_FACELETS`.** Safe when the cube is actually solved (pre-scramble), wrong when the cube is scrambled and the user is armed. Gating on `!armed` is the correct fix — the timer's tracking starts from `SOLVED_FACELETS` at first move anyway, so no reset is needed in the armed case.
+- `[gotcha]` **`hoveredIndex` in `PhaseBar` is never automatically reset when `phaseRecords` shrinks.** React component state persists across re-renders regardless of prop changes. Any index into a prop array must be bounds-checked at the access point.
+- `[insight]` **WeakMap is cleaner than `userData` for typed per-object metadata in Three.js.** `userData` is `Record<string, unknown>` — every read requires an unsafe cast. A `WeakMap<THREE.Mesh, CubieData>` populated at construction time gives typed access everywhere and lets the entries be GC'd with the mesh.
 
 ---
 
