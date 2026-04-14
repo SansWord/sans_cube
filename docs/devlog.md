@@ -2,6 +2,14 @@
 
 A record of what was built and what was learned, especially around co-working with Claude Code.
 
+### Learning tags
+
+| Tag | Meaning |
+|-----|---------|
+| `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
+| `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
+| `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
 ---
 
 ## v1.10 — Solve Sharing (2026-04-13 21:55)
