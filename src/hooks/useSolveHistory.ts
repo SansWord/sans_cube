@@ -13,6 +13,7 @@ import {
   loadNextSeqFromFirestore,
   updateCounterInFirestore,
 } from '../services/firestoreSolves'
+import { updateSharedSolve } from '../services/firestoreSharing'
 
 export interface CloudConfig {
   enabled: boolean
@@ -179,6 +180,9 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
     if (useCloud && uid) {
       setCloudSolves((prev) => prev.map((s) => s.id === updated.id ? updated : s))
       await updateSolveInFirestore(uid, updated)
+      if (updated.shareId) {
+        void updateSharedSolve(updated.shareId, updated)
+      }
     } else {
       setLocalSolves((prev) => {
         const next = prev.map((s) => s.id === updated.id ? updated : s)
