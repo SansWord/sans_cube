@@ -36,16 +36,16 @@ See `docs/ui-architecture.md` for the full component tree, hook ownership, and d
 
 When creating any new `docs/*.md` file, always add it to this list with a one-line description.
 
-- `devlog.md` — session-by-session record of what was built and learned; update at end of each session
-- `debug-mode.md` — what's in debug mode: diagnostic views, Firebase panel, maintenance buttons; update when buttons change
-- `firebase-cloud-sync.md` — cloud sync architecture, security, migration behavior, ID design
-- `animation-system.md` — Three.js animation details
-- `manual-test-checklist.md` — manual QA checklist
-- `storage.md` — all localStorage keys and Firestore structure; what syncs vs. what's local-only
-- `time-model.md` — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
-- `ui-architecture.md` — component tree, hook ownership per component, data flow, leaf component prop tables
-- `trends-zoom.md` — drag-to-zoom behavior in TrendsModal: zoom stack, data filtering, x-axis domain, day reference lines
-- `analytics.md` — Firebase Analytics setup, event reference, consent banner, local dev notes
+- [`devlog.md`](docs/devlog.md) — session-by-session record of what was built and learned; update at end of each session
+- [`debug-mode.md`](docs/debug-mode.md) — what's in debug mode: diagnostic views, Firebase panel, maintenance buttons; update when buttons change
+- [`firebase-cloud-sync.md`](docs/firebase-cloud-sync.md) — cloud sync architecture, security, migration behavior, ID design
+- [`animation-system.md`](docs/animation-system.md) — Three.js animation details
+- [`manual-test-checklist.md`](docs/manual-test-checklist.md) — manual QA checklist
+- [`storage.md`](docs/storage.md) — all localStorage keys and Firestore structure; what syncs vs. what's local-only
+- [`time-model.md`](docs/time-model.md) — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
+- [`ui-architecture.md`](docs/ui-architecture.md) — component tree, hook ownership per component, data flow, leaf component prop tables
+- [`trends-zoom.md`](docs/trends-zoom.md) — drag-to-zoom behavior in TrendsModal: zoom stack, data filtering, x-axis domain, day reference lines
+- [`analytics.md`](docs/analytics.md) — Firebase Analytics setup, event reference, consent banner, local dev notes
 
 ## Persistence
 

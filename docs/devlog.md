@@ -6,26 +6,26 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
-| v1.15 | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
-| v1.14 | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
-| v1.13 | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
-| v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
-| v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
-| v1.10 | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
-| v1.9 | Debug tool — detect CFOP/Roux method mismatches across solve history |
-| v1.8 | Method update in SolveDetailModal — CFOP ↔ Roux with recomputePhases |
-| v1.7 | URL deep link fixes — `#solve-N`, `#trends`, hashchange listener, loading overlay |
-| v1.6 | Hardware clock timing fix — BLE delay correction, recalibration buttons, copy-as-TSV |
-| v1.5 | Stats Trends modal — scatter + phase lines, Ao5/Ao12, zoom, day lines, URL sync |
-| v1.4 | Method filter in solve history sidebar |
-| v1.3 | Firebase cloud sync — opt-in Google sign-in, Firestore storage, GitHub Pages deploy |
-| v1.2 | Mobile layout, polish |
-| v1.1 | Roux method + slice moves |
-| v1.0 | Scramble tracker, timer, solve history |
-| v0.4 | Example solves, button driver |
-| v0.3 | Replay + phase highlighting |
-| v0.2 | Layout + sidebar |
-| v0.1 | Foundation — BLE connection, 3D cube, move recording |
+| [v1.15](#v115--driver-filter-for-sidebar-stats-and-trends-2026-04-14-0357) | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
+| [v1.14](#v114--trends-chart-animation-tuning-2026-04-14) | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
+| [v1.13](#v113--usesharedsolve-extraction-shared-link-fixes-drag-to-zoom-fix-2026-04-14-0136) | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
+| [v1.12](#v112--code-quality-sweep--bug-fixes-2026-04-14-0113) | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
+| [v1.11](#v111--firebase-analytics-2026-04-14-0025) | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
+| [v1.10](#v110--solve-sharing-2026-04-13-2155) | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
+| [v1.9](#v19--detect-method-mismatches-debug-tool-2026-04-13-2117) | Debug tool — detect CFOP/Roux method mismatches across solve history |
+| [v1.8](#v18--method-update-in-solvedetailmodal-2026-04-13-1905) | Method update in SolveDetailModal — CFOP ↔ Roux with recomputePhases |
+| [v1.7](#v17--url-deep-link-fixes--cloud-sync-loading-overlay-2026-04-09-2324) | URL deep link fixes — `#solve-N`, `#trends`, hashchange listener, loading overlay |
+| [v1.6](#v16--hardware-clock-timing-fix--solve-list-copy-2026-04-09-2240) | Hardware clock timing fix — BLE delay correction, recalibration buttons, copy-as-TSV |
+| [v1.5](#v15--stats-trends-enhancements-2026-04-09-1401) | Stats Trends modal — scatter + phase lines, Ao5/Ao12, zoom, day lines, URL sync |
+| [v1.4](#v14--method-filter-in-solve-history-sidebar-2026-04-08-2305) | Method filter in solve history sidebar |
+| [v1.3](#v13--firebase-cloud-sync-2026-04-08-1329) | Firebase cloud sync — opt-in Google sign-in, Firestore storage, GitHub Pages deploy |
+| [v1.2](#v12--mobile--polish-2026-04-06) | Mobile layout, polish |
+| [v1.1](#v11--roux-method--slice-moves-2026-04-03-to-2026-04-05) | Roux method + slice moves |
+| [v1.0](#v10--scramble-tracker--timer--solve-history-2026-03-31-to-2026-04-02) | Scramble tracker, timer, solve history |
+| [v0.4](#v04--example-solves--button-driver-2026-03-30) | Example solves, button driver |
+| [v0.3](#v03--replay--phase-highlighting-2026-03-28) | Replay + phase highlighting |
+| [v0.2](#v02--layout--sidebar-2026-03-27) | Layout + sidebar |
+| [v0.1](#v01--foundation-2026-03-25-to-2026-03-26) | Foundation — BLE connection, 3D cube, move recording |
 
 ---
 
