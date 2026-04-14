@@ -59,14 +59,16 @@ Both filter values persist to localStorage so they survive page reloads:
 
 | Key | Type | Values |
 |-----|------|--------|
-| `sans_cube_method` | `string` | `'all'` \| `'cfop'` \| `'roux'` (already exists) |
+| `sans_cube_method_filter` | `string` | `'all'` \| `'cfop'` \| `'roux'` (new) |
 | `sans_cube_driver` | `string` | `'all'` \| `'cube'` \| `'mouse'` (new) |
+
+Note: `sans_cube_method` already exists but is unrelated — it stores the **active recording method** (which method tags the next solve). The filter keys are separate.
 
 `TimerScreen` reads both keys on mount to initialize `solveFilter`, and writes them on every change:
 
 ```ts
 function readSolveFilter(): SolveFilter {
-  const method = (localStorage.getItem('sans_cube_method') ?? 'all') as MethodFilter
+  const method = (localStorage.getItem('sans_cube_method_filter') ?? 'all') as MethodFilter
   const driver = (localStorage.getItem('sans_cube_driver') ?? 'all') as DriverFilter
   return { method, driver }
 }
@@ -80,7 +82,7 @@ On change, the setter also writes to localStorage:
 function updateSolveFilter(updater: (f: SolveFilter) => SolveFilter) {
   setSolveFilter(prev => {
     const next = updater(prev)
-    localStorage.setItem('sans_cube_method', next.method)
+    localStorage.setItem('sans_cube_method_filter', next.method)
     localStorage.setItem('sans_cube_driver', next.driver)
     return next
   })
