@@ -45,6 +45,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - `time-model.md` — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate
 - `ui-architecture.md` — component tree, hook ownership per component, data flow, leaf component prop tables
 - `trends-zoom.md` — drag-to-zoom behavior in TrendsModal: zoom stack, data filtering, x-axis domain, day reference lines
+- `analytics.md` — Firebase Analytics setup, event reference, consent banner, local dev notes
 
 ## Persistence
 
@@ -84,6 +85,11 @@ All `it.each`-based tests in `recomputePhases.test.ts` expand automatically — 
 ## Planned Future Work
 
 See `future.md` for the full backlog (single source of truth).
+
+## Promotion / Marketing Copy
+
+When writing promotional content (LinkedIn posts, social media, release announcements):
+- Do **not** mention GAN by brand name — refer to it as "smart cube" instead.
 
 ## End of Session
 
