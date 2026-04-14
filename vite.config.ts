@@ -13,6 +13,7 @@ export default defineConfig({
       'firebase/auth': path.resolve(__dirname, 'tests/__mocks__/firebase-auth.ts'),
       'firebase/firestore': path.resolve(__dirname, 'tests/__mocks__/firebase-firestore.ts'),
       'firebase/app': path.resolve(__dirname, 'tests/__mocks__/firebase-app.ts'),
+      'firebase/analytics': path.resolve(__dirname, 'tests/__mocks__/firebase-analytics.ts'),
     },
     server: {
       deps: {

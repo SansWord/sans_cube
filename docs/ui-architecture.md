@@ -18,6 +18,7 @@ main.tsx
     │   │   ├── PhaseBar
     │   │   └── CubeCanvas
     │   └── SolveReplayer            ← shown after a solve completes
+    ├── AnalyticsBanner              ← fixed-position bottom overlay, no props, one-time dismiss
     └── [timer mode]
         └── TimerScreen
             ├── SolveHistorySidebar  ← desktop sidebar (always rendered)
