@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move, GesturePattern } from '../types/cube'
+import { useCubeDriverEvent } from './useCubeDriverEvent'
 
 export function matchGesture(recentMoves: Move[], pattern: GesturePattern): boolean {
   if (recentMoves.length < pattern.count) return false
@@ -33,29 +34,23 @@ export function useGestureDetector(
 ) {
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
+  const historyRef = useRef<Move[]>([])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
+  // Reset gesture history on driver reconnect
+  useEffect(() => { historyRef.current = [] }, [driverVersion])
 
-    const history: Move[] = []
+  useCubeDriverEvent(driver, 'move', (move) => {
+    historyRef.current.push(move)
+    if (historyRef.current.length > 20) historyRef.current.shift()
 
-    const onMove = (move: Move) => {
-      history.push(move)
-      if (history.length > 20) history.shift()
+    if (blockedRef?.current) return
 
-      if (blockedRef?.current) return
-
-      for (const { pattern, action } of DEFAULT_PATTERNS) {
-        if (matchGesture(history, pattern)) {
-          if (action === 'resetGyro' && isSolvedRef.current) handlersRef.current.resetGyro()
-          if (action === 'resetState') handlersRef.current.resetState()
-          history.length = 0
-        }
+    for (const { pattern, action } of DEFAULT_PATTERNS) {
+      if (matchGesture(historyRef.current, pattern)) {
+        if (action === 'resetGyro' && isSolvedRef.current) handlersRef.current.resetGyro()
+        if (action === 'resetState') handlersRef.current.resetState()
+        historyRef.current.length = 0
       }
     }
-
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion]) // handlers removed from deps — accessed via ref
+  }, driverVersion)
 }

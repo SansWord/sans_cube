@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move, SolveSession } from '../types/cube'
+import { useCubeDriverEvent } from './useCubeDriverEvent'
 
 type Entry = { move: Move; cubeTimestamp: number }
 
@@ -35,34 +36,22 @@ export function useSolveRecorder(
     wasSolvedRef.current = isSolved
   }, [isSolved])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-
-    const onMove = (move: Move) => {
-      // Start recording on first move after cube was solved
-      if (wasSolvedRef.current && !isRecording.current) {
-        isRecording.current = true
-        entries.current = []
-      }
-      if (isRecording.current) {
-        entries.current.push({ move, cubeTimestamp: move.cubeTimestamp })
-      }
+  useCubeDriverEvent(driver, 'move', (move) => {
+    // Start recording on first move after cube was solved
+    if (wasSolvedRef.current && !isRecording.current) {
+      isRecording.current = true
+      entries.current = []
     }
-
-    const onReplacePreviousMove = (move: Move) => {
-      if (!isRecording.current || entries.current.length === 0) return
-      entries.current.pop()
+    if (isRecording.current) {
       entries.current.push({ move, cubeTimestamp: move.cubeTimestamp })
     }
+  }, driverVersion)
 
-    d.on('move', onMove)
-    d.on('replacePreviousMove', onReplacePreviousMove)
-    return () => {
-      d.off('move', onMove)
-      d.off('replacePreviousMove', onReplacePreviousMove)
-    }
-  }, [driver, driverVersion])
+  useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
+    if (!isRecording.current || entries.current.length === 0) return
+    entries.current.pop()
+    entries.current.push({ move, cubeTimestamp: move.cubeTimestamp })
+  }, driverVersion)
 
   const clearSession = useCallback(() => setLastSession(null), [])
 

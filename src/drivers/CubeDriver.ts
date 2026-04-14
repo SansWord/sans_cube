@@ -2,7 +2,7 @@ import type { Move, Quaternion } from '../types/cube'
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 
-type EventMap = {
+export type EventMap = {
   move: Move
   /** Emitted when a previously emitted move is retroactively identified as a slice.
    *  Consumers should replace the last recorded move with this one. */

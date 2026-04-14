@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import type { Quaternion, Face, AnyFace } from '../types/cube'
 
+interface CubieData { x: number; y: number; z: number }
+
 export interface FaceHit {
   face: Face
   hitX: number   // world-space hit point
@@ -82,6 +84,9 @@ export class CubeRenderer {
   // Separate frame IDs: renderFrameId is always running; animFrameId is only set during an animation tick
   private renderFrameId: number | null = null
   private animFrameId: number | null = null
+  private quaternionAnimId: number | null = null
+  private orbitAnimId: number | null = null
+  private readonly cubieData = new WeakMap<THREE.Mesh, CubieData>()
   private animationQueue: Array<
     | { type: 'move'; face: AnyFace; direction: 'CW' | 'CCW'; durationMs: number; resolve: () => void }
     | { type: 'facelets'; facelets: string }
@@ -141,7 +146,7 @@ export class CubeRenderer {
           ]
           const mesh = new THREE.Mesh(geo, mats)
           mesh.position.set(x, y, z)
-          mesh.userData = { x, y, z }
+          this.cubieData.set(mesh, { x, y, z })
           this.pivotGroup.add(mesh)
           this.cubies.push(mesh)
         }
@@ -151,7 +156,7 @@ export class CubeRenderer {
 
   private _syncMaterialVisibility(): void {
     this.cubies.forEach(cubie => {
-      const { x, y, z } = cubie.userData as { x: number; y: number; z: number }
+      const { x, y, z } = this.cubieData.get(cubie)!
       const mats = cubie.material as THREE.MeshLambertMaterial[]
       mats[0].visible = x === 1
       mats[1].visible = x === -1
@@ -171,7 +176,7 @@ export class CubeRenderer {
     }
 
     this.cubies.forEach(cubie => {
-      const { x, y, z } = cubie.userData as { x: number; y: number; z: number }
+      const { x, y, z } = this.cubieData.get(cubie)!
       const mats = cubie.material as THREE.MeshLambertMaterial[]
 
       if (x === 1) {
@@ -258,7 +263,7 @@ export class CubeRenderer {
     const moving: THREE.Mesh[] = []
 
     this.cubies.forEach(c => {
-      const pos = c.userData as { x: number; y: number; z: number }
+      const pos = this.cubieData.get(c)!
       if (Math.round(pos[axis]) === layerVal) {
         moving.push(c)
         pivot.attach(c)
@@ -277,7 +282,7 @@ export class CubeRenderer {
       c.position.y = Math.round(c.position.y)
       c.position.z = Math.round(c.position.z)
       c.rotation.set(0, 0, 0)
-      const ud = c.userData as { x: number; y: number; z: number }
+      const ud = this.cubieData.get(c)!
       ud.x = c.position.x
       ud.y = c.position.y
       ud.z = c.position.z
@@ -303,7 +308,7 @@ export class CubeRenderer {
       const moving: THREE.Mesh[] = []
 
       this.cubies.forEach(c => {
-        const pos = c.userData as { x: number; y: number; z: number }
+        const pos = this.cubieData.get(c)!
         if (Math.round(pos[axis]) === layerVal) {
           moving.push(c)
           pivot.attach(c)
@@ -335,7 +340,7 @@ export class CubeRenderer {
             c.position.y = Math.round(c.position.y)
             c.position.z = Math.round(c.position.z)
             c.rotation.set(0, 0, 0)
-            const ud = c.userData as { x: number; y: number; z: number }
+            const ud = this.cubieData.get(c)!
             ud.x = c.position.x
             ud.y = c.position.y
             ud.z = c.position.z
@@ -387,7 +392,7 @@ export class CubeRenderer {
     const faceIndex = hit.face?.materialIndex
     if (faceIndex === undefined || faceIndex === null) return null
     const face = CubeRenderer._MAT_TO_FACE[faceIndex]
-    const { x: cubieX, y: cubieY, z: cubieZ } = (hit.object as THREE.Mesh).userData as { x: number; y: number; z: number }
+    const { x: cubieX, y: cubieY, z: cubieZ } = this.cubieData.get(hit.object as THREE.Mesh)!
     return { face, hitX: hit.point.x, hitY: hit.point.y, hitZ: hit.point.z, cubieX, cubieY, cubieZ }
   }
 
@@ -460,6 +465,7 @@ export class CubeRenderer {
   }
 
   animateQuaternionTo(q: { x: number; y: number; z: number; w: number }, durationMs: number): void {
+    if (this.quaternionAnimId !== null) cancelAnimationFrame(this.quaternionAnimId)
     const R = CubeRenderer._GAN_TO_THREE
     const ganQ = new THREE.Quaternion(q.x, q.y, q.z, q.w)
     const target = R.clone().multiply(ganQ).multiply(R.clone().invert())
@@ -468,22 +474,31 @@ export class CubeRenderer {
     const animate = () => {
       const t = Math.min((performance.now() - startTime) / durationMs, 1)
       this.pivotGroup.quaternion.slerpQuaternions(start, target, t)
-      if (t < 1) requestAnimationFrame(animate)
+      if (t < 1) {
+        this.quaternionAnimId = requestAnimationFrame(animate)
+      } else {
+        this.quaternionAnimId = null
+      }
     }
-    requestAnimationFrame(animate)
+    this.quaternionAnimId = requestAnimationFrame(animate)
   }
 
   // Smoothly rotates orbit to a view that shows F, U, R over the given duration
   animateOrbitToDefaultView(durationMs = 400): void {
+    if (this.orbitAnimId !== null) cancelAnimationFrame(this.orbitAnimId)
     const target = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6)
     const start = this.orbitGroup.quaternion.clone()
     const startTime = performance.now()
     const animate = () => {
       const t = Math.min((performance.now() - startTime) / durationMs, 1)
       this.orbitGroup.quaternion.slerpQuaternions(start, target, t)
-      if (t < 1) requestAnimationFrame(animate)
+      if (t < 1) {
+        this.orbitAnimId = requestAnimationFrame(animate)
+      } else {
+        this.orbitAnimId = null
+      }
     }
-    requestAnimationFrame(animate)
+    this.orbitAnimId = requestAnimationFrame(animate)
   }
 
   // Returns the current orbit quaternion converted to GAN sensor space,
@@ -509,6 +524,8 @@ export class CubeRenderer {
     this.animationRunning = false
     if (this.renderFrameId !== null) cancelAnimationFrame(this.renderFrameId)
     if (this.animFrameId !== null) cancelAnimationFrame(this.animFrameId)
+    if (this.quaternionAnimId !== null) cancelAnimationFrame(this.quaternionAnimId)
+    if (this.orbitAnimId !== null) cancelAnimationFrame(this.orbitAnimId)
     this.stickerTextures.forEach(t => t.dispose())
     this.renderer.dispose()
   }

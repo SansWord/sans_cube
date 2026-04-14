@@ -6,6 +6,9 @@ import type { PhaseRecord, QuaternionSnapshot, SolveMethod } from '../types/solv
 import { isSolvedFacelets } from './useCubeState'
 import { applyMoveToFacelets } from './useCubeState'
 import { SOLVED_FACELETS } from '../types/cube'
+import { useCubeDriverEvent } from './useCubeDriverEvent'
+
+const r5 = (n: number) => Math.round(n * 1e5) / 1e5
 
 export type TimerStatus = 'idle' | 'solving' | 'solved'
 
@@ -16,6 +19,19 @@ export interface TimerResult {
   recordedMoves: Move[]
   quaternionSnapshots: QuaternionSnapshot[]
   reset: () => void
+}
+
+function absorbPhaseIntoNext(phases: PhaseRecord[], searchLabel: string, nextLabel: string): PhaseRecord[] {
+  const idx = phases.findIndex((p) => p.label === searchLabel)
+  if (idx < 0 || idx + 1 >= phases.length) return phases
+  if (phases[idx + 1].label !== nextLabel || phases[idx + 1].turns !== 0) return phases
+  const absorbed = phases[idx]
+  return [
+    ...phases.slice(0, idx),
+    { ...absorbed, recognitionMs: 0, executionMs: 0, turns: 0 },
+    { ...phases[idx + 1], recognitionMs: absorbed.recognitionMs, executionMs: absorbed.executionMs, turns: absorbed.turns },
+    ...phases.slice(idx + 2),
+  ]
 }
 
 export function useTimer(
@@ -104,27 +120,21 @@ export function useTimer(
     setQuaternionSnapshots([])
   }, [stopInterval])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-
-    const r5 = (n: number) => Math.round(n * 1e5) / 1e5
-    const onGyro = (q: Quaternion) => {
-      latestQuaternionRef.current = q
-      if (statusRef.current === 'solving') {
-        const relativeMs = Date.now() - startTimeRef.current
-        if (relativeMs - lastGyroMsRef.current >= 100) {   // 10 Hz cap
-          lastGyroMsRef.current = relativeMs
-          quaternionSnapshotsRef.current.push({
-            quaternion: { x: r5(q.x), y: r5(q.y), z: r5(q.z), w: r5(q.w) },
-            relativeMs,
-          })
-        }
+  useCubeDriverEvent(driver, 'gyro', (q) => {
+    latestQuaternionRef.current = q
+    if (statusRef.current === 'solving') {
+      const relativeMs = Date.now() - startTimeRef.current
+      if (relativeMs - lastGyroMsRef.current >= 100) {   // 10 Hz cap
+        lastGyroMsRef.current = relativeMs
+        quaternionSnapshotsRef.current.push({
+          quaternion: { x: r5(q.x), y: r5(q.y), z: r5(q.z), w: r5(q.w) },
+          relativeMs,
+        })
       }
     }
-    d.on('gyro', onGyro)
+  }, driverVersion)
 
-    const onMove = (move: Move) => {
+  useCubeDriverEvent(driver, 'move', (move) => {
       const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
 
       if (statusRef.current === 'solved') return
@@ -176,32 +186,9 @@ export function useTimer(
         while (phaseIndexRef.current < methodRef.current.phases.length) {
           completePhase(now)
         }
-        const phases = completedPhasesRef.current
-        const n = phases.length
-
-        // If EOLL completed OLL on the same move (OLL has 0 turns), absorb EOLL into OLL
-        const eollIdx = phases.findIndex((p) => p.label === 'EOLL')
-        if (eollIdx >= 0 && eollIdx + 1 < n && phases[eollIdx + 1].label === 'COLL' && phases[eollIdx + 1].turns === 0) {
-          const eoll = phases[eollIdx]
-          completedPhasesRef.current = [
-            ...phases.slice(0, eollIdx),
-            { ...eoll, recognitionMs: 0, executionMs: 0, turns: 0 },
-            { ...phases[eollIdx + 1], recognitionMs: eoll.recognitionMs, executionMs: eoll.executionMs, turns: eoll.turns },
-            ...phases.slice(eollIdx + 2),
-          ]
-        }
-
-        // If CPLL and PLL finished on the same move (PLL has 0 turns), absorb CPLL into PLL
-        const phases2 = completedPhasesRef.current
-        const n2 = phases2.length
-        if (n2 >= 2 && phases2[n2 - 2].label === 'CPLL' && phases2[n2 - 1].label === 'EPLL' && phases2[n2 - 1].turns === 0) {
-          const cpll = phases2[n2 - 2]
-          completedPhasesRef.current = [
-            ...phases2.slice(0, n2 - 2),
-            { ...cpll, recognitionMs: 0, executionMs: 0, turns: 0 },
-            { ...phases2[n2 - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
-          ]
-        }
+        // Absorb zero-turn phase completions: EOLL→COLL and CPLL→EPLL
+        completedPhasesRef.current = absorbPhaseIntoNext(completedPhasesRef.current, 'EOLL', 'COLL')
+        completedPhasesRef.current = absorbPhaseIntoNext(completedPhasesRef.current, 'CPLL', 'EPLL')
         stopInterval()
         const total = now - startTimeRef.current
         statusRef.current = 'solved'
@@ -211,45 +198,36 @@ export function useTimer(
         setRecordedMoves([...movesRef.current])
         setQuaternionSnapshots([...quaternionSnapshotsRef.current])
       }
+  }, driverVersion)
+
+  useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
+    if (statusRef.current !== 'solving') return
+    const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
+
+    // Revert the last move and apply the replacement slice move
+    faceletsRef.current = applyMoveToFacelets(prevFaceletsRef.current, moveWithQ)
+
+    // Replace the last recorded move
+    if (movesRef.current.length > 0) {
+      movesRef.current = [...movesRef.current.slice(0, -1), moveWithQ]
     }
 
-    const onReplacePreviousMove = (move: Move) => {
-      if (statusRef.current !== 'solving') return
-      const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
-
-      // Revert the last move and apply the replacement slice move
-      faceletsRef.current = applyMoveToFacelets(prevFaceletsRef.current, moveWithQ)
-
-      // Replace the last recorded move
-      if (movesRef.current.length > 0) {
-        movesRef.current = [...movesRef.current.slice(0, -1), moveWithQ]
+    // Check if the replacement move solves the cube
+    if (isSolvedFacelets(faceletsRef.current)) {
+      const now = move.cubeTimestamp + hwOffsetRef.current
+      while (phaseIndexRef.current < methodRef.current.phases.length) {
+        completePhase(now)
       }
-
-      // Check if the replacement move solves the cube
-      if (isSolvedFacelets(faceletsRef.current)) {
-        const now = move.cubeTimestamp + hwOffsetRef.current
-        while (phaseIndexRef.current < methodRef.current.phases.length) {
-          completePhase(now)
-        }
-        stopInterval()
-        const total = now - startTimeRef.current
-        statusRef.current = 'solved'
-        setStatus('solved')
-        setElapsedMs(total)
-        setPhaseRecords([...completedPhasesRef.current])
-        setRecordedMoves([...movesRef.current])
-        setQuaternionSnapshots([...quaternionSnapshotsRef.current])
-      }
+      stopInterval()
+      const total = now - startTimeRef.current
+      statusRef.current = 'solved'
+      setStatus('solved')
+      setElapsedMs(total)
+      setPhaseRecords([...completedPhasesRef.current])
+      setRecordedMoves([...movesRef.current])
+      setQuaternionSnapshots([...quaternionSnapshotsRef.current])
     }
-
-    d.on('move', onMove)
-    d.on('replacePreviousMove', onReplacePreviousMove)
-    return () => {
-      d.off('move', onMove)
-      d.off('gyro', onGyro)
-      d.off('replacePreviousMove', onReplacePreviousMove)
-    }
-  }, [driver, driverVersion, completePhase, startInterval, stopInterval])
+  }, driverVersion)
 
   return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset }
 }

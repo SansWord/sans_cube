@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move } from '../types/cube'
+import { useCubeDriverEvent } from './useCubeDriverEvent'
 import { SOLVED_FACELETS } from '../types/cube'
 
 // Face layout in 54-char Kociemba string:
@@ -182,41 +183,29 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     setIsSolved(true)
   }, [])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
+  // Saved before each move so replacePreviousMove can revert + re-apply.
+  const prevFaceletsRef = useRef<string | null>(null)
 
-    // Saved before each move so replacePreviousMove can revert + re-apply.
-    let prevFacelets: string | null = null
+  useCubeDriverEvent(driver, 'move', (move) => {
+    prevFaceletsRef.current = faceletsRef.current
+    const next = applyMoveToFacelets(faceletsRef.current, move)
+    const solved = isSolvedFacelets(next)
+    faceletsRef.current = next
+    isSolvedRef.current = solved
+    setFacelets(next)
+    setIsSolved(solved)
+  }, driverVersion)
 
-    const onMove = (move: Move) => {
-      prevFacelets = faceletsRef.current
-      const next = applyMoveToFacelets(faceletsRef.current, move)
-      const solved = isSolvedFacelets(next)
-      faceletsRef.current = next
-      isSolvedRef.current = solved
-      setFacelets(next)
-      setIsSolved(solved)
-    }
-
-    const onReplacePreviousMove = (move: Move) => {
-      if (prevFacelets === null) return
-      const next = applyMoveToFacelets(prevFacelets, move)
-      const solved = isSolvedFacelets(next)
-      faceletsRef.current = next
-      isSolvedRef.current = solved
-      prevFacelets = null
-      setFacelets(next)
-      setIsSolved(solved)
-    }
-
-    d.on('move', onMove)
-    d.on('replacePreviousMove', onReplacePreviousMove)
-    return () => {
-      d.off('move', onMove)
-      d.off('replacePreviousMove', onReplacePreviousMove)
-    }
-  }, [driver, driverVersion])
+  useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
+    if (prevFaceletsRef.current === null) return
+    const next = applyMoveToFacelets(prevFaceletsRef.current, move)
+    const solved = isSolvedFacelets(next)
+    faceletsRef.current = next
+    isSolvedRef.current = solved
+    prevFaceletsRef.current = null
+    setFacelets(next)
+    setIsSolved(solved)
+  }, driverVersion)
 
   return { facelets, isSolved, isSolvedRef, resetState }
 }

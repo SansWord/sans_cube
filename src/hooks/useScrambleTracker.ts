@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move, Direction } from '../types/cube'
+import type { Move } from '../types/cube'
+import { useCubeDriverEvent } from './useCubeDriverEvent'
 import type { ScrambleStep } from '../types/solve'
 
 export type StepState = 'done' | 'current' | 'pending' | 'warning'
@@ -16,7 +17,6 @@ export interface TrackerState {
   stepStates: StepState[]
   trackingState: TrackingState
   wrongSegments: WrongSegment[]  // stack of face segments; reverse cancels all wrong-doing
-  partialDirection: Direction | null
   currentStepIndex: number
   warningNetTurns: number        // net CW(+1)/CCW(-1) count while in warning state
   wrongFromWarning: boolean      // whether wrong state was entered from warning
@@ -27,7 +27,6 @@ export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
     stepStates: steps.map((_, i) => (i === 0 ? 'current' : 'pending')),
     trackingState: steps.length === 0 ? 'armed' : 'scrambling',
     wrongSegments: [],
-    partialDirection: null,
     currentStepIndex: 0,
     warningNetTurns: 0,
     wrongFromWarning: false,
@@ -141,7 +140,6 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
       ...state,
       trackingState: 'wrong',
       wrongSegments: [{ face: move.face, netTurns: delta }],
-      partialDirection: null,
       stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
     }
   }
@@ -188,21 +186,15 @@ export function useScrambleTracker(
     setState(makeInitialTrackerState(steps))
   }, [steps])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = (move: Move) => {
-      setState((prev) => {
-        const next = applyTrackerMove(prev, steps, move)
-        if (next.trackingState === 'armed' && prev.trackingState !== 'armed') {
-          onArmed?.()
-        }
-        return next
-      })
-    }
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion, steps]) // eslint-disable-line react-hooks/exhaustive-deps
+  useCubeDriverEvent(driver, 'move', (move) => {
+    setState((prev) => {
+      const next = applyTrackerMove(prev, steps, move)
+      if (next.trackingState === 'armed' && prev.trackingState !== 'armed') {
+        onArmed?.()
+      }
+      return next
+    })
+  }, driverVersion)
 
   const reset = useCallback(() => setState(makeInitialTrackerState(steps)), [steps])
 
