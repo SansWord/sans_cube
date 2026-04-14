@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| v1.15 | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
 | v1.14 | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
 | v1.13 | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
 | v1.12 | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
@@ -35,6 +36,27 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.15 — Driver filter for sidebar stats and Trends (2026-04-14 03:57)
+
+**Review:** not yet
+
+**Design docs:**
+- Driver Filter: [Spec](superpowers/specs/2026-04-14-driver-filter-design.md) [Plan](superpowers/plans/2026-04-14-driver-filter.md)
+
+**What was built:**
+- **`DriverFilter` type and `SolveFilter` interface** — unified filter object `{ method: MethodFilter, driver: DriverFilter }` replacing the standalone `methodFilter` prop across the component tree
+- **Driver dropdown** in sidebar stats section and TrendsModal header, next to the existing method dropdown — both labeled ("Method" / "Driver") to avoid ambiguity when showing "All"
+- **`filterSolves` updated** — now filters by both method and driver; example solves bypass both filters; legacy solves without a `driver` field default to `'cube'`
+- **localStorage persistence** — `sans_cube_method_filter` and `sans_cube_driver_filter` store both filter values across sessions (separate from `sans_cube_method` which controls the active recording method)
+- **URL hash honors `method`/`driver` params** — navigating to `#trends?method=roux&driver=cube` overrides localStorage and opens Trends with those filters active
+
+**Key technical learnings:**
+- `[gotcha]` `sans_cube_method` already existed and stored the active *recording* method (which tags new solves). The filter state needed its own separate keys (`sans_cube_method_filter`, `sans_cube_driver_filter`) — conflating them would have silently broken method selection.
+- `[insight]` When using a plain object (`SolveFilter`) as a React `useEffect` dependency, reference equality means it's safe only if the object comes from `useState` (stable reference between renders). Using primitive fields (`solveFilter.method`, `solveFilter.driver`) is more robust and makes the intent explicit.
+- `[insight]` URL hash params written by a modal on mount will overwrite the incoming URL unless you apply the override to parent state *before* the modal renders. Fix: parse `method`/`driver` from the hash in `TimerScreen` and call `updateSolveFilter` alongside `setShowTrends(true)` — both batched into the same render.
 
 ---
 

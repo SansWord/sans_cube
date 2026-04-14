@@ -72,7 +72,7 @@ Note: `TimerScreen` is unmounted while debug mode is active, so direct storage w
 | `useTimer` | `status`, `elapsedMs`, `phaseRecords`, `recordedMoves`, `quaternionSnapshots`, `reset` |
 | `useMethod` | `method`, `setMethod` |
 | `useSharedSolve` | `sharedSolve`, `sharedSolveLoading`, `sharedSolveNotFound`, `clearSharedSolve` |
-| `methodFilter` / `setMethodFilter` | Lifted MethodFilter state — shared between sidebar and TrendsModal |
+| `solveFilter` / `updateSolveFilter` | Lifted `SolveFilter` state (`{ method, driver }`) — shared between sidebar and TrendsModal; persisted to `sans_cube_method_filter` and `sans_cube_driver_filter` in localStorage; URL hash `method`/`driver` params override localStorage when opening Trends |
 | `showTrends` / `setShowTrends` | Controls TrendsModal visibility |
 
 `TimerScreen` receives `driver`, `facelets`, `quaternion`, `driverType`, and the reset callbacks from `App` as props. It owns its own `rendererRef` for animating moves in timer mode.
@@ -95,7 +95,7 @@ Debug-mode only. Owns its own playback state (`isPlaying`, `currentIndex`, `spee
 
 ### `SolveHistorySidebar` (`src/components/SolveHistorySidebar.tsx`)
 
-No custom hooks. Local `useState` for the method filter. Calls `computeStats` (exported from `useSolveHistory`) to derive statistics from the `solves` array it receives as a prop. Renders in two modes depending on whether `onClose` is provided: desktop sidebar or mobile full-screen overlay.
+No custom hooks. Calls `computeStats` and `filterSolves` (both exported from `useSolveHistory`) to derive statistics from the `solves` array it receives as a prop. Renders in two modes depending on whether `onClose` is provided: desktop sidebar or mobile full-screen overlay.
 
 ---
 
@@ -115,8 +115,8 @@ These components are purely presentational — they receive data as props and fi
 | `OrientationConfig` | `config`, `disabled` | `onSave`, `onUseCurrentOrientation` |
 | `MoveHistory` | `moves` | — |
 | `FaceletDebug` | `facelets` | — |
-| `SolveHistorySidebar` | `solves`, `width`, `cloudLoading`, `methodFilter`, `setMethodFilter`, `onOpenTrends` | `onSelectSolve`, `onWidthChange`, `onClose` |
-| `TrendsModal` | `solves`, `methodFilter`, `setMethodFilter`, `onSelectSolve`, `onClose` | — |
+| `SolveHistorySidebar` | `solves`, `width`, `cloudLoading`, `solveFilter`, `updateSolveFilter`, `onOpenTrends` | `onSelectSolve`, `onWidthChange`, `onClose` |
+| `TrendsModal` | `solves`, `solveFilter`, `updateSolveFilter`, `onSelectSolve`, `onClose` | — |
 
 ---
 
