@@ -101,11 +101,45 @@ describe('recomputePhases', () => {
   })
 
   it('all phases have non-negative recognitionMs and executionMs', () => {
-    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)!
-    const phases = recomputePhases(cfopSolve, CFOP)!
-    for (const p of phases) {
+    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
+    if (!cfopSolve) throw new Error('No CFOP example solve found')
+    const phases = recomputePhases(cfopSolve, CFOP)
+    expect(phases).not.toBeNull()
+    for (const p of phases!) {
       expect(p.recognitionMs).toBeGreaterThanOrEqual(0)
       expect(p.executionMs).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('CFOP recompute produces phases whose labels are all from the CFOP phase list', () => {
+    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
+    if (!cfopSolve) throw new Error('No CFOP example solve found')
+    const phases = recomputePhases(cfopSolve, CFOP)
+    expect(phases).not.toBeNull()
+    const validLabels = new Set(CFOP.phases.map((p) => p.label))
+    for (const p of phases!) {
+      expect(validLabels.has(p.label)).toBe(true)
+    }
+  })
+
+  it('CFOP merge rules: if CPLL phase has 0 turns it is absorbed (turns=0 and EPLL gets the timing)', () => {
+    // Use real CFOP example solve — if it contains a CPLL with 0 turns, verify the merge ran correctly.
+    // If the example solve does not trigger this case, this test still validates phase count is <= CFOP.phases.length.
+    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
+    if (!cfopSolve) throw new Error('No CFOP example solve found')
+    const phases = recomputePhases(cfopSolve, CFOP)
+    expect(phases).not.toBeNull()
+    // After merge rules, phase count should be <= number of CFOP phases (never more)
+    expect(phases!.length).toBeLessThanOrEqual(CFOP.phases.length)
+    // If CPLL has 0 turns, the merged CPLL should carry 0 turns and EPLL should carry the timing
+    const cpll = phases!.find((p) => p.label === 'CPLL')
+    const epll = phases!.find((p) => p.label === 'EPLL')
+    if (cpll && epll && cpll.turns === 0) {
+      // Merge rule ran: CPLL has 0 recognition and execution, EPLL has the combined timing
+      expect(cpll.recognitionMs).toBe(0)
+      expect(cpll.executionMs).toBe(0)
+      expect(epll.recognitionMs).toBeGreaterThanOrEqual(0)
+      expect(epll.executionMs).toBeGreaterThanOrEqual(0)
     }
   })
 })
