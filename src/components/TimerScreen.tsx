@@ -46,6 +46,19 @@ interface Props {
   cloudConfig?: CloudConfig
 }
 
+function parseTrendsFilterFromHash(hash: string): Partial<SolveFilter> | null {
+  if (!hash.startsWith('#trends')) return null
+  const search = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
+  const params = new URLSearchParams(search)
+  const method = params.get('method')
+  const driver = params.get('driver')
+  if (!method && !driver) return null
+  const result: Partial<SolveFilter> = {}
+  if (method && ['all', 'cfop', 'roux'].includes(method)) result.method = method as MethodFilter
+  if (driver && ['all', 'cube', 'mouse'].includes(driver)) result.driver = driver as DriverFilter
+  return result
+}
+
 export function TimerScreen({
   driver,
   facelets,
@@ -106,6 +119,8 @@ export function TimerScreen({
     const hash = window.location.hash
     if (hash.startsWith('#trends')) {
       setShowTrends(true)
+      const override = parseTrendsFilterFromHash(hash)
+      if (override) updateSolveFilter(f => ({ ...f, ...override }))
     } else if (hash.startsWith('#solve-')) {
       const id = parseInt(hash.replace('#solve-', ''), 10)
       const solve = solves.find(s => s.id === id)
@@ -132,6 +147,8 @@ export function TimerScreen({
       if (hash.startsWith('#trends')) {
         setSelectedSolve(null)
         setShowTrends(true)
+        const override = parseTrendsFilterFromHash(hash)
+        if (override) updateSolveFilter(f => ({ ...f, ...override }))
       } else if (hash.startsWith('#solve-')) {
         const id = parseInt(hash.replace('#solve-', ''), 10)
         const solve = solves.find(s => s.id === id)
