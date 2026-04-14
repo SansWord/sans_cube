@@ -24,8 +24,9 @@ import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
-import { shareSolve, unshareSolve, loadSharedSolve, SHARE_ID_RE } from '../services/firestoreSharing'
-import { logSharedSolveViewed, logSolveRecorded } from '../services/analytics'
+import { shareSolve, unshareSolve } from '../services/firestoreSharing'
+import { logSolveRecorded } from '../services/analytics'
+import { useSharedSolve } from '../hooks/useSharedSolve'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -76,9 +77,7 @@ export function TimerScreen({
   const [showHistory, setShowHistory] = useState(false)
   const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
   const [showTrends, setShowTrends] = useState(false)
-  const [sharedSolve, setSharedSolve] = useState<SolveRecord | null>(null)
-  const [sharedSolveLoading, setSharedSolveLoading] = useState(false)
-  const [sharedSolveNotFound, setSharedSolveNotFound] = useState(false)
+  const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve()
   const urlResolvedRef = useRef(false)
   const initialHashRef = useRef(window.location.hash)
 
@@ -99,30 +98,6 @@ export function TimerScreen({
       if (solve) setSelectedSolve(solve)
     }
   }, [cloudLoading, solves])
-
-  // Resolve #shared-{shareId} on boot — does not require auth or cloudLoading
-  useEffect(() => {
-    const hash = window.location.hash
-    if (!hash.startsWith('#shared-')) return
-    const shareId = hash.replace('#shared-', '')
-    if (!SHARE_ID_RE.test(shareId)) return
-
-    setSharedSolveLoading(true)
-    logSharedSolveViewed(shareId)
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
-    void Promise.race([loadSharedSolve(shareId), timeout]).then((solve) => {
-      setSharedSolveLoading(false)
-      if (solve) {
-        setSharedSolve(solve)
-        // Restore the hash — the URL-update effect may have cleared it while the fetch was in flight
-        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#shared-${shareId}`)
-      } else {
-        setSharedSolveNotFound(true)
-        history.replaceState(null, '', window.location.pathname + window.location.search)
-        setTimeout(() => setSharedSolveNotFound(false), 3000)
-      }
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Write URL hash for selectedSolve (only when TrendsModal is not open).
   // Uses replaceState (not window.location.hash=) to avoid firing a hashchange event.
@@ -147,23 +122,6 @@ export function TimerScreen({
         const id = parseInt(hash.replace('#solve-', ''), 10)
         const solve = solves.find(s => s.id === id)
         if (solve) { setShowTrends(false); setSelectedSolve(solve) }
-      } else if (hash.startsWith('#shared-')) {
-        const shareId = hash.replace('#shared-', '')
-        if (!SHARE_ID_RE.test(shareId)) return
-        setSharedSolveLoading(true)
-        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
-        void Promise.race([loadSharedSolve(shareId), timeout]).then((solve) => {
-          setSharedSolveLoading(false)
-          if (solve) {
-            setSelectedSolve(null)
-            setShowTrends(false)
-            setSharedSolve(solve)
-          } else {
-            setSharedSolveNotFound(true)
-            history.replaceState(null, '', window.location.pathname + window.location.search)
-            setTimeout(() => setSharedSolveNotFound(false), 3000)
-          }
-        })
       } else {
         setSelectedSolve(null)
         setShowTrends(false)
@@ -172,6 +130,11 @@ export function TimerScreen({
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [solves])
+
+  // Close other modals when a shared solve is loaded via hashchange
+  useEffect(() => {
+    if (sharedSolve) { setSelectedSolve(null); setShowTrends(false) }
+  }, [sharedSolve])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
@@ -430,10 +393,7 @@ export function TimerScreen({
       {sharedSolve && (
         <SolveDetailModal
           solve={sharedSolve}
-          onClose={() => {
-            setSharedSolve(null)
-            history.replaceState(null, '', window.location.pathname + window.location.search)
-          }}
+          onClose={clearSharedSolve}
           onDelete={() => {}}
           onUpdate={async () => {}}
           readOnly

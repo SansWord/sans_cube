@@ -5,7 +5,7 @@
 
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
-- Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412
+- Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
 - [trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection
 
 ## Solving Methods
@@ -54,10 +54,7 @@ Scanned 2026-04-09. Items #1, #2, #4, #5, #8, #9 done. ~~#10 was a false positiv
 - Timing + gyro logic are two independent setup blocks inline in one function
 - Fix: extract `startIndicatorAndGyroLoop(startOffsetMs)` helper to make the structure visible
 
-**#7 — TimerScreen.tsx 10 useState declarations** (Low-Medium effort)
-- armed, selectedSolve, regeneratePending, sidebarWidth, showHistory, methodFilter, showTrends, sharedSolve, sharedSolveLoading, sharedSolveNotFound
-- Best extraction: `useSharedSolve(hash)` for the 3 sharedSolve* fields (clear independent responsibility); leave the rest as-is
-- The showHistory/showTrends/selectedSolve triad could be a discriminated union modal state but risks regressions in hash-sync logic
+**~~#7 — TimerScreen.tsx 10 useState declarations~~** — done in v1.13 (`useSharedSolve` extracted)
 
 ## firebase
 - **App Check**: Skip for now. Security rules already lock data to authenticated users — App Check adds a second layer but the main risk is ad blockers silently breaking cloud sync. Worth revisiting if there's real abuse risk or many users. Requires debug token setup for local dev.

@@ -71,6 +71,7 @@ Note: `TimerScreen` is unmounted while debug mode is active, so direct storage w
 | `useScrambleTracker` | `stepStates`, `trackingState`, `wrongSegments`, `reset` |
 | `useTimer` | `status`, `elapsedMs`, `phaseRecords`, `recordedMoves`, `quaternionSnapshots`, `reset` |
 | `useMethod` | `method`, `setMethod` |
+| `useSharedSolve` | `sharedSolve`, `sharedSolveLoading`, `sharedSolveNotFound`, `clearSharedSolve` |
 | `methodFilter` / `setMethodFilter` | Lifted MethodFilter state — shared between sidebar and TrendsModal |
 | `showTrends` / `setShowTrends` | Controls TrendsModal visibility |
 
