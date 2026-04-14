@@ -183,7 +183,37 @@
 
 ---
 
-## 13. Debug Mode
+## 13. Solve Sharing
+
+- [ ] Open a solve → click **Share** → button shows loading, then a share URL appears
+- [ ] Copy the share URL → open in a new tab → shared solve loads in read-only modal
+- [ ] Shared solve row in sidebar shows seq number in green
+- [ ] Click **Unshare** → share link deactivated (opening old URL shows "not found")
+- [ ] Open `#shared-{shareId}` URL directly → solve loads; URL preserved in address bar after load
+- [ ] Open invalid `#shared-xxxxx` URL → brief "not found" message, then clears
+
+---
+
+## 14. Analytics
+
+**Setup:** Open Firebase Console → Analytics → DebugView before testing.
+
+- [ ] Open the site → `page_view` event appears in DebugView
+- [ ] Open `#shared-{shareId}` URL → `shared_solve_viewed` event with `share_id` param
+- [ ] Make any cube move (first move of the session) → `cube_first_move` with `driver: mouse` (or `touch` on mobile)
+- [ ] Complete a solve → `solve_recorded` with `method` param
+- [ ] Connect GAN cube → `cube_connected` event
+- [ ] Make first move with GAN cube → `cube_first_move` with `driver: ble`
+- [ ] Enable cloud sync → `cloud_sync_enabled` event
+- [ ] Share a solve → `solve_shared` event with `method` param
+- [ ] Sign in → analytics user ID set (check DebugView user property)
+- [ ] Sign out → analytics user ID cleared
+- [ ] First visit: analytics banner appears at bottom
+- [ ] Click **Got it** → banner disappears; does not reappear on reload
+
+---
+
+## 15. Debug Mode
 
 - [ ] Switch to debug mode → 3D cube canvas shows, ControlBar and OrientationConfig visible
 - [ ] **Reset gyro** → cube 3D orientation resets to neutral
