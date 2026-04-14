@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { computeStats, computeAo } from '../../src/hooks/useSolveHistory'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { computeStats, computeAo, useSolveHistory } from '../../src/hooks/useSolveHistory'
 import type { SolveRecord } from '../../src/types/solve'
 
 function makeSolve(id: number, timeMs: number): SolveRecord {
@@ -50,5 +51,37 @@ describe('computeStats', () => {
     const stats = computeStats(solves)
     expect(stats.single.best).toBeCloseTo(20000)
     expect(stats.single.current).toBeCloseTo(25000) // latest
+  })
+})
+
+describe('useSolveHistory — updateSolve (localStorage mode)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  function makeSolveRecord(id: number, method: string): SolveRecord {
+    return { id, seq: id, scramble: '', timeMs: 10000, moves: [], phases: [], date: 0, method }
+  }
+
+  it('updateSolve replaces the solve with matching id', async () => {
+    const { result } = renderHook(() => useSolveHistory())
+    act(() => { result.current.addSolve(makeSolveRecord(1, 'cfop')) })
+    await act(async () => {
+      await result.current.updateSolve(makeSolveRecord(1, 'roux'))
+    })
+    const updated = result.current.solves.find((s) => s.id === 1)
+    expect(updated?.method).toBe('roux')
+  })
+
+  it('updateSolve does not affect other solves', async () => {
+    const { result } = renderHook(() => useSolveHistory())
+    act(() => {
+      result.current.addSolve(makeSolveRecord(1, 'cfop'))
+      result.current.addSolve(makeSolveRecord(2, 'cfop'))
+    })
+    await act(async () => {
+      await result.current.updateSolve(makeSolveRecord(1, 'roux'))
+    })
+    expect(result.current.solves.find((s) => s.id === 2)?.method).toBe('cfop')
   })
 })

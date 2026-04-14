@@ -8,6 +8,7 @@ import {
   loadSolvesFromFirestore,
   addSolveToFirestore,
   deleteSolveFromFirestore,
+  updateSolveInFirestore,
   migrateLocalSolvesToFirestore,
   loadNextSeqFromFirestore,
   updateCounterInFirestore,
@@ -174,6 +175,19 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
     }
   }, [useCloud, uid])
 
+  const updateSolve = useCallback(async (updated: SolveRecord): Promise<void> => {
+    if (useCloud && uid) {
+      setCloudSolves((prev) => prev.map((s) => s.id === updated.id ? updated : s))
+      await updateSolveInFirestore(uid, updated)
+    } else {
+      setLocalSolves((prev) => {
+        const next = prev.map((s) => s.id === updated.id ? updated : s)
+        saveLocalSolves(next)
+        return next
+      })
+    }
+  }, [useCloud, uid])
+
   const deleteSolve = useCallback((id: number) => {
     if (id < 0) {
       dismissExample(id)
@@ -202,5 +216,5 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
   const solves = isCloudLoading ? [] : (useCloud ? cloudSolves : localSolves)
   const visibleExamples = isCloudLoading ? [] : EXAMPLE_SOLVES.filter((e) => !dismissedExamples.has(e.id))
   const allSolves = [...visibleExamples, ...solves]
-  return { solves: allSolves, addSolve, deleteSolve, nextSolveIds, cloudLoading: isCloudLoading }
+  return { solves: allSolves, addSolve, deleteSolve, updateSolve, nextSolveIds, cloudLoading: isCloudLoading }
 }

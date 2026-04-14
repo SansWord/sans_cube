@@ -47,6 +47,10 @@ export async function deleteSolveFromFirestore(uid: string, solve: SolveRecord):
   await deleteDoc(solveDocRef(uid, solve))
 }
 
+export async function updateSolveInFirestore(uid: string, solve: SolveRecord): Promise<void> {
+  await setDoc(solveDocRef(uid, solve), sanitize(solve))
+}
+
 export async function migrateLocalSolvesToFirestore(uid: string, solves: SolveRecord[]): Promise<void> {
   await Promise.all(solves.map((s) => addSolveToFirestore(uid, s)))
 }
