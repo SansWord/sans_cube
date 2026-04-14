@@ -541,40 +541,46 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontWeight: 'bold', color: '#888', fontSize: 15 }}>Trends</span>
-          <select
-            value={solveFilter.method}
-            onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
-            style={{
-              background: 'transparent',
-              border: '1px solid #333',
-              color: '#888',
-              fontSize: 12,
-              padding: '1px 4px',
-              borderRadius: 3,
-              cursor: 'pointer',
-            }}
-          >
-            <option value="all">All</option>
-            <option value="cfop">CFOP</option>
-            <option value="roux">Roux</option>
-          </select>
-          <select
-            value={solveFilter.driver}
-            onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
-            style={{
-              background: 'transparent',
-              border: '1px solid #333',
-              color: '#888',
-              fontSize: 12,
-              padding: '1px 4px',
-              borderRadius: 3,
-              cursor: 'pointer',
-            }}
-          >
-            <option value="all">All</option>
-            <option value="cube">Cube</option>
-            <option value="mouse">Mouse</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#555', fontSize: 11 }}>Method</span>
+            <select
+              value={solveFilter.method}
+              onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#888',
+                fontSize: 12,
+                padding: '1px 4px',
+                borderRadius: 3,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="all">All</option>
+              <option value="cfop">CFOP</option>
+              <option value="roux">Roux</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#555', fontSize: 11 }}>Driver</span>
+            <select
+              value={solveFilter.driver}
+              onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#888',
+                fontSize: 12,
+                padding: '1px 4px',
+                borderRadius: 3,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="all">All</option>
+              <option value="cube">Cube</option>
+              <option value="mouse">Mouse</option>
+            </select>
+          </div>
         </div>
         <button
           onClick={onClose}

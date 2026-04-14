@@ -81,34 +81,40 @@ function StatsSection({ solves, solveFilter, updateSolveFilter, onOpenTrends, cl
               Trends
             </button>
           )}
-          <select
-            value={solveFilter.method}
-            onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
-            disabled={cloudLoading}
-            style={{
-              ...filterSelectStyle,
-              cursor: cloudLoading ? 'not-allowed' : 'pointer',
-              opacity: cloudLoading ? 0.5 : 1,
-            }}
-          >
-            <option value="all">All</option>
-            <option value="cfop">CFOP</option>
-            <option value="roux">Roux</option>
-          </select>
-          <select
-            value={solveFilter.driver}
-            onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
-            disabled={cloudLoading}
-            style={{
-              ...filterSelectStyle,
-              cursor: cloudLoading ? 'not-allowed' : 'pointer',
-              opacity: cloudLoading ? 0.5 : 1,
-            }}
-          >
-            <option value="all">All</option>
-            <option value="cube">Cube</option>
-            <option value="mouse">Mouse</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#555', fontSize: 10 }}>Method</span>
+            <select
+              value={solveFilter.method}
+              onChange={e => updateSolveFilter(f => ({ ...f, method: e.target.value as SolveFilter['method'] }))}
+              disabled={cloudLoading}
+              style={{
+                ...filterSelectStyle,
+                cursor: cloudLoading ? 'not-allowed' : 'pointer',
+                opacity: cloudLoading ? 0.5 : 1,
+              }}
+            >
+              <option value="all">All</option>
+              <option value="cfop">CFOP</option>
+              <option value="roux">Roux</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#555', fontSize: 10 }}>Driver</span>
+            <select
+              value={solveFilter.driver}
+              onChange={e => updateSolveFilter(f => ({ ...f, driver: e.target.value as SolveFilter['driver'] }))}
+              disabled={cloudLoading}
+              style={{
+                ...filterSelectStyle,
+                cursor: cloudLoading ? 'not-allowed' : 'pointer',
+                opacity: cloudLoading ? 0.5 : 1,
+              }}
+            >
+              <option value="all">All</option>
+              <option value="cube">Cube</option>
+              <option value="mouse">Mouse</option>
+            </select>
+          </div>
         </div>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
