@@ -142,7 +142,7 @@ https://sansword.github.io/sans_cube/#shared-aB3kR9mNpQxZ7wLdUvTy
 
 ## New Service Functions
 
-Add to `src/services/firestoreSolves.ts` (or a new `firestoreSharing.ts`):
+Add to a new `src/services/firestoreSharing.ts`:
 
 ```ts
 // Generate a new shareId without writing anything
@@ -218,7 +218,7 @@ If cloud sync is off, the Share button is not shown (sharing requires the solve 
 | File | Change |
 |---|---|
 | `src/types/solve.ts` | Add `shareId?: string` to `SolveRecord` |
-| `src/services/firestoreSolves.ts` | Add `shareSolve`, `unshareSolve`, `updateSharedSolve`, `loadSharedSolve`, `newShareId` |
+| `src/services/firestoreSharing.ts` | New file: `shareSolve`, `unshareSolve`, `updateSharedSolve`, `loadSharedSolve`, `newShareId` |
 | `src/hooks/useSolveHistory.ts` | Call `updateSharedSolve` inside `updateSolve` when `solve.shareId` is set |
 | `src/components/SolveDetailModal.tsx` | Add share button + URL display + read-only mode prop |
 | `src/App.tsx` | Extend hash routing to handle `#shared-{shareId}` |
