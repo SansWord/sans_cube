@@ -9,7 +9,9 @@ const BASE62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
 // Generate a 20-char base62 ID — same character space as Firestore auto-IDs
 export function newShareId(): string {
-  return Array.from({ length: 20 }, () => BASE62[Math.floor(Math.random() * 62)]).join('')
+  const bytes = new Uint8Array(20)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => BASE62[b % 62]).join('')
 }
 
 function publicSolveRef(shareId: string) {

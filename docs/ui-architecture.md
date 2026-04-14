@@ -136,6 +136,7 @@ These components are purely presentational — they receive data as props and fi
 |---|---|
 | `firebase.ts` | Firebase app init; exports `auth`, `db`, `googleProvider` |
 | `firestoreSolves.ts` | Firestore CRUD for solve records (`users/{uid}/solves`) and sequence counter (`users/{uid}/meta/counter`) |
+| `firestoreSharing.ts` | Share ID generation (`newShareId`), and Firestore CRUD for `public_solves/{shareId}` and `users/{uid}/shared_solves/{shareId}` |
 
 ---
 

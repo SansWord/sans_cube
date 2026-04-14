@@ -159,8 +159,8 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
       const updated = { ...localSolve, shareId }
       setLocalSolve(updated)
       await onUpdate(updated)
-    } catch {
-      // silently revert — share failure is non-critical
+    } catch (e) {
+      console.error('[share] failed to persist shareId after sharing:', e)
     } finally {
       setShareState('idle')
     }
