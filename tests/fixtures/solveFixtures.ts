@@ -1,0 +1,7666 @@
+// tests/fixtures/solveFixtures.ts
+// Real solve records with quaternion fields stripped (not needed for phase recomputation).
+// Source: src/data/exampleSolves.ts — copied here so tests are stable and independent of production data.
+// To add a new fixture: add a new const, then append it to CFOP_SOLVES or ROUX_SOLVES below.
+import type { SolveRecord } from '../../src/types/solve'
+
+// id: -1, scramble: R' D' B2 L2 F2 R F' B D2 B' L' D B L U' D R' L' D' U
+export const CFOP_SOLVE_1: SolveRecord = {
+  "scramble": "R' D' B2 L2 F2 R F' B D2 B' L' D B L U' D R' L' D' U",
+  "timeMs": 114609,
+  "moves": [
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068205921,
+      "serial": 24
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068206821,
+      "serial": 25
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068207646,
+      "serial": 26
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068210721,
+      "serial": 27
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068211430,
+      "serial": 28
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068212929,
+      "serial": 29
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068220313,
+      "serial": 30
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068221438,
+      "serial": 31
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068222280,
+      "serial": 32
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068222988,
+      "serial": 33
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068224496,
+      "serial": 34
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068225305,
+      "serial": 35
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068226063,
+      "serial": 36
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068226805,
+      "serial": 37
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068228196,
+      "serial": 38
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068229563,
+      "serial": 39
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068235188,
+      "serial": 40
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068235921,
+      "serial": 41
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068236654,
+      "serial": 42
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068237655,
+      "serial": 43
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068238421,
+      "serial": 44
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068239063,
+      "serial": 45
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068241096,
+      "serial": 46
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068241771,
+      "serial": 47
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068242688,
+      "serial": 48
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068244688,
+      "serial": 49
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068245563,
+      "serial": 50
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068246188,
+      "serial": 51
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068247046,
+      "serial": 52
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068247938,
+      "serial": 53
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068248655,
+      "serial": 54
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068249721,
+      "serial": 55
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068250396,
+      "serial": 56
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068252038,
+      "serial": 57
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068252796,
+      "serial": 58
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068253563,
+      "serial": 59
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068254321,
+      "serial": 60
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068256146,
+      "serial": 61
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068256821,
+      "serial": 62
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068258463,
+      "serial": 63
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068262305,
+      "serial": 64
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068263013,
+      "serial": 65
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068264788,
+      "serial": 66
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068265588,
+      "serial": 67
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068266380,
+      "serial": 68
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068268288,
+      "serial": 69
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068270196,
+      "serial": 70
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068271221,
+      "serial": 71
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068272254,
+      "serial": 72
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068273138,
+      "serial": 73
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068276929,
+      "serial": 74
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068277663,
+      "serial": 75
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068278546,
+      "serial": 76
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 1775068279421,
+      "serial": 77
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068280263,
+      "serial": 78
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068281113,
+      "serial": 79
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068281821,
+      "serial": 80
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068282563,
+      "serial": 81
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068292046,
+      "serial": 82
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068292813,
+      "serial": 83
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068293580,
+      "serial": 84
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068294379,
+      "serial": 85
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068295979,
+      "serial": 86
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068296721,
+      "serial": 87
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068297571,
+      "serial": 88
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 1775068298321,
+      "serial": 89
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068299730,
+      "serial": 90
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068300502,
+      "serial": 91
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068301421,
+      "serial": 92
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068302138,
+      "serial": 93
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068302871,
+      "serial": 94
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068303896,
+      "serial": 95
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068305030,
+      "serial": 96
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068305855,
+      "serial": 97
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068307688,
+      "serial": 98
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 1775068308429,
+      "serial": 99
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068309146,
+      "serial": 100
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068310238,
+      "serial": 101
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068311280,
+      "serial": 102
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068312080,
+      "serial": 103
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068312955,
+      "serial": 104
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068313846,
+      "serial": 105
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 1775068314521,
+      "serial": 106
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068315430,
+      "serial": 107
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 1775068317455,
+      "serial": 108
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068318596,
+      "serial": 109
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068319696,
+      "serial": 110
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 1775068320529,
+      "serial": 111
+    }
+  ],
+  "phases": [
+    {
+      "label": "Cross",
+      "recognitionMs": 0,
+      "executionMs": 7008,
+      "turns": 6
+    },
+    {
+      "label": "F2L Slot 1",
+      "group": "F2L",
+      "recognitionMs": 7384,
+      "executionMs": 9250,
+      "turns": 10
+    },
+    {
+      "label": "F2L Slot 2",
+      "group": "F2L",
+      "recognitionMs": 5625,
+      "executionMs": 7500,
+      "turns": 9
+    },
+    {
+      "label": "F2L Slot 3",
+      "group": "F2L",
+      "recognitionMs": 2000,
+      "executionMs": 5708,
+      "turns": 8
+    },
+    {
+      "label": "F2L Slot 4",
+      "group": "F2L",
+      "recognitionMs": 1642,
+      "executionMs": 6425,
+      "turns": 7
+    },
+    {
+      "label": "EOLL",
+      "group": "OLL",
+      "recognitionMs": 3842,
+      "executionMs": 10833,
+      "turns": 10
+    },
+    {
+      "label": "COLL",
+      "group": "OLL",
+      "recognitionMs": 3791,
+      "executionMs": 5634,
+      "turns": 8
+    },
+    {
+      "label": "CPLL",
+      "group": "PLL",
+      "recognitionMs": 9483,
+      "executionMs": 10092,
+      "turns": 12
+    },
+    {
+      "label": "EPLL",
+      "group": "PLL",
+      "recognitionMs": 733,
+      "executionMs": 17659,
+      "turns": 18
+    }
+  ],
+  "quaternionSnapshots": [
+    {
+      "quaternion": {
+        "x": 0.01384,
+        "y": 0.01119,
+        "z": -0.47813,
+        "w": 0.87811
+      },
+      "relativeMs": 2681
+    },
+    {
+      "quaternion": {
+        "x": 0.01367,
+        "y": 0.0114,
+        "z": -0.46491,
+        "w": 0.88518
+      },
+      "relativeMs": 2781
+    },
+    {
+      "quaternion": {
+        "x": -0.03808,
+        "y": -0.00503,
+        "z": -0.22191,
+        "w": 0.97431
+      },
+      "relativeMs": 2889
+    },
+    {
+      "quaternion": {
+        "x": -0.05086,
+        "y": -0.01622,
+        "z": -0.04136,
+        "w": 0.99772
+      },
+      "relativeMs": 3497
+    },
+    {
+      "quaternion": {
+        "x": -0.0496,
+        "y": -0.01973,
+        "z": 0.02853,
+        "w": 0.99817
+      },
+      "relativeMs": 3597
+    },
+    {
+      "quaternion": {
+        "x": -0.02534,
+        "y": -0.04699,
+        "z": 0.66299,
+        "w": 0.74672
+      },
+      "relativeMs": 3700
+    },
+    {
+      "quaternion": {
+        "x": -0.02212,
+        "y": -0.04859,
+        "z": 0.71185,
+        "w": 0.7003
+      },
+      "relativeMs": 3806
+    },
+    {
+      "quaternion": {
+        "x": -0.02387,
+        "y": -0.04681,
+        "z": 0.71197,
+        "w": 0.70024
+      },
+      "relativeMs": 3956
+    },
+    {
+      "quaternion": {
+        "x": -0.02387,
+        "y": -0.04681,
+        "z": 0.71197,
+        "w": 0.70024
+      },
+      "relativeMs": 5939
+    },
+    {
+      "quaternion": {
+        "x": -0.02368,
+        "y": -0.04766,
+        "z": 0.68691,
+        "w": 0.72479
+      },
+      "relativeMs": 6039
+    },
+    {
+      "quaternion": {
+        "x": -0.03334,
+        "y": -0.04441,
+        "z": 0.30008,
+        "w": 0.9523
+      },
+      "relativeMs": 6139
+    },
+    {
+      "quaternion": {
+        "x": -0.06063,
+        "y": -0.03224,
+        "z": 0.11068,
+        "w": 0.99148
+      },
+      "relativeMs": 6239
+    },
+    {
+      "quaternion": {
+        "x": -0.09258,
+        "y": -0.02531,
+        "z": 0.03945,
+        "w": 0.9946
+      },
+      "relativeMs": 6339
+    },
+    {
+      "quaternion": {
+        "x": -0.09258,
+        "y": -0.02531,
+        "z": 0.03945,
+        "w": 0.9946
+      },
+      "relativeMs": 7507
+    },
+    {
+      "quaternion": {
+        "x": -0.0919,
+        "y": -0.01731,
+        "z": -0.04518,
+        "w": 0.99459
+      },
+      "relativeMs": 7614
+    },
+    {
+      "quaternion": {
+        "x": -0.08583,
+        "y": 0.03033,
+        "z": -0.53772,
+        "w": 0.8382
+      },
+      "relativeMs": 7714
+    },
+    {
+      "quaternion": {
+        "x": -0.08702,
+        "y": 0.03689,
+        "z": -0.644,
+        "w": 0.75916
+      },
+      "relativeMs": 7814
+    },
+    {
+      "quaternion": {
+        "x": -0.08867,
+        "y": 0.04,
+        "z": -0.71339,
+        "w": 0.69399
+      },
+      "relativeMs": 7914
+    },
+    {
+      "quaternion": {
+        "x": -0.08945,
+        "y": 0.04017,
+        "z": -0.72892,
+        "w": 0.67754
+      },
+      "relativeMs": 8031
+    },
+    {
+      "quaternion": {
+        "x": 0.06099,
+        "y": 0.19819,
+        "z": -0.70429,
+        "w": 0.67895
+      },
+      "relativeMs": 8131
+    },
+    {
+      "quaternion": {
+        "x": 0.15708,
+        "y": 0.28716,
+        "z": -0.69519,
+        "w": 0.63998
+      },
+      "relativeMs": 8231
+    },
+    {
+      "quaternion": {
+        "x": 0.17156,
+        "y": 0.30526,
+        "z": -0.68459,
+        "w": 0.63931
+      },
+      "relativeMs": 8331
+    },
+    {
+      "quaternion": {
+        "x": 0.17729,
+        "y": 0.31763,
+        "z": -0.67189,
+        "w": 0.64517
+      },
+      "relativeMs": 8431
+    },
+    {
+      "quaternion": {
+        "x": 0.17729,
+        "y": 0.31763,
+        "z": -0.67189,
+        "w": 0.64517
+      },
+      "relativeMs": 8806
+    },
+    {
+      "quaternion": {
+        "x": 0.27018,
+        "y": 0.41292,
+        "z": -0.61792,
+        "w": 0.61211
+      },
+      "relativeMs": 8906
+    },
+    {
+      "quaternion": {
+        "x": 0.50844,
+        "y": 0.63965,
+        "z": -0.3784,
+        "w": 0.43492
+      },
+      "relativeMs": 9006
+    },
+    {
+      "quaternion": {
+        "x": 0.50844,
+        "y": 0.63965,
+        "z": -0.3784,
+        "w": 0.43492
+      },
+      "relativeMs": 10089
+    },
+    {
+      "quaternion": {
+        "x": 0.37124,
+        "y": 0.51286,
+        "z": -0.53787,
+        "w": 0.55665
+      },
+      "relativeMs": 10189
+    },
+    {
+      "quaternion": {
+        "x": 0.26611,
+        "y": 0.40537,
+        "z": -0.62507,
+        "w": 0.61168
+      },
+      "relativeMs": 10289
+    },
+    {
+      "quaternion": {
+        "x": 0.24764,
+        "y": 0.38644,
+        "z": -0.63695,
+        "w": 0.61939
+      },
+      "relativeMs": 10806
+    },
+    {
+      "quaternion": {
+        "x": -0.10585,
+        "y": 0.01109,
+        "z": -0.72829,
+        "w": 0.67695
+      },
+      "relativeMs": 10906
+    },
+    {
+      "quaternion": {
+        "x": -0.15154,
+        "y": -0.03867,
+        "z": -0.72226,
+        "w": 0.6737
+      },
+      "relativeMs": 11006
+    },
+    {
+      "quaternion": {
+        "x": -0.18657,
+        "y": -0.07691,
+        "z": -0.71755,
+        "w": 0.66663
+      },
+      "relativeMs": 11106
+    },
+    {
+      "quaternion": {
+        "x": -0.19993,
+        "y": -0.09119,
+        "z": -0.71586,
+        "w": 0.66277
+      },
+      "relativeMs": 11206
+    },
+    {
+      "quaternion": {
+        "x": -0.20427,
+        "y": -0.0869,
+        "z": -0.73517,
+        "w": 0.6405
+      },
+      "relativeMs": 11306
+    },
+    {
+      "quaternion": {
+        "x": -0.21046,
+        "y": -0.08296,
+        "z": -0.75826,
+        "w": 0.61145
+      },
+      "relativeMs": 11406
+    },
+    {
+      "quaternion": {
+        "x": -0.21545,
+        "y": -0.06947,
+        "z": -0.79491,
+        "w": 0.56292
+      },
+      "relativeMs": 11506
+    },
+    {
+      "quaternion": {
+        "x": -0.21212,
+        "y": -0.03809,
+        "z": -0.8433,
+        "w": 0.49234
+      },
+      "relativeMs": 11606
+    },
+    {
+      "quaternion": {
+        "x": -0.2178,
+        "y": -0.04175,
+        "z": -0.85375,
+        "w": 0.4711
+      },
+      "relativeMs": 11714
+    },
+    {
+      "quaternion": {
+        "x": -0.2177,
+        "y": -0.0423,
+        "z": -0.85257,
+        "w": 0.47323
+      },
+      "relativeMs": 11847
+    },
+    {
+      "quaternion": {
+        "x": -0.18487,
+        "y": -0.04178,
+        "z": -0.75841,
+        "w": 0.62362
+      },
+      "relativeMs": 11947
+    },
+    {
+      "quaternion": {
+        "x": -0.11806,
+        "y": -0.02383,
+        "z": -0.60391,
+        "w": 0.7879
+      },
+      "relativeMs": 12047
+    },
+    {
+      "quaternion": {
+        "x": -0.03233,
+        "y": 0.00915,
+        "z": -0.43543,
+        "w": 0.8996
+      },
+      "relativeMs": 12147
+    },
+    {
+      "quaternion": {
+        "x": -0.02125,
+        "y": 0.01393,
+        "z": -0.4172,
+        "w": 0.90846
+      },
+      "relativeMs": 12247
+    },
+    {
+      "quaternion": {
+        "x": -0.02139,
+        "y": 0.01372,
+        "z": -0.4081,
+        "w": 0.91259
+      },
+      "relativeMs": 12397
+    },
+    {
+      "quaternion": {
+        "x": -0.00886,
+        "y": 0.02617,
+        "z": -0.79855,
+        "w": 0.60129
+      },
+      "relativeMs": 12497
+    },
+    {
+      "quaternion": {
+        "x": -0.00071,
+        "y": 0.03126,
+        "z": -0.8965,
+        "w": 0.44194
+      },
+      "relativeMs": 12597
+    },
+    {
+      "quaternion": {
+        "x": -0.00201,
+        "y": 0.02461,
+        "z": -0.92542,
+        "w": 0.37813
+      },
+      "relativeMs": 12697
+    },
+    {
+      "quaternion": {
+        "x": -0.00473,
+        "y": 0.01535,
+        "z": -0.93915,
+        "w": 0.34314
+      },
+      "relativeMs": 12797
+    },
+    {
+      "quaternion": {
+        "x": -0.00558,
+        "y": 0.013,
+        "z": -0.93918,
+        "w": 0.34312
+      },
+      "relativeMs": 12897
+    },
+    {
+      "quaternion": {
+        "x": 0.02673,
+        "y": 0.09262,
+        "z": -0.81608,
+        "w": 0.56984
+      },
+      "relativeMs": 12997
+    },
+    {
+      "quaternion": {
+        "x": 0.05506,
+        "y": 0.21118,
+        "z": -0.36262,
+        "w": 0.90602
+      },
+      "relativeMs": 13097
+    },
+    {
+      "quaternion": {
+        "x": 0.03402,
+        "y": 0.23261,
+        "z": -0.12949,
+        "w": 0.96331
+      },
+      "relativeMs": 13197
+    },
+    {
+      "quaternion": {
+        "x": 0.01258,
+        "y": 0.23654,
+        "z": 0.00123,
+        "w": 0.97154
+      },
+      "relativeMs": 13297
+    },
+    {
+      "quaternion": {
+        "x": -0.01684,
+        "y": 0.23718,
+        "z": 0.04807,
+        "w": 0.97013
+      },
+      "relativeMs": 13397
+    },
+    {
+      "quaternion": {
+        "x": -0.04452,
+        "y": 0.23751,
+        "z": 0.07723,
+        "w": 0.96729
+      },
+      "relativeMs": 13497
+    },
+    {
+      "quaternion": {
+        "x": -0.04515,
+        "y": 0.23806,
+        "z": 0.06938,
+        "w": 0.96772
+      },
+      "relativeMs": 13597
+    },
+    {
+      "quaternion": {
+        "x": -0.01815,
+        "y": 0.24172,
+        "z": -0.04999,
+        "w": 0.96889
+      },
+      "relativeMs": 13697
+    },
+    {
+      "quaternion": {
+        "x": -0.01876,
+        "y": 0.24172,
+        "z": -0.05786,
+        "w": 0.96844
+      },
+      "relativeMs": 17439
+    },
+    {
+      "quaternion": {
+        "x": -0.01331,
+        "y": 0.24208,
+        "z": -0.07963,
+        "w": 0.96689
+      },
+      "relativeMs": 17539
+    },
+    {
+      "quaternion": {
+        "x": 0.08434,
+        "y": 0.15927,
+        "z": -0.69321,
+        "w": 0.69783
+      },
+      "relativeMs": 17639
+    },
+    {
+      "quaternion": {
+        "x": 0.07878,
+        "y": 0.11727,
+        "z": -0.78946,
+        "w": 0.59732
+      },
+      "relativeMs": 17739
+    },
+    {
+      "quaternion": {
+        "x": 0.07463,
+        "y": 0.09895,
+        "z": -0.82304,
+        "w": 0.5543
+      },
+      "relativeMs": 17839
+    },
+    {
+      "quaternion": {
+        "x": 0.07463,
+        "y": 0.09895,
+        "z": -0.82304,
+        "w": 0.5543
+      },
+      "relativeMs": 22681
+    },
+    {
+      "quaternion": {
+        "x": 0.06353,
+        "y": 0.08247,
+        "z": -0.82485,
+        "w": 0.55569
+      },
+      "relativeMs": 22781
+    },
+    {
+      "quaternion": {
+        "x": -0.05487,
+        "y": -0.07798,
+        "z": -0.77646,
+        "w": 0.62291
+      },
+      "relativeMs": 22889
+    },
+    {
+      "quaternion": {
+        "x": -0.07604,
+        "y": -0.10849,
+        "z": -0.75557,
+        "w": 0.64153
+      },
+      "relativeMs": 22989
+    },
+    {
+      "quaternion": {
+        "x": -0.0771,
+        "y": -0.11076,
+        "z": -0.75208,
+        "w": 0.6451
+      },
+      "relativeMs": 24013
+    },
+    {
+      "quaternion": {
+        "x": -0.08334,
+        "y": -0.10615,
+        "z": -0.78791,
+        "w": 0.60082
+      },
+      "relativeMs": 24114
+    },
+    {
+      "quaternion": {
+        "x": -0.15454,
+        "y": -0.10738,
+        "z": -0.96898,
+        "w": 0.16017
+      },
+      "relativeMs": 24214
+    },
+    {
+      "quaternion": {
+        "x": -0.17818,
+        "y": -0.12381,
+        "z": -0.97135,
+        "w": -0.09698
+      },
+      "relativeMs": 24314
+    },
+    {
+      "quaternion": {
+        "x": -0.17934,
+        "y": -0.13432,
+        "z": -0.96697,
+        "w": -0.12148
+      },
+      "relativeMs": 24780
+    },
+    {
+      "quaternion": {
+        "x": -0.14445,
+        "y": -0.39684,
+        "z": -0.79279,
+        "w": -0.43947
+      },
+      "relativeMs": 24881
+    },
+    {
+      "quaternion": {
+        "x": -0.12638,
+        "y": -0.50441,
+        "z": -0.62006,
+        "w": -0.58747
+      },
+      "relativeMs": 24981
+    },
+    {
+      "quaternion": {
+        "x": -0.1248,
+        "y": -0.52477,
+        "z": -0.56665,
+        "w": -0.62286
+      },
+      "relativeMs": 25081
+    },
+    {
+      "quaternion": {
+        "x": -0.12455,
+        "y": -0.52587,
+        "z": -0.56377,
+        "w": -0.62458
+      },
+      "relativeMs": 25206
+    },
+    {
+      "quaternion": {
+        "x": -0.10294,
+        "y": -0.52593,
+        "z": -0.60102,
+        "w": -0.59294
+      },
+      "relativeMs": 25306
+    },
+    {
+      "quaternion": {
+        "x": 0.01848,
+        "y": -0.47653,
+        "z": -0.79621,
+        "w": -0.37232
+      },
+      "relativeMs": 25406
+    },
+    {
+      "quaternion": {
+        "x": 0.06867,
+        "y": -0.4374,
+        "z": -0.85808,
+        "w": -0.2601
+      },
+      "relativeMs": 25506
+    },
+    {
+      "quaternion": {
+        "x": 0.10273,
+        "y": -0.47594,
+        "z": -0.84713,
+        "w": -0.21285
+      },
+      "relativeMs": 25606
+    },
+    {
+      "quaternion": {
+        "x": 0.13363,
+        "y": -0.51499,
+        "z": -0.8293,
+        "w": -0.17087
+      },
+      "relativeMs": 25706
+    },
+    {
+      "quaternion": {
+        "x": 0.11344,
+        "y": -0.61124,
+        "z": -0.75337,
+        "w": -0.21438
+      },
+      "relativeMs": 25806
+    },
+    {
+      "quaternion": {
+        "x": 0.105,
+        "y": -0.62645,
+        "z": -0.73811,
+        "w": -0.22744
+      },
+      "relativeMs": 25981
+    },
+    {
+      "quaternion": {
+        "x": 0.06444,
+        "y": -0.50786,
+        "z": -0.823,
+        "w": -0.24618
+      },
+      "relativeMs": 26081
+    },
+    {
+      "quaternion": {
+        "x": -0.03934,
+        "y": -0.13349,
+        "z": -0.96052,
+        "w": -0.24091
+      },
+      "relativeMs": 26181
+    },
+    {
+      "quaternion": {
+        "x": -0.05569,
+        "y": -0.05926,
+        "z": -0.97148,
+        "w": -0.22275
+      },
+      "relativeMs": 26281
+    },
+    {
+      "quaternion": {
+        "x": -0.08559,
+        "y": 0.07651,
+        "z": -0.97189,
+        "w": -0.20555
+      },
+      "relativeMs": 26389
+    },
+    {
+      "quaternion": {
+        "x": -0.08832,
+        "y": 0.08845,
+        "z": -0.97137,
+        "w": -0.20203
+      },
+      "relativeMs": 26506
+    },
+    {
+      "quaternion": {
+        "x": -0.08781,
+        "y": 0.08602,
+        "z": -0.97159,
+        "w": -0.20225
+      },
+      "relativeMs": 26606
+    },
+    {
+      "quaternion": {
+        "x": -0.09217,
+        "y": 0.0782,
+        "z": -0.98219,
+        "w": -0.14384
+      },
+      "relativeMs": 26714
+    },
+    {
+      "quaternion": {
+        "x": -0.09441,
+        "y": 0.04146,
+        "z": -0.99201,
+        "w": -0.07263
+      },
+      "relativeMs": 26814
+    },
+    {
+      "quaternion": {
+        "x": -0.09123,
+        "y": 0.02197,
+        "z": -0.99009,
+        "w": -0.10445
+      },
+      "relativeMs": 26914
+    },
+    {
+      "quaternion": {
+        "x": -0.08987,
+        "y": 0.01814,
+        "z": -0.98523,
+        "w": -0.14464
+      },
+      "relativeMs": 27014
+    },
+    {
+      "quaternion": {
+        "x": -0.09514,
+        "y": 0.07045,
+        "z": -0.96576,
+        "w": -0.23084
+      },
+      "relativeMs": 27114
+    },
+    {
+      "quaternion": {
+        "x": -0.06969,
+        "y": 0.12106,
+        "z": -0.87637,
+        "w": -0.46093
+      },
+      "relativeMs": 27214
+    },
+    {
+      "quaternion": {
+        "x": 0.06385,
+        "y": -0.03645,
+        "z": -0.71422,
+        "w": -0.69605
+      },
+      "relativeMs": 27314
+    },
+    {
+      "quaternion": {
+        "x": 0.11291,
+        "y": -0.09489,
+        "z": -0.63448,
+        "w": -0.75873
+      },
+      "relativeMs": 27422
+    },
+    {
+      "quaternion": {
+        "x": 0.11908,
+        "y": -0.10289,
+        "z": -0.62205,
+        "w": -0.767
+      },
+      "relativeMs": 27563
+    },
+    {
+      "quaternion": {
+        "x": 0.09463,
+        "y": -0.10691,
+        "z": -0.52933,
+        "w": -0.83631
+      },
+      "relativeMs": 27663
+    },
+    {
+      "quaternion": {
+        "x": 0.09034,
+        "y": -0.11339,
+        "z": -0.47793,
+        "w": -0.86635
+      },
+      "relativeMs": 27764
+    },
+    {
+      "quaternion": {
+        "x": 0.09695,
+        "y": -0.1109,
+        "z": -0.51191,
+        "w": -0.84632
+      },
+      "relativeMs": 27864
+    },
+    {
+      "quaternion": {
+        "x": 0.15516,
+        "y": -0.0232,
+        "z": -0.94238,
+        "w": -0.29547
+      },
+      "relativeMs": 27964
+    },
+    {
+      "quaternion": {
+        "x": 0.16787,
+        "y": -0.03623,
+        "z": -0.97953,
+        "w": -0.10497
+      },
+      "relativeMs": 28064
+    },
+    {
+      "quaternion": {
+        "x": 0.1696,
+        "y": -0.04266,
+        "z": -0.98103,
+        "w": -0.08368
+      },
+      "relativeMs": 28172
+    },
+    {
+      "quaternion": {
+        "x": 0.16949,
+        "y": -0.04638,
+        "z": -0.98026,
+        "w": -0.09061
+      },
+      "relativeMs": 28272
+    },
+    {
+      "quaternion": {
+        "x": 0.16827,
+        "y": -0.05677,
+        "z": -0.97657,
+        "w": -0.12156
+      },
+      "relativeMs": 28372
+    },
+    {
+      "quaternion": {
+        "x": 0.16175,
+        "y": -0.06718,
+        "z": -0.96143,
+        "w": -0.21209
+      },
+      "relativeMs": 28472
+    },
+    {
+      "quaternion": {
+        "x": 0.16267,
+        "y": -0.076,
+        "z": -0.95873,
+        "w": -0.22047
+      },
+      "relativeMs": 33656
+    },
+    {
+      "quaternion": {
+        "x": 0.16263,
+        "y": -0.07962,
+        "z": -0.95686,
+        "w": -0.22725
+      },
+      "relativeMs": 33756
+    },
+    {
+      "quaternion": {
+        "x": 0.08128,
+        "y": -0.1618,
+        "z": -0.62421,
+        "w": -0.75998
+      },
+      "relativeMs": 33856
+    },
+    {
+      "quaternion": {
+        "x": 0.05012,
+        "y": -0.18233,
+        "z": -0.41678,
+        "w": -0.88912
+      },
+      "relativeMs": 33956
+    },
+    {
+      "quaternion": {
+        "x": 0.05618,
+        "y": -0.19029,
+        "z": -0.3781,
+        "w": -0.90425
+      },
+      "relativeMs": 34148
+    },
+    {
+      "quaternion": {
+        "x": 0.09135,
+        "y": -0.17431,
+        "z": -0.55475,
+        "w": -0.8084
+      },
+      "relativeMs": 34256
+    },
+    {
+      "quaternion": {
+        "x": 0.12361,
+        "y": -0.16796,
+        "z": -0.65636,
+        "w": -0.72505
+      },
+      "relativeMs": 34356
+    },
+    {
+      "quaternion": {
+        "x": 0.14087,
+        "y": -0.1698,
+        "z": -0.68963,
+        "w": -0.68973
+      },
+      "relativeMs": 34456
+    },
+    {
+      "quaternion": {
+        "x": 0.14301,
+        "y": -0.17117,
+        "z": -0.69093,
+        "w": -0.68765
+      },
+      "relativeMs": 37156
+    },
+    {
+      "quaternion": {
+        "x": 0.0876,
+        "y": -0.11541,
+        "z": -0.7024,
+        "w": -0.69688
+      },
+      "relativeMs": 37264
+    },
+    {
+      "quaternion": {
+        "x": -0.10132,
+        "y": 0.07502,
+        "z": -0.73849,
+        "w": -0.66237
+      },
+      "relativeMs": 37364
+    },
+    {
+      "quaternion": {
+        "x": -0.14853,
+        "y": 0.10763,
+        "z": -0.79793,
+        "w": -0.57416
+      },
+      "relativeMs": 37464
+    },
+    {
+      "quaternion": {
+        "x": -0.1456,
+        "y": 0.08795,
+        "z": -0.82567,
+        "w": -0.5379
+      },
+      "relativeMs": 37564
+    },
+    {
+      "quaternion": {
+        "x": -0.05556,
+        "y": -0.07425,
+        "z": -0.86784,
+        "w": -0.48811
+      },
+      "relativeMs": 37664
+    },
+    {
+      "quaternion": {
+        "x": -0.03203,
+        "y": -0.1157,
+        "z": -0.86576,
+        "w": -0.48584
+      },
+      "relativeMs": 37781
+    },
+    {
+      "quaternion": {
+        "x": -0.03412,
+        "y": -0.1133,
+        "z": -0.86238,
+        "w": -0.49224
+      },
+      "relativeMs": 37881
+    },
+    {
+      "quaternion": {
+        "x": -0.04283,
+        "y": -0.10172,
+        "z": -0.85244,
+        "w": -0.51105
+      },
+      "relativeMs": 44922
+    },
+    {
+      "quaternion": {
+        "x": -0.04283,
+        "y": -0.10172,
+        "z": -0.85244,
+        "w": -0.51105
+      },
+      "relativeMs": 45056
+    },
+    {
+      "quaternion": {
+        "x": -0.05269,
+        "y": -0.0782,
+        "z": -0.88074,
+        "w": -0.46411
+      },
+      "relativeMs": 45164
+    },
+    {
+      "quaternion": {
+        "x": -0.05336,
+        "y": -0.08038,
+        "z": -0.86108,
+        "w": -0.49923
+      },
+      "relativeMs": 45272
+    },
+    {
+      "quaternion": {
+        "x": -0.0399,
+        "y": -0.11227,
+        "z": -0.77675,
+        "w": -0.61843
+      },
+      "relativeMs": 45372
+    },
+    {
+      "quaternion": {
+        "x": -0.03587,
+        "y": -0.11915,
+        "z": -0.76307,
+        "w": -0.63422
+      },
+      "relativeMs": 49239
+    },
+    {
+      "quaternion": {
+        "x": -0.00403,
+        "y": -0.12436,
+        "z": -0.90047,
+        "w": -0.41673
+      },
+      "relativeMs": 49339
+    },
+    {
+      "quaternion": {
+        "x": 0.00592,
+        "y": -0.12429,
+        "z": -0.9309,
+        "w": -0.34344
+      },
+      "relativeMs": 49439
+    },
+    {
+      "quaternion": {
+        "x": 0.00592,
+        "y": -0.12429,
+        "z": -0.9309,
+        "w": -0.34344
+      },
+      "relativeMs": 53073
+    },
+    {
+      "quaternion": {
+        "x": -0.0522,
+        "y": -0.05977,
+        "z": -0.76905,
+        "w": -0.63424
+      },
+      "relativeMs": 53181
+    },
+    {
+      "quaternion": {
+        "x": -0.05721,
+        "y": -0.05349,
+        "z": -0.63118,
+        "w": -0.77167
+      },
+      "relativeMs": 53289
+    },
+    {
+      "quaternion": {
+        "x": -0.05058,
+        "y": -0.05493,
+        "z": -0.53768,
+        "w": -0.83984
+      },
+      "relativeMs": 53389
+    },
+    {
+      "quaternion": {
+        "x": -0.04114,
+        "y": -0.06058,
+        "z": -0.52005,
+        "w": -0.85099
+      },
+      "relativeMs": 53489
+    },
+    {
+      "quaternion": {
+        "x": -0.04159,
+        "y": -0.06027,
+        "z": -0.51365,
+        "w": -0.85487
+      },
+      "relativeMs": 54306
+    },
+    {
+      "quaternion": {
+        "x": -0.04426,
+        "y": -0.05834,
+        "z": -0.47468,
+        "w": -0.87711
+      },
+      "relativeMs": 54414
+    },
+    {
+      "quaternion": {
+        "x": -0.08107,
+        "y": 0.00373,
+        "z": 0.34483,
+        "w": -0.93515
+      },
+      "relativeMs": 54514
+    },
+    {
+      "quaternion": {
+        "x": -0.02778,
+        "y": 0.06166,
+        "z": 0.62896,
+        "w": -0.77449
+      },
+      "relativeMs": 54614
+    },
+    {
+      "quaternion": {
+        "x": -0.00386,
+        "y": 0.07917,
+        "z": 0.68166,
+        "w": -0.72736
+      },
+      "relativeMs": 57781
+    },
+    {
+      "quaternion": {
+        "x": -0.00349,
+        "y": 0.08225,
+        "z": 0.64974,
+        "w": -0.75569
+      },
+      "relativeMs": 57881
+    },
+    {
+      "quaternion": {
+        "x": 0.04248,
+        "y": 0.13329,
+        "z": 0.42882,
+        "w": -0.89249
+      },
+      "relativeMs": 57981
+    },
+    {
+      "quaternion": {
+        "x": 0.05244,
+        "y": 0.14233,
+        "z": 0.38811,
+        "w": -0.90904
+      },
+      "relativeMs": 67914
+    },
+    {
+      "quaternion": {
+        "x": 0.05244,
+        "y": 0.14233,
+        "z": 0.38811,
+        "w": -0.90904
+      },
+      "relativeMs": 68223
+    },
+    {
+      "quaternion": {
+        "x": 0.05052,
+        "y": 0.14123,
+        "z": 0.39074,
+        "w": -0.9082
+      },
+      "relativeMs": 68339
+    },
+    {
+      "quaternion": {
+        "x": 0.04739,
+        "y": 0.13877,
+        "z": 0.4005,
+        "w": -0.90448
+      },
+      "relativeMs": 68439
+    },
+    {
+      "quaternion": {
+        "x": 0.05015,
+        "y": 0.1378,
+        "z": 0.41851,
+        "w": -0.89629
+      },
+      "relativeMs": 68548
+    },
+    {
+      "quaternion": {
+        "x": 0.13141,
+        "y": 0.09203,
+        "z": 0.83773,
+        "w": -0.52199
+      },
+      "relativeMs": 68648
+    },
+    {
+      "quaternion": {
+        "x": 0.15893,
+        "y": 0.03516,
+        "z": 0.98443,
+        "w": -0.0663
+      },
+      "relativeMs": 68748
+    },
+    {
+      "quaternion": {
+        "x": 0.16315,
+        "y": 0.05596,
+        "z": 0.98474,
+        "w": 0.02311
+      },
+      "relativeMs": 68848
+    },
+    {
+      "quaternion": {
+        "x": 0.16329,
+        "y": 0.05555,
+        "z": 0.98468,
+        "w": 0.02557
+      },
+      "relativeMs": 69081
+    },
+    {
+      "quaternion": {
+        "x": 0.16294,
+        "y": 0.05883,
+        "z": 0.98466,
+        "w": 0.02106
+      },
+      "relativeMs": 69181
+    },
+    {
+      "quaternion": {
+        "x": 0.1589,
+        "y": 0.06397,
+        "z": 0.98435,
+        "w": -0.04129
+      },
+      "relativeMs": 69281
+    },
+    {
+      "quaternion": {
+        "x": 0.14709,
+        "y": 0.08458,
+        "z": 0.96735,
+        "w": -0.1883
+      },
+      "relativeMs": 69381
+    },
+    {
+      "quaternion": {
+        "x": 0.12427,
+        "y": 0.05111,
+        "z": 0.9412,
+        "w": -0.30998
+      },
+      "relativeMs": 69481
+    },
+    {
+      "quaternion": {
+        "x": 0.11877,
+        "y": 0.03069,
+        "z": 0.94582,
+        "w": -0.30062
+      },
+      "relativeMs": 69581
+    },
+    {
+      "quaternion": {
+        "x": 0.1025,
+        "y": -0.02794,
+        "z": 0.95593,
+        "w": -0.2737
+      },
+      "relativeMs": 69681
+    },
+    {
+      "quaternion": {
+        "x": 0.09841,
+        "y": -0.04011,
+        "z": 0.97798,
+        "w": -0.1796
+      },
+      "relativeMs": 69788
+    },
+    {
+      "quaternion": {
+        "x": 0.09731,
+        "y": -0.04107,
+        "z": 0.98377,
+        "w": -0.14503
+      },
+      "relativeMs": 69906
+    },
+    {
+      "quaternion": {
+        "x": 0.09951,
+        "y": -0.00562,
+        "z": 0.99225,
+        "w": -0.07414
+      },
+      "relativeMs": 70014
+    },
+    {
+      "quaternion": {
+        "x": 0.10231,
+        "y": 0.0378,
+        "z": 0.99352,
+        "w": -0.0321
+      },
+      "relativeMs": 70114
+    },
+    {
+      "quaternion": {
+        "x": 0.10277,
+        "y": 0.03651,
+        "z": 0.99384,
+        "w": -0.01968
+      },
+      "relativeMs": 70214
+    },
+    {
+      "quaternion": {
+        "x": 0.10277,
+        "y": 0.03651,
+        "z": 0.99384,
+        "w": -0.01968
+      },
+      "relativeMs": 77081
+    },
+    {
+      "quaternion": {
+        "x": 0.1069,
+        "y": -0.00125,
+        "z": 0.9913,
+        "w": 0.07674
+      },
+      "relativeMs": 77181
+    },
+    {
+      "quaternion": {
+        "x": 0.09532,
+        "y": -0.14264,
+        "z": 0.85162,
+        "w": 0.49529
+      },
+      "relativeMs": 77281
+    },
+    {
+      "quaternion": {
+        "x": 0.02367,
+        "y": -0.08972,
+        "z": 0.77158,
+        "w": 0.62933
+      },
+      "relativeMs": 77381
+    },
+    {
+      "quaternion": {
+        "x": -0.05746,
+        "y": -0.00303,
+        "z": 0.71726,
+        "w": 0.69443
+      },
+      "relativeMs": 77489
+    },
+    {
+      "quaternion": {
+        "x": -0.08351,
+        "y": 0.02515,
+        "z": 0.70107,
+        "w": 0.70774
+      },
+      "relativeMs": 77589
+    },
+    {
+      "quaternion": {
+        "x": -0.05385,
+        "y": -0.00618,
+        "z": 0.71377,
+        "w": 0.69828
+      },
+      "relativeMs": 77689
+    },
+    {
+      "quaternion": {
+        "x": 0.21718,
+        "y": -0.27743,
+        "z": 0.83594,
+        "w": 0.4208
+      },
+      "relativeMs": 77789
+    },
+    {
+      "quaternion": {
+        "x": 0.31178,
+        "y": -0.34752,
+        "z": 0.85188,
+        "w": 0.23733
+      },
+      "relativeMs": 78656
+    },
+    {
+      "quaternion": {
+        "x": 0.28452,
+        "y": -0.25412,
+        "z": 0.88424,
+        "w": 0.26942
+      },
+      "relativeMs": 78756
+    },
+    {
+      "quaternion": {
+        "x": 0.20653,
+        "y": -0.02055,
+        "z": 0.91981,
+        "w": 0.33299
+      },
+      "relativeMs": 78856
+    },
+    {
+      "quaternion": {
+        "x": 0.19983,
+        "y": -0.00215,
+        "z": 0.92003,
+        "w": 0.33705
+      },
+      "relativeMs": 78956
+    },
+    {
+      "quaternion": {
+        "x": 0.19213,
+        "y": 0.0111,
+        "z": 0.90653,
+        "w": 0.37572
+      },
+      "relativeMs": 79056
+    },
+    {
+      "quaternion": {
+        "x": 0.19114,
+        "y": -0.01251,
+        "z": 0.84764,
+        "w": 0.49478
+      },
+      "relativeMs": 79156
+    },
+    {
+      "quaternion": {
+        "x": 0.19676,
+        "y": -0.03377,
+        "z": 0.81748,
+        "w": 0.54026
+      },
+      "relativeMs": 79256
+    },
+    {
+      "quaternion": {
+        "x": 0.19676,
+        "y": -0.03377,
+        "z": 0.81748,
+        "w": 0.54026
+      },
+      "relativeMs": 79781
+    },
+    {
+      "quaternion": {
+        "x": 0.11957,
+        "y": -0.06695,
+        "z": 0.50567,
+        "w": 0.85177
+      },
+      "relativeMs": 79888
+    },
+    {
+      "quaternion": {
+        "x": 0.03376,
+        "y": -0.07464,
+        "z": 0.19662,
+        "w": 0.97705
+      },
+      "relativeMs": 79989
+    },
+    {
+      "quaternion": {
+        "x": -0.00011,
+        "y": -0.07076,
+        "z": 0.13984,
+        "w": 0.98764
+      },
+      "relativeMs": 80089
+    },
+    {
+      "quaternion": {
+        "x": -0.00258,
+        "y": -0.07041,
+        "z": 0.14002,
+        "w": 0.98764
+      },
+      "relativeMs": 80189
+    },
+    {
+      "quaternion": {
+        "x": 0.00024,
+        "y": -0.07078,
+        "z": 0.14478,
+        "w": 0.98693
+      },
+      "relativeMs": 80314
+    },
+    {
+      "quaternion": {
+        "x": 0.03118,
+        "y": -0.07064,
+        "z": 0.36722,
+        "w": 0.92693
+      },
+      "relativeMs": 80422
+    },
+    {
+      "quaternion": {
+        "x": 0.0614,
+        "y": -0.06006,
+        "z": 0.64131,
+        "w": 0.76246
+      },
+      "relativeMs": 80522
+    },
+    {
+      "quaternion": {
+        "x": 0.06641,
+        "y": -0.05446,
+        "z": 0.70549,
+        "w": 0.7035
+      },
+      "relativeMs": 80623
+    },
+    {
+      "quaternion": {
+        "x": 0.06913,
+        "y": -0.04678,
+        "z": 0.76279,
+        "w": 0.64123
+      },
+      "relativeMs": 80723
+    },
+    {
+      "quaternion": {
+        "x": 0.06833,
+        "y": -0.03914,
+        "z": 0.79712,
+        "w": 0.59866
+      },
+      "relativeMs": 80823
+    },
+    {
+      "quaternion": {
+        "x": 0.06646,
+        "y": -0.02848,
+        "z": 0.83457,
+        "w": 0.54613
+      },
+      "relativeMs": 80923
+    },
+    {
+      "quaternion": {
+        "x": 0.06432,
+        "y": -0.02295,
+        "z": 0.84546,
+        "w": 0.52966
+      },
+      "relativeMs": 81323
+    },
+    {
+      "quaternion": {
+        "x": 0.06432,
+        "y": -0.02295,
+        "z": 0.84546,
+        "w": 0.52966
+      },
+      "relativeMs": 81448
+    },
+    {
+      "quaternion": {
+        "x": 0.26318,
+        "y": -0.34653,
+        "z": 0.77152,
+        "w": 0.46412
+      },
+      "relativeMs": 81556
+    },
+    {
+      "quaternion": {
+        "x": 0.32637,
+        "y": -0.46025,
+        "z": 0.70781,
+        "w": 0.42504
+      },
+      "relativeMs": 81656
+    },
+    {
+      "quaternion": {
+        "x": 0.33135,
+        "y": -0.47675,
+        "z": 0.69525,
+        "w": 0.42373
+      },
+      "relativeMs": 81763
+    },
+    {
+      "quaternion": {
+        "x": 0.33016,
+        "y": -0.47757,
+        "z": 0.69419,
+        "w": 0.42547
+      },
+      "relativeMs": 81973
+    },
+    {
+      "quaternion": {
+        "x": 0.31177,
+        "y": -0.4727,
+        "z": 0.69272,
+        "w": 0.44664
+      },
+      "relativeMs": 82073
+    },
+    {
+      "quaternion": {
+        "x": 0.00466,
+        "y": -0.39854,
+        "z": 0.54592,
+        "w": 0.73696
+      },
+      "relativeMs": 82173
+    },
+    {
+      "quaternion": {
+        "x": -0.17308,
+        "y": -0.32712,
+        "z": 0.40361,
+        "w": 0.83674
+      },
+      "relativeMs": 82281
+    },
+    {
+      "quaternion": {
+        "x": -0.24819,
+        "y": -0.28704,
+        "z": 0.342,
+        "w": 0.85968
+      },
+      "relativeMs": 82381
+    },
+    {
+      "quaternion": {
+        "x": -0.26033,
+        "y": -0.27946,
+        "z": 0.32688,
+        "w": 0.86445
+      },
+      "relativeMs": 82498
+    },
+    {
+      "quaternion": {
+        "x": -0.23833,
+        "y": -0.27752,
+        "z": 0.25924,
+        "w": 0.89386
+      },
+      "relativeMs": 82605
+    },
+    {
+      "quaternion": {
+        "x": -0.23769,
+        "y": -0.26207,
+        "z": 0.17012,
+        "w": 0.91972
+      },
+      "relativeMs": 82706
+    },
+    {
+      "quaternion": {
+        "x": -0.23504,
+        "y": -0.2611,
+        "z": 0.16191,
+        "w": 0.92215
+      },
+      "relativeMs": 82806
+    },
+    {
+      "quaternion": {
+        "x": -0.10099,
+        "y": -0.27611,
+        "z": 0.09814,
+        "w": 0.95076
+      },
+      "relativeMs": 82906
+    },
+    {
+      "quaternion": {
+        "x": 0.09259,
+        "y": -0.28786,
+        "z": 0.01481,
+        "w": 0.95307
+      },
+      "relativeMs": 83006
+    },
+    {
+      "quaternion": {
+        "x": 0.13398,
+        "y": -0.28317,
+        "z": 0.04897,
+        "w": 0.9484
+      },
+      "relativeMs": 83106
+    },
+    {
+      "quaternion": {
+        "x": 0.21193,
+        "y": -0.25501,
+        "z": 0.23452,
+        "w": 0.91381
+      },
+      "relativeMs": 83214
+    },
+    {
+      "quaternion": {
+        "x": 0.20088,
+        "y": -0.28872,
+        "z": 0.10507,
+        "w": 0.93019
+      },
+      "relativeMs": 83314
+    },
+    {
+      "quaternion": {
+        "x": 0.10382,
+        "y": -0.31781,
+        "z": -0.04965,
+        "w": 0.94114
+      },
+      "relativeMs": 83414
+    },
+    {
+      "quaternion": {
+        "x": 0.05336,
+        "y": -0.32402,
+        "z": -0.07442,
+        "w": 0.94161
+      },
+      "relativeMs": 84098
+    },
+    {
+      "quaternion": {
+        "x": 0.31466,
+        "y": -0.29027,
+        "z": -0.11521,
+        "w": 0.89636
+      },
+      "relativeMs": 84206
+    },
+    {
+      "quaternion": {
+        "x": 0.43099,
+        "y": -0.30954,
+        "z": -0.27514,
+        "w": 0.80171
+      },
+      "relativeMs": 84306
+    },
+    {
+      "quaternion": {
+        "x": 0.42319,
+        "y": -0.36936,
+        "z": -0.4653,
+        "w": 0.68409
+      },
+      "relativeMs": 84406
+    },
+    {
+      "quaternion": {
+        "x": 0.41745,
+        "y": -0.38267,
+        "z": -0.52141,
+        "w": 0.63831
+      },
+      "relativeMs": 84514
+    },
+    {
+      "quaternion": {
+        "x": 0.36699,
+        "y": -0.43159,
+        "z": -0.60533,
+        "w": 0.55912
+      },
+      "relativeMs": 84623
+    },
+    {
+      "quaternion": {
+        "x": 0.3552,
+        "y": -0.43912,
+        "z": -0.63394,
+        "w": 0.52833
+      },
+      "relativeMs": 84731
+    },
+    {
+      "quaternion": {
+        "x": 0.40377,
+        "y": -0.37346,
+        "z": -0.38478,
+        "w": 0.74125
+      },
+      "relativeMs": 84831
+    },
+    {
+      "quaternion": {
+        "x": 0.42127,
+        "y": -0.30706,
+        "z": -0.19817,
+        "w": 0.83004
+      },
+      "relativeMs": 84931
+    },
+    {
+      "quaternion": {
+        "x": 0.40532,
+        "y": -0.29142,
+        "z": -0.14287,
+        "w": 0.85462
+      },
+      "relativeMs": 85031
+    },
+    {
+      "quaternion": {
+        "x": 0.40323,
+        "y": -0.28638,
+        "z": -0.12785,
+        "w": 0.85968
+      },
+      "relativeMs": 85131
+    },
+    {
+      "quaternion": {
+        "x": 0.41891,
+        "y": -0.27778,
+        "z": -0.11629,
+        "w": 0.85664
+      },
+      "relativeMs": 85231
+    },
+    {
+      "quaternion": {
+        "x": 0.43795,
+        "y": -0.26936,
+        "z": -0.10829,
+        "w": 0.85083
+      },
+      "relativeMs": 100372
+    },
+    {
+      "quaternion": {
+        "x": 0.423,
+        "y": -0.27121,
+        "z": -0.10356,
+        "w": 0.85837
+      },
+      "relativeMs": 100473
+    },
+    {
+      "quaternion": {
+        "x": 0.16497,
+        "y": -0.27458,
+        "z": 0.0291,
+        "w": 0.94686
+      },
+      "relativeMs": 100573
+    },
+    {
+      "quaternion": {
+        "x": 0.01237,
+        "y": -0.24906,
+        "z": 0.14522,
+        "w": 0.95746
+      },
+      "relativeMs": 100681
+    },
+    {
+      "quaternion": {
+        "x": -0.04732,
+        "y": -0.23871,
+        "z": 0.17065,
+        "w": 0.95481
+      },
+      "relativeMs": 100781
+    },
+    {
+      "quaternion": {
+        "x": -0.05925,
+        "y": -0.23648,
+        "z": 0.16347,
+        "w": 0.95595
+      },
+      "relativeMs": 100881
+    },
+    {
+      "quaternion": {
+        "x": -0.06223,
+        "y": -0.23593,
+        "z": 0.16167,
+        "w": 0.95621
+      },
+      "relativeMs": 110331
+    },
+    {
+      "quaternion": {
+        "x": -0.06164,
+        "y": -0.23608,
+        "z": 0.16406,
+        "w": 0.9558
+      },
+      "relativeMs": 110448
+    },
+    {
+      "quaternion": {
+        "x": -0.05705,
+        "y": -0.23109,
+        "z": 0.3736,
+        "w": 0.89653
+      },
+      "relativeMs": 110548
+    },
+    {
+      "quaternion": {
+        "x": -0.07227,
+        "y": -0.22002,
+        "z": 0.4503,
+        "w": 0.86232
+      },
+      "relativeMs": 110648
+    }
+  ],
+  "date": 1775068320530,
+  "driver": "mouse",
+  "method": "cfop",
+  "id": -1,
+  "isExample": true
+}
+
+// id: -2, scramble: D' R' F D2 R F B' R' U L' U L2 F2 B' U' L' R' F2 L R
+export const CFOP_SOLVE_2: SolveRecord = {
+  "scramble": "D' R' F D2 R F B' R' U L' U L2 F2 B' U' L' R' F2 L R",
+  "timeMs": 28672,
+  "moves": [
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 48992,
+      "serial": 30
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 49360,
+      "serial": 31
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 49616,
+      "serial": 32
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 49976,
+      "serial": 33
+    },
+    {
+      "face": "D",
+      "direction": "CW",
+      "cubeTimestamp": 50224,
+      "serial": 34
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 50624,
+      "serial": 35
+    },
+    {
+      "face": "D",
+      "direction": "CW",
+      "cubeTimestamp": 51888,
+      "serial": 36
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 52112,
+      "serial": 37
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 52320,
+      "serial": 38
+    },
+    {
+      "face": "D",
+      "direction": "CCW",
+      "cubeTimestamp": 52424,
+      "serial": 39
+    },
+    {
+      "face": "D",
+      "direction": "CCW",
+      "cubeTimestamp": 52504,
+      "serial": 40
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 53400,
+      "serial": 41
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 53592,
+      "serial": 42
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 53800,
+      "serial": 43
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 54096,
+      "serial": 44
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 54336,
+      "serial": 45
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 54416,
+      "serial": 46
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 54616,
+      "serial": 47
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 54864,
+      "serial": 48
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 55136,
+      "serial": 49
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 55344,
+      "serial": 50
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 55840,
+      "serial": 51
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 57632,
+      "serial": 52
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 57856,
+      "serial": 53
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 57968,
+      "serial": 54
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 58104,
+      "serial": 55
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 58336,
+      "serial": 56
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 58496,
+      "serial": 57
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 59104,
+      "serial": 58
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 59264,
+      "serial": 59
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 59784,
+      "serial": 60
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 61464,
+      "serial": 61
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 62160,
+      "serial": 62
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 62552,
+      "serial": 63
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 62832,
+      "serial": 64
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 62960,
+      "serial": 65
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 63176,
+      "serial": 66
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 63304,
+      "serial": 67
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 63480,
+      "serial": 68
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 63768,
+      "serial": 69
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 64248,
+      "serial": 70
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 64648,
+      "serial": 71
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 64792,
+      "serial": 72
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 64952,
+      "serial": 73
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 65080,
+      "serial": 74
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 65280,
+      "serial": 75
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 65376,
+      "serial": 76
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 65496,
+      "serial": 77
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 65632,
+      "serial": 78
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 65936,
+      "serial": 79
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 66216,
+      "serial": 80
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 66464,
+      "serial": 81
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 66592,
+      "serial": 82
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 66648,
+      "serial": 83
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 66792,
+      "serial": 84
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 66992,
+      "serial": 85
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 67120,
+      "serial": 86
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 67312,
+      "serial": 87
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 67496,
+      "serial": 88
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 67608,
+      "serial": 89
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 68056,
+      "serial": 90
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 68360,
+      "serial": 91
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 68584,
+      "serial": 92
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 68840,
+      "serial": 93
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 69000,
+      "serial": 94
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 69120,
+      "serial": 95
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 69240,
+      "serial": 96
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 69344,
+      "serial": 97
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 69464,
+      "serial": 98
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 69592,
+      "serial": 99
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 69648,
+      "serial": 100
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 69808,
+      "serial": 101
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 69920,
+      "serial": 102
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 70080,
+      "serial": 103
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 70136,
+      "serial": 104
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 70312,
+      "serial": 105
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 71024,
+      "serial": 106
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 72352,
+      "serial": 107
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 72688,
+      "serial": 108
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 72872,
+      "serial": 109
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 73024,
+      "serial": 110
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 73248,
+      "serial": 111
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 73360,
+      "serial": 112
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 73536,
+      "serial": 113
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 74088,
+      "serial": 114
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 74160,
+      "serial": 115
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 74568,
+      "serial": 116
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 75104,
+      "serial": 117
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 75760,
+      "serial": 118
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 76000,
+      "serial": 119
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 76264,
+      "serial": 120
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 76568,
+      "serial": 121
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 76704,
+      "serial": 122
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 76896,
+      "serial": 123
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 77464,
+      "serial": 124
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 77664,
+      "serial": 125
+    }
+  ],
+  "phases": [
+    {
+      "label": "Cross",
+      "recognitionMs": 0,
+      "executionMs": 3540,
+      "turns": 11
+    },
+    {
+      "label": "F2L Slot 1",
+      "group": "F2L",
+      "recognitionMs": 901,
+      "executionMs": 2465,
+      "turns": 11
+    },
+    {
+      "label": "F2L Slot 2",
+      "group": "F2L",
+      "recognitionMs": 1794,
+      "executionMs": 2159,
+      "turns": 9
+    },
+    {
+      "label": "F2L Slot 3",
+      "group": "F2L",
+      "recognitionMs": 1710,
+      "executionMs": 2310,
+      "turns": 9
+    },
+    {
+      "label": "F2L Slot 4",
+      "group": "F2L",
+      "recognitionMs": 480,
+      "executionMs": 1410,
+      "turns": 9
+    },
+    {
+      "label": "EOLL",
+      "group": "OLL",
+      "recognitionMs": 301,
+      "executionMs": 2433,
+      "turns": 13
+    },
+    {
+      "label": "COLL",
+      "group": "OLL",
+      "recognitionMs": 237,
+      "executionMs": 2464,
+      "turns": 15
+    },
+    {
+      "label": "CPLL",
+      "group": "PLL",
+      "recognitionMs": 0,
+      "executionMs": 0,
+      "turns": 0
+    },
+    {
+      "label": "EPLL",
+      "group": "PLL",
+      "recognitionMs": 1316,
+      "executionMs": 5369,
+      "turns": 19
+    }
+  ],
+  "quaternionSnapshots": [
+    {
+      "quaternion": {
+        "x": 0.50398,
+        "y": 0.60506,
+        "z": -0.30573,
+        "w": 0.53514
+      },
+      "relativeMs": 29
+    },
+    {
+      "quaternion": {
+        "x": 0.47847,
+        "y": 0.70244,
+        "z": -0.33302,
+        "w": 0.40831
+      },
+      "relativeMs": 209
+    },
+    {
+      "quaternion": {
+        "x": 0.54738,
+        "y": 0.71712,
+        "z": -0.32554,
+        "w": 0.28297
+      },
+      "relativeMs": 389
+    },
+    {
+      "quaternion": {
+        "x": 0.57369,
+        "y": 0.72393,
+        "z": -0.27625,
+        "w": 0.26542
+      },
+      "relativeMs": 600
+    },
+    {
+      "quaternion": {
+        "x": 0.61232,
+        "y": 0.78256,
+        "z": -0.10804,
+        "w": 0.03079
+      },
+      "relativeMs": 779
+    },
+    {
+      "quaternion": {
+        "x": 0.64211,
+        "y": 0.76614,
+        "z": -0.01984,
+        "w": -0.01709
+      },
+      "relativeMs": 961
+    },
+    {
+      "quaternion": {
+        "x": 0.57662,
+        "y": 0.80963,
+        "z": 0.1055,
+        "w": 0.02924
+      },
+      "relativeMs": 1169
+    },
+    {
+      "quaternion": {
+        "x": 0.01138,
+        "y": 0.98389,
+        "z": 0.10706,
+        "w": -0.1427
+      },
+      "relativeMs": 1349
+    },
+    {
+      "quaternion": {
+        "x": -0.07349,
+        "y": 0.98328,
+        "z": 0.1243,
+        "w": -0.1109
+      },
+      "relativeMs": 1530
+    },
+    {
+      "quaternion": {
+        "x": -0.02353,
+        "y": 0.98477,
+        "z": 0.03964,
+        "w": -0.16746
+      },
+      "relativeMs": 1649
+    },
+    {
+      "quaternion": {
+        "x": -0.0061,
+        "y": 0.93826,
+        "z": 0.02536,
+        "w": -0.34486
+      },
+      "relativeMs": 1829
+    },
+    {
+      "quaternion": {
+        "x": 0.10398,
+        "y": 0.7951,
+        "z": -0.10623,
+        "w": -0.58797
+      },
+      "relativeMs": 2010
+    },
+    {
+      "quaternion": {
+        "x": -0.02655,
+        "y": 0.50563,
+        "z": 0.09131,
+        "w": -0.85745
+      },
+      "relativeMs": 2219
+    },
+    {
+      "quaternion": {
+        "x": 0.02356,
+        "y": 0.39515,
+        "z": 0.01392,
+        "w": -0.91818
+      },
+      "relativeMs": 2400
+    },
+    {
+      "quaternion": {
+        "x": 0.3101,
+        "y": 0.49449,
+        "z": -0.35432,
+        "w": -0.73055
+      },
+      "relativeMs": 2580
+    },
+    {
+      "quaternion": {
+        "x": 0.29588,
+        "y": 0.53847,
+        "z": -0.36219,
+        "w": -0.70089
+      },
+      "relativeMs": 2699
+    },
+    {
+      "quaternion": {
+        "x": 0.26469,
+        "y": 0.66948,
+        "z": -0.26185,
+        "w": -0.64275
+      },
+      "relativeMs": 2881
+    },
+    {
+      "quaternion": {
+        "x": -0.09912,
+        "y": 0.73812,
+        "z": -0.05969,
+        "w": -0.66463
+      },
+      "relativeMs": 3059
+    },
+    {
+      "quaternion": {
+        "x": -0.13938,
+        "y": 0.69646,
+        "z": -0.04712,
+        "w": -0.70232
+      },
+      "relativeMs": 3181
+    },
+    {
+      "quaternion": {
+        "x": -0.1363,
+        "y": 0.70199,
+        "z": -0.03598,
+        "w": -0.69808
+      },
+      "relativeMs": 3299
+    },
+    {
+      "quaternion": {
+        "x": -0.03681,
+        "y": 0.65215,
+        "z": -0.0603,
+        "w": -0.75475
+      },
+      "relativeMs": 3450
+    },
+    {
+      "quaternion": {
+        "x": 0.08112,
+        "y": 0.54048,
+        "z": -0.12244,
+        "w": -0.82839
+      },
+      "relativeMs": 3630
+    },
+    {
+      "quaternion": {
+        "x": 0.15195,
+        "y": 0.549,
+        "z": -0.15415,
+        "w": -0.80728
+      },
+      "relativeMs": 3750
+    },
+    {
+      "quaternion": {
+        "x": 0.39888,
+        "y": 0.48958,
+        "z": -0.33897,
+        "w": -0.69732
+      },
+      "relativeMs": 3929
+    },
+    {
+      "quaternion": {
+        "x": 0.34626,
+        "y": 0.23041,
+        "z": -0.13843,
+        "w": -0.89877
+      },
+      "relativeMs": 4109
+    },
+    {
+      "quaternion": {
+        "x": 0.12531,
+        "y": -0.06363,
+        "z": -0.05463,
+        "w": -0.98856
+      },
+      "relativeMs": 4229
+    },
+    {
+      "quaternion": {
+        "x": 0.06284,
+        "y": -0.1062,
+        "z": -0.02264,
+        "w": -0.9921
+      },
+      "relativeMs": 4410
+    },
+    {
+      "quaternion": {
+        "x": -0.11405,
+        "y": -0.01022,
+        "z": -0.08399,
+        "w": -0.98984
+      },
+      "relativeMs": 4589
+    },
+    {
+      "quaternion": {
+        "x": -0.21015,
+        "y": -0.10092,
+        "z": -0.03006,
+        "w": -0.97195
+      },
+      "relativeMs": 4799
+    },
+    {
+      "quaternion": {
+        "x": -0.06748,
+        "y": -0.05945,
+        "z": -0.05075,
+        "w": -0.99463
+      },
+      "relativeMs": 4980
+    },
+    {
+      "quaternion": {
+        "x": -0.2165,
+        "y": -0.06079,
+        "z": -0.00143,
+        "w": -0.97436
+      },
+      "relativeMs": 5159
+    },
+    {
+      "quaternion": {
+        "x": -0.21458,
+        "y": -0.06528,
+        "z": 0.00494,
+        "w": -0.97449
+      },
+      "relativeMs": 5280
+    },
+    {
+      "quaternion": {
+        "x": -0.00925,
+        "y": 0.05313,
+        "z": -0.13297,
+        "w": -0.98962
+      },
+      "relativeMs": 5460
+    },
+    {
+      "quaternion": {
+        "x": -0.04123,
+        "y": 0.0683,
+        "z": -0.17606,
+        "w": -0.98111
+      },
+      "relativeMs": 5641
+    },
+    {
+      "quaternion": {
+        "x": -0.07941,
+        "y": 0.04508,
+        "z": -0.14673,
+        "w": -0.98492
+      },
+      "relativeMs": 5849
+    },
+    {
+      "quaternion": {
+        "x": -0.17701,
+        "y": 0.02393,
+        "z": -0.0878,
+        "w": -0.97998
+      },
+      "relativeMs": 6029
+    },
+    {
+      "quaternion": {
+        "x": -0.41652,
+        "y": 0.00171,
+        "z": -0.29945,
+        "w": -0.85836
+      },
+      "relativeMs": 6209
+    },
+    {
+      "quaternion": {
+        "x": -0.48067,
+        "y": 0.00937,
+        "z": -0.3412,
+        "w": -0.8077
+      },
+      "relativeMs": 6330
+    },
+    {
+      "quaternion": {
+        "x": -0.21723,
+        "y": -0.04303,
+        "z": -0.24906,
+        "w": -0.94281
+      },
+      "relativeMs": 6512
+    },
+    {
+      "quaternion": {
+        "x": -0.18802,
+        "y": -0.05182,
+        "z": -0.26228,
+        "w": -0.94507
+      },
+      "relativeMs": 6689
+    },
+    {
+      "quaternion": {
+        "x": -0.24018,
+        "y": -0.00241,
+        "z": -0.30058,
+        "w": -0.923
+      },
+      "relativeMs": 6899
+    },
+    {
+      "quaternion": {
+        "x": -0.07251,
+        "y": -0.05585,
+        "z": -0.20777,
+        "w": -0.97388
+      },
+      "relativeMs": 7080
+    },
+    {
+      "quaternion": {
+        "x": 0.15378,
+        "y": -0.20838,
+        "z": -0.05307,
+        "w": -0.96442
+      },
+      "relativeMs": 7260
+    },
+    {
+      "quaternion": {
+        "x": 0.21305,
+        "y": -0.18995,
+        "z": -0.02991,
+        "w": -0.95791
+      },
+      "relativeMs": 7379
+    },
+    {
+      "quaternion": {
+        "x": -0.14066,
+        "y": 0.05194,
+        "z": -0.25901,
+        "w": -0.95413
+      },
+      "relativeMs": 7560
+    },
+    {
+      "quaternion": {
+        "x": -0.20783,
+        "y": 0.11328,
+        "z": -0.31077,
+        "w": -0.92053
+      },
+      "relativeMs": 7739
+    },
+    {
+      "quaternion": {
+        "x": -0.15287,
+        "y": 0.04172,
+        "z": -0.23716,
+        "w": -0.95843
+      },
+      "relativeMs": 7950
+    },
+    {
+      "quaternion": {
+        "x": 0.08747,
+        "y": 0.01041,
+        "z": -0.16105,
+        "w": -0.983
+      },
+      "relativeMs": 8130
+    },
+    {
+      "quaternion": {
+        "x": 0.39753,
+        "y": -0.16364,
+        "z": -0.03934,
+        "w": -0.90201
+      },
+      "relativeMs": 8310
+    },
+    {
+      "quaternion": {
+        "x": 0.40437,
+        "y": -0.20585,
+        "z": -0.00949,
+        "w": -0.89105
+      },
+      "relativeMs": 8431
+    },
+    {
+      "quaternion": {
+        "x": 0.27146,
+        "y": -0.19663,
+        "z": 0.00327,
+        "w": -0.94211
+      },
+      "relativeMs": 8609
+    },
+    {
+      "quaternion": {
+        "x": 0.15702,
+        "y": -0.14695,
+        "z": -0.06211,
+        "w": -0.97461
+      },
+      "relativeMs": 8710
+    },
+    {
+      "quaternion": {
+        "x": 0.04767,
+        "y": -0.06943,
+        "z": -0.09415,
+        "w": -0.99197
+      },
+      "relativeMs": 8879
+    },
+    {
+      "quaternion": {
+        "x": -0.10962,
+        "y": -0.12983,
+        "z": -0.08014,
+        "w": -0.98218
+      },
+      "relativeMs": 9000
+    },
+    {
+      "quaternion": {
+        "x": -0.51207,
+        "y": -0.25318,
+        "z": 0.22602,
+        "w": -0.78903
+      },
+      "relativeMs": 9185
+    },
+    {
+      "quaternion": {
+        "x": -0.21656,
+        "y": -0.15149,
+        "z": -0.00995,
+        "w": -0.96438
+      },
+      "relativeMs": 9361
+    },
+    {
+      "quaternion": {
+        "x": -0.04065,
+        "y": -0.08145,
+        "z": -0.12494,
+        "w": -0.98795
+      },
+      "relativeMs": 9479
+    },
+    {
+      "quaternion": {
+        "x": -0.18491,
+        "y": -0.18323,
+        "z": 0.00687,
+        "w": -0.96548
+      },
+      "relativeMs": 9660
+    },
+    {
+      "quaternion": {
+        "x": -0.53349,
+        "y": -0.52858,
+        "z": 0.32261,
+        "w": -0.57607
+      },
+      "relativeMs": 9839
+    },
+    {
+      "quaternion": {
+        "x": -0.33079,
+        "y": -0.52171,
+        "z": 0.64498,
+        "w": -0.44981
+      },
+      "relativeMs": 10050
+    },
+    {
+      "quaternion": {
+        "x": -0.16831,
+        "y": -0.18647,
+        "z": 0.63094,
+        "w": -0.734
+      },
+      "relativeMs": 10232
+    },
+    {
+      "quaternion": {
+        "x": -0.10141,
+        "y": 0.06159,
+        "z": 0.5027,
+        "w": -0.85626
+      },
+      "relativeMs": 10431
+    },
+    {
+      "quaternion": {
+        "x": -0.07218,
+        "y": 0.13028,
+        "z": 0.45546,
+        "w": -0.87768
+      },
+      "relativeMs": 10531
+    },
+    {
+      "quaternion": {
+        "x": -0.30992,
+        "y": 0.01083,
+        "z": 0.472,
+        "w": -0.82522
+      },
+      "relativeMs": 10709
+    },
+    {
+      "quaternion": {
+        "x": -0.39891,
+        "y": -0.14502,
+        "z": 0.52788,
+        "w": -0.73562
+      },
+      "relativeMs": 10890
+    },
+    {
+      "quaternion": {
+        "x": -0.39167,
+        "y": -0.38243,
+        "z": 0.35997,
+        "w": -0.75546
+      },
+      "relativeMs": 11100
+    },
+    {
+      "quaternion": {
+        "x": -0.52315,
+        "y": -0.36067,
+        "z": 0.16782,
+        "w": -0.75365
+      },
+      "relativeMs": 11279
+    },
+    {
+      "quaternion": {
+        "x": -0.26435,
+        "y": -0.15085,
+        "z": 0.00861,
+        "w": -0.95248
+      },
+      "relativeMs": 11462
+    },
+    {
+      "quaternion": {
+        "x": 0.0322,
+        "y": -0.04639,
+        "z": -0.15098,
+        "w": -0.98691
+      },
+      "relativeMs": 11579
+    },
+    {
+      "quaternion": {
+        "x": 0.43251,
+        "y": 0.07376,
+        "z": -0.21531,
+        "w": -0.8724
+      },
+      "relativeMs": 11759
+    },
+    {
+      "quaternion": {
+        "x": 0.49364,
+        "y": 0.1113,
+        "z": -0.20695,
+        "w": -0.83731
+      },
+      "relativeMs": 11939
+    },
+    {
+      "quaternion": {
+        "x": 0.2234,
+        "y": 0.16306,
+        "z": -0.21326,
+        "w": -0.93701
+      },
+      "relativeMs": 12150
+    },
+    {
+      "quaternion": {
+        "x": 0.10953,
+        "y": 0.07053,
+        "z": -0.14972,
+        "w": -0.9801
+      },
+      "relativeMs": 12329
+    },
+    {
+      "quaternion": {
+        "x": -0.00467,
+        "y": -0.06403,
+        "z": -0.03375,
+        "w": -0.99734
+      },
+      "relativeMs": 12509
+    },
+    {
+      "quaternion": {
+        "x": -0.01532,
+        "y": -0.06485,
+        "z": -0.09302,
+        "w": -0.99341
+      },
+      "relativeMs": 12629
+    },
+    {
+      "quaternion": {
+        "x": -0.0846,
+        "y": -0.03711,
+        "z": -0.1178,
+        "w": -0.98871
+      },
+      "relativeMs": 12810
+    },
+    {
+      "quaternion": {
+        "x": -0.18751,
+        "y": -0.08658,
+        "z": -0.00458,
+        "w": -0.97842
+      },
+      "relativeMs": 12989
+    },
+    {
+      "quaternion": {
+        "x": -0.16181,
+        "y": -0.00714,
+        "z": -0.02332,
+        "w": -0.98651
+      },
+      "relativeMs": 13200
+    },
+    {
+      "quaternion": {
+        "x": -0.03687,
+        "y": 0.06409,
+        "z": -0.1492,
+        "w": -0.98602
+      },
+      "relativeMs": 13381
+    },
+    {
+      "quaternion": {
+        "x": -0.1236,
+        "y": 0.07193,
+        "z": -0.15232,
+        "w": -0.9779
+      },
+      "relativeMs": 13560
+    },
+    {
+      "quaternion": {
+        "x": -0.08368,
+        "y": 0.09485,
+        "z": -0.20133,
+        "w": -0.97131
+      },
+      "relativeMs": 13770
+    },
+    {
+      "quaternion": {
+        "x": -0.11454,
+        "y": 0.05893,
+        "z": -0.19358,
+        "w": -0.97256
+      },
+      "relativeMs": 13957
+    },
+    {
+      "quaternion": {
+        "x": -0.09796,
+        "y": 0.02029,
+        "z": -0.14325,
+        "w": -0.98459
+      },
+      "relativeMs": 14130
+    },
+    {
+      "quaternion": {
+        "x": -0.0809,
+        "y": 0.02954,
+        "z": -0.12738,
+        "w": -0.9881
+      },
+      "relativeMs": 14250
+    },
+    {
+      "quaternion": {
+        "x": -0.02292,
+        "y": -0.07489,
+        "z": -0.07471,
+        "w": -0.99411
+      },
+      "relativeMs": 14429
+    },
+    {
+      "quaternion": {
+        "x": -0.04282,
+        "y": -0.09601,
+        "z": -0.02789,
+        "w": -0.99405
+      },
+      "relativeMs": 14609
+    },
+    {
+      "quaternion": {
+        "x": -0.13819,
+        "y": -0.14188,
+        "z": 0.01617,
+        "w": -0.98004
+      },
+      "relativeMs": 14729
+    },
+    {
+      "quaternion": {
+        "x": -0.20157,
+        "y": -0.26649,
+        "z": 0.00583,
+        "w": -0.94247
+      },
+      "relativeMs": 14909
+    },
+    {
+      "quaternion": {
+        "x": -0.02634,
+        "y": -0.16984,
+        "z": -0.01776,
+        "w": -0.98495
+      },
+      "relativeMs": 15090
+    },
+    {
+      "quaternion": {
+        "x": -0.06876,
+        "y": -0.06845,
+        "z": -0.01669,
+        "w": -0.99512
+      },
+      "relativeMs": 15300
+    },
+    {
+      "quaternion": {
+        "x": -0.21528,
+        "y": -0.14676,
+        "z": 0.24357,
+        "w": -0.9342
+      },
+      "relativeMs": 15479
+    },
+    {
+      "quaternion": {
+        "x": -0.08539,
+        "y": -0.07419,
+        "z": 0.58309,
+        "w": -0.80447
+      },
+      "relativeMs": 15659
+    },
+    {
+      "quaternion": {
+        "x": -0.0213,
+        "y": -0.10697,
+        "z": 0.63222,
+        "w": -0.76705
+      },
+      "relativeMs": 15779
+    },
+    {
+      "quaternion": {
+        "x": 0.09018,
+        "y": -0.08249,
+        "z": 0.6693,
+        "w": -0.73284
+      },
+      "relativeMs": 15959
+    },
+    {
+      "quaternion": {
+        "x": -0.01187,
+        "y": -0.08896,
+        "z": 0.62236,
+        "w": -0.77755
+      },
+      "relativeMs": 16140
+    },
+    {
+      "quaternion": {
+        "x": 0.02145,
+        "y": -0.03516,
+        "z": 0.63244,
+        "w": -0.77349
+      },
+      "relativeMs": 16350
+    },
+    {
+      "quaternion": {
+        "x": 0.03977,
+        "y": -0.07004,
+        "z": 0.62352,
+        "w": -0.77761
+      },
+      "relativeMs": 16469
+    },
+    {
+      "quaternion": {
+        "x": 0.10376,
+        "y": -0.07761,
+        "z": 0.63134,
+        "w": -0.76458
+      },
+      "relativeMs": 16623
+    },
+    {
+      "quaternion": {
+        "x": 0.10254,
+        "y": -0.06262,
+        "z": 0.63616,
+        "w": -0.76214
+      },
+      "relativeMs": 16739
+    },
+    {
+      "quaternion": {
+        "x": 0.00943,
+        "y": -0.06452,
+        "z": 0.60237,
+        "w": -0.79553
+      },
+      "relativeMs": 16920
+    },
+    {
+      "quaternion": {
+        "x": -0.05512,
+        "y": 0.00913,
+        "z": 0.57698,
+        "w": -0.81481
+      },
+      "relativeMs": 17099
+    },
+    {
+      "quaternion": {
+        "x": -0.07059,
+        "y": -0.11182,
+        "z": 0.64623,
+        "w": -0.75158
+      },
+      "relativeMs": 17281
+    },
+    {
+      "quaternion": {
+        "x": 0.11652,
+        "y": 0.02826,
+        "z": 0.67074,
+        "w": -0.73189
+      },
+      "relativeMs": 17400
+    },
+    {
+      "quaternion": {
+        "x": -0.2606,
+        "y": 0.46501,
+        "z": 0.38008,
+        "w": -0.75588
+      },
+      "relativeMs": 17579
+    },
+    {
+      "quaternion": {
+        "x": -0.23362,
+        "y": 0.54173,
+        "z": 0.15009,
+        "w": -0.79333
+      },
+      "relativeMs": 17759
+    },
+    {
+      "quaternion": {
+        "x": -0.24445,
+        "y": 0.48302,
+        "z": 0.27982,
+        "w": -0.79284
+      },
+      "relativeMs": 17880
+    },
+    {
+      "quaternion": {
+        "x": -0.16184,
+        "y": 0.68236,
+        "z": -0.11234,
+        "w": -0.70394
+      },
+      "relativeMs": 18059
+    },
+    {
+      "quaternion": {
+        "x": -0.1952,
+        "y": 0.68584,
+        "z": -0.04495,
+        "w": -0.69961
+      },
+      "relativeMs": 18239
+    },
+    {
+      "quaternion": {
+        "x": -0.21308,
+        "y": 0.70605,
+        "z": -0.05329,
+        "w": -0.67321
+      },
+      "relativeMs": 18450
+    },
+    {
+      "quaternion": {
+        "x": -0.2461,
+        "y": 0.68834,
+        "z": -0.05054,
+        "w": -0.68044
+      },
+      "relativeMs": 18629
+    },
+    {
+      "quaternion": {
+        "x": -0.17719,
+        "y": 0.70116,
+        "z": -0.06156,
+        "w": -0.68783
+      },
+      "relativeMs": 18810
+    },
+    {
+      "quaternion": {
+        "x": -0.04636,
+        "y": 0.67586,
+        "z": 0.13981,
+        "w": -0.72213
+      },
+      "relativeMs": 18932
+    },
+    {
+      "quaternion": {
+        "x": 0.25419,
+        "y": 0.4788,
+        "z": 0.3282,
+        "w": -0.77355
+      },
+      "relativeMs": 19110
+    },
+    {
+      "quaternion": {
+        "x": 0.02808,
+        "y": 0.27161,
+        "z": 0.41356,
+        "w": -0.86856
+      },
+      "relativeMs": 19290
+    },
+    {
+      "quaternion": {
+        "x": -0.01794,
+        "y": 0.0651,
+        "z": 0.46574,
+        "w": -0.88232
+      },
+      "relativeMs": 19499
+    },
+    {
+      "quaternion": {
+        "x": -0.0911,
+        "y": -0.15036,
+        "z": 0.58415,
+        "w": -0.79232
+      },
+      "relativeMs": 19679
+    },
+    {
+      "quaternion": {
+        "x": -0.19218,
+        "y": -0.36271,
+        "z": 0.66875,
+        "w": -0.61986
+      },
+      "relativeMs": 19859
+    },
+    {
+      "quaternion": {
+        "x": -0.23505,
+        "y": -0.40168,
+        "z": 0.67315,
+        "w": -0.57466
+      },
+      "relativeMs": 19980
+    },
+    {
+      "quaternion": {
+        "x": -0.15494,
+        "y": -0.25663,
+        "z": 0.61086,
+        "w": -0.73275
+      },
+      "relativeMs": 20164
+    },
+    {
+      "quaternion": {
+        "x": -0.1359,
+        "y": -0.22047,
+        "z": 0.58473,
+        "w": -0.76873
+      },
+      "relativeMs": 20339
+    },
+    {
+      "quaternion": {
+        "x": -0.20728,
+        "y": -0.50536,
+        "z": 0.68474,
+        "w": -0.48244
+      },
+      "relativeMs": 20549
+    },
+    {
+      "quaternion": {
+        "x": -0.04096,
+        "y": -0.19077,
+        "z": 0.58464,
+        "w": -0.78747
+      },
+      "relativeMs": 20729
+    },
+    {
+      "quaternion": {
+        "x": -0.21674,
+        "y": -0.59117,
+        "z": 0.63472,
+        "w": -0.44789
+      },
+      "relativeMs": 20910
+    },
+    {
+      "quaternion": {
+        "x": -0.16977,
+        "y": -0.44969,
+        "z": 0.67727,
+        "w": -0.55696
+      },
+      "relativeMs": 21030
+    },
+    {
+      "quaternion": {
+        "x": -0.02725,
+        "y": -0.18195,
+        "z": 0.60176,
+        "w": -0.77715
+      },
+      "relativeMs": 21150
+    },
+    {
+      "quaternion": {
+        "x": -0.10578,
+        "y": -0.43107,
+        "z": 0.60256,
+        "w": -0.6632
+      },
+      "relativeMs": 21302
+    },
+    {
+      "quaternion": {
+        "x": -0.15775,
+        "y": -0.54265,
+        "z": 0.6986,
+        "w": -0.4388
+      },
+      "relativeMs": 21482
+    },
+    {
+      "quaternion": {
+        "x": -0.16767,
+        "y": -0.49812,
+        "z": 0.69701,
+        "w": -0.48772
+      },
+      "relativeMs": 21606
+    },
+    {
+      "quaternion": {
+        "x": -0.2157,
+        "y": -0.44285,
+        "z": 0.74804,
+        "w": -0.44465
+      },
+      "relativeMs": 21780
+    },
+    {
+      "quaternion": {
+        "x": -0.21329,
+        "y": -0.4785,
+        "z": 0.74325,
+        "w": -0.41606
+      },
+      "relativeMs": 21959
+    },
+    {
+      "quaternion": {
+        "x": -0.19382,
+        "y": -0.48256,
+        "z": 0.71926,
+        "w": -0.46065
+      },
+      "relativeMs": 22079
+    },
+    {
+      "quaternion": {
+        "x": -0.19776,
+        "y": -0.40266,
+        "z": 0.74645,
+        "w": -0.49144
+      },
+      "relativeMs": 22262
+    },
+    {
+      "quaternion": {
+        "x": -0.09912,
+        "y": -0.03174,
+        "z": 0.58263,
+        "w": -0.80602
+      },
+      "relativeMs": 22442
+    },
+    {
+      "quaternion": {
+        "x": -0.00052,
+        "y": 0.41487,
+        "z": 0.36985,
+        "w": -0.83129
+      },
+      "relativeMs": 22649
+    },
+    {
+      "quaternion": {
+        "x": 0.00748,
+        "y": 0.38679,
+        "z": 0.38166,
+        "w": -0.83941
+      },
+      "relativeMs": 22829
+    },
+    {
+      "quaternion": {
+        "x": 0.03369,
+        "y": 0.04904,
+        "z": 0.5305,
+        "w": -0.84558
+      },
+      "relativeMs": 23010
+    },
+    {
+      "quaternion": {
+        "x": -0.09006,
+        "y": -0.06915,
+        "z": 0.56255,
+        "w": -0.8189
+      },
+      "relativeMs": 23129
+    },
+    {
+      "quaternion": {
+        "x": -0.23829,
+        "y": -0.07624,
+        "z": 0.51555,
+        "w": -0.81948
+      },
+      "relativeMs": 23310
+    },
+    {
+      "quaternion": {
+        "x": -0.22507,
+        "y": -0.07019,
+        "z": 0.52052,
+        "w": -0.82064
+      },
+      "relativeMs": 23489
+    },
+    {
+      "quaternion": {
+        "x": -0.14457,
+        "y": 0.14734,
+        "z": 0.44487,
+        "w": -0.87146
+      },
+      "relativeMs": 23699
+    },
+    {
+      "quaternion": {
+        "x": -0.10416,
+        "y": 0.01071,
+        "z": 0.50822,
+        "w": -0.85479
+      },
+      "relativeMs": 23879
+    },
+    {
+      "quaternion": {
+        "x": -0.00665,
+        "y": -0.11768,
+        "z": 0.6274,
+        "w": -0.76968
+      },
+      "relativeMs": 24063
+    },
+    {
+      "quaternion": {
+        "x": -0.0466,
+        "y": -0.06357,
+        "z": 0.62047,
+        "w": -0.78024
+      },
+      "relativeMs": 24179
+    },
+    {
+      "quaternion": {
+        "x": -0.14383,
+        "y": 0.0126,
+        "z": 0.55254,
+        "w": -0.82086
+      },
+      "relativeMs": 24359
+    },
+    {
+      "quaternion": {
+        "x": -0.11234,
+        "y": 0.05396,
+        "z": 0.52678,
+        "w": -0.84078
+      },
+      "relativeMs": 24542
+    },
+    {
+      "quaternion": {
+        "x": -0.38868,
+        "y": -0.30592,
+        "z": 0.34205,
+        "w": -0.79894
+      },
+      "relativeMs": 24749
+    },
+    {
+      "quaternion": {
+        "x": -0.63625,
+        "y": -0.35591,
+        "z": 0.08017,
+        "w": -0.67974
+      },
+      "relativeMs": 24929
+    },
+    {
+      "quaternion": {
+        "x": -0.5071,
+        "y": -0.21241,
+        "z": 0.20185,
+        "w": -0.81054
+      },
+      "relativeMs": 25110
+    },
+    {
+      "quaternion": {
+        "x": -0.43101,
+        "y": -0.15781,
+        "z": 0.10227,
+        "w": -0.8825
+      },
+      "relativeMs": 25229
+    },
+    {
+      "quaternion": {
+        "x": -0.08808,
+        "y": -0.06003,
+        "z": -0.09824,
+        "w": -0.98941
+      },
+      "relativeMs": 25411
+    },
+    {
+      "quaternion": {
+        "x": 0.06204,
+        "y": -0.18662,
+        "z": -0.05194,
+        "w": -0.97906
+      },
+      "relativeMs": 25589
+    },
+    {
+      "quaternion": {
+        "x": -0.08304,
+        "y": -0.06302,
+        "z": -0.0708,
+        "w": -0.992
+      },
+      "relativeMs": 25799
+    },
+    {
+      "quaternion": {
+        "x": -0.18351,
+        "y": -0.07236,
+        "z": -0.14557,
+        "w": -0.96945
+      },
+      "relativeMs": 25979
+    },
+    {
+      "quaternion": {
+        "x": -0.18946,
+        "y": -0.07477,
+        "z": -0.10642,
+        "w": -0.9732
+      },
+      "relativeMs": 26159
+    },
+    {
+      "quaternion": {
+        "x": -0.16272,
+        "y": -0.07028,
+        "z": -0.0727,
+        "w": -0.98144
+      },
+      "relativeMs": 26280
+    },
+    {
+      "quaternion": {
+        "x": -0.09128,
+        "y": -0.08374,
+        "z": -0.04959,
+        "w": -0.99103
+      },
+      "relativeMs": 26459
+    },
+    {
+      "quaternion": {
+        "x": -0.15452,
+        "y": -0.0412,
+        "z": -0.10901,
+        "w": -0.98108
+      },
+      "relativeMs": 26641
+    },
+    {
+      "quaternion": {
+        "x": -0.06308,
+        "y": -0.13627,
+        "z": -0.07944,
+        "w": -0.98544
+      },
+      "relativeMs": 26850
+    },
+    {
+      "quaternion": {
+        "x": -0.08975,
+        "y": -0.09522,
+        "z": -0.09455,
+        "w": -0.98688
+      },
+      "relativeMs": 27029
+    },
+    {
+      "quaternion": {
+        "x": -0.21433,
+        "y": -0.06311,
+        "z": -0.05676,
+        "w": -0.97305
+      },
+      "relativeMs": 27215
+    },
+    {
+      "quaternion": {
+        "x": -0.18433,
+        "y": -0.03797,
+        "z": -0.09223,
+        "w": -0.97778
+      },
+      "relativeMs": 27329
+    },
+    {
+      "quaternion": {
+        "x": -0.15152,
+        "y": -0.00592,
+        "z": -0.12085,
+        "w": -0.98099
+      },
+      "relativeMs": 27509
+    },
+    {
+      "quaternion": {
+        "x": -0.0759,
+        "y": 0.04028,
+        "z": -0.19831,
+        "w": -0.97635
+      },
+      "relativeMs": 27695
+    },
+    {
+      "quaternion": {
+        "x": -0.12772,
+        "y": 0.00821,
+        "z": -0.1457,
+        "w": -0.98099
+      },
+      "relativeMs": 27900
+    },
+    {
+      "quaternion": {
+        "x": -0.1344,
+        "y": -0.0546,
+        "z": -0.05545,
+        "w": -0.98785
+      },
+      "relativeMs": 28081
+    },
+    {
+      "quaternion": {
+        "x": -0.14655,
+        "y": -0.14548,
+        "z": -0.00467,
+        "w": -0.97842
+      },
+      "relativeMs": 28259
+    },
+    {
+      "quaternion": {
+        "x": -0.16483,
+        "y": -0.13916,
+        "z": -0.02597,
+        "w": -0.97607
+      },
+      "relativeMs": 28381
+    },
+    {
+      "quaternion": {
+        "x": -0.29228,
+        "y": 0.04877,
+        "z": -0.19938,
+        "w": -0.93402
+      },
+      "relativeMs": 28559
+    },
+    {
+      "quaternion": {
+        "x": -0.28339,
+        "y": 0.06293,
+        "z": -0.23627,
+        "w": -0.92727
+      },
+      "relativeMs": 28739
+    }
+  ],
+  "date": 1775067954030,
+  "driver": "cube",
+  "method": "cfop",
+  "id": -2,
+  "isExample": true
+}
+
+// id: -3, scramble: D' U F B R F2 B' R2 F2 B2 R' L2 D U F R2 B' F' D2 F'
+export const ROUX_SOLVE_1: SolveRecord = {
+  "scramble": "D' U F B R F2 B' R2 F2 B2 R' L2 D U F R2 B' F' D2 F'",
+  "timeMs": 40856,
+  "moves": [
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4728264,
+      "serial": 103
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4729744,
+      "serial": 104
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4729992,
+      "serial": 105
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 4730336,
+      "serial": 106
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4730792,
+      "serial": 107
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4731008,
+      "serial": 108
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4731232,
+      "serial": 109
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 4731664,
+      "serial": 110
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 4733344,
+      "serial": 111
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4733448,
+      "serial": 112
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 4733640,
+      "serial": 113
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4734272,
+      "serial": 114
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 4734424,
+      "serial": 115
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4734624,
+      "serial": 116
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4734824,
+      "serial": 117
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4737040,
+      "serial": 118
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4737368,
+      "serial": 119
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 4737736,
+      "serial": 120
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 4737856,
+      "serial": 121
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4738168,
+      "serial": 122
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4738552,
+      "serial": 123
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4738792,
+      "serial": 124
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4739088,
+      "serial": 125
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4739328,
+      "serial": 126
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4739672,
+      "serial": 127
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4739824,
+      "serial": 128
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4740024,
+      "serial": 129
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4740192,
+      "serial": 130
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 4740712,
+      "serial": 131
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 4740840,
+      "serial": 132
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4741104,
+      "serial": 133
+    },
+    {
+      "face": "M",
+      "direction": "CW",
+      "cubeTimestamp": 4744392,
+      "serial": 134
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4744696,
+      "serial": 136
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4745066,
+      "serial": 138
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 4745320,
+      "serial": 139
+    },
+    {
+      "face": "F",
+      "direction": "CW",
+      "cubeTimestamp": 4745480,
+      "serial": 140
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4745896,
+      "serial": 141
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4746120,
+      "serial": 142
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4746312,
+      "serial": 143
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4747040,
+      "serial": 144
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4747304,
+      "serial": 145
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4747392,
+      "serial": 146
+    },
+    {
+      "face": "D",
+      "direction": "CW",
+      "cubeTimestamp": 4747656,
+      "serial": 147
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4747856,
+      "serial": 148
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4748264,
+      "serial": 149
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4748480,
+      "serial": 150
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4748768,
+      "serial": 151
+    },
+    {
+      "face": "D",
+      "direction": "CCW",
+      "cubeTimestamp": 4748960,
+      "serial": 152
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4749128,
+      "serial": 153
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4749344,
+      "serial": 154
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4749512,
+      "serial": 155
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4749672,
+      "serial": 156
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4751264,
+      "serial": 157
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 4751672,
+      "serial": 158
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 4752168,
+      "serial": 159
+    },
+    {
+      "face": "L",
+      "direction": "CW",
+      "cubeTimestamp": 4752320,
+      "serial": 160
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4752528,
+      "serial": 161
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4752752,
+      "serial": 162
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 4752944,
+      "serial": 163
+    },
+    {
+      "face": "B",
+      "direction": "CW",
+      "cubeTimestamp": 4753160,
+      "serial": 164
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4753384,
+      "serial": 165
+    },
+    {
+      "face": "D",
+      "direction": "CCW",
+      "cubeTimestamp": 4753480,
+      "serial": 166
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4753576,
+      "serial": 167
+    },
+    {
+      "face": "D",
+      "direction": "CW",
+      "cubeTimestamp": 4753816,
+      "serial": 168
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4753944,
+      "serial": 169
+    },
+    {
+      "face": "R",
+      "direction": "CCW",
+      "cubeTimestamp": 4754048,
+      "serial": 170
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4754448,
+      "serial": 171
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4757760,
+      "serial": 172
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 4757960,
+      "serial": 174
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 4758096,
+      "serial": 175
+    },
+    {
+      "face": "M",
+      "direction": "CW",
+      "cubeTimestamp": 4758488,
+      "serial": 176
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4759152,
+      "serial": 178
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4759624,
+      "serial": 179
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4759808,
+      "serial": 180
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4760402,
+      "serial": 182
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 4760536,
+      "serial": 183
+    },
+    {
+      "face": "L",
+      "direction": "CCW",
+      "cubeTimestamp": 4760688,
+      "serial": 184
+    },
+    {
+      "face": "R",
+      "direction": "CW",
+      "cubeTimestamp": 4760744,
+      "serial": 185
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4760944,
+      "serial": 186
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4761170,
+      "serial": 188
+    },
+    {
+      "face": "F",
+      "direction": "CCW",
+      "cubeTimestamp": 4761304,
+      "serial": 189
+    },
+    {
+      "face": "M",
+      "direction": "CW",
+      "cubeTimestamp": 4761536,
+      "serial": 190
+    },
+    {
+      "face": "U",
+      "direction": "CCW",
+      "cubeTimestamp": 4764216,
+      "serial": 192
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4766312,
+      "serial": 193
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4766722,
+      "serial": 195
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4766994,
+      "serial": 197
+    },
+    {
+      "face": "D",
+      "direction": "CW",
+      "cubeTimestamp": 4767352,
+      "serial": 198
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4767954,
+      "serial": 200
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 4768096,
+      "serial": 201
+    },
+    {
+      "face": "B",
+      "direction": "CCW",
+      "cubeTimestamp": 4768288,
+      "serial": 202
+    },
+    {
+      "face": "M",
+      "direction": "CCW",
+      "cubeTimestamp": 4768826,
+      "serial": 204
+    },
+    {
+      "face": "U",
+      "direction": "CW",
+      "cubeTimestamp": 4769120,
+      "serial": 205
+    }
+  ],
+  "phases": [
+    {
+      "label": "FB",
+      "recognitionMs": 0,
+      "executionMs": 6392,
+      "turns": 14
+    },
+    {
+      "label": "SB",
+      "recognitionMs": 213,
+      "executionMs": 11578,
+      "turns": 25
+    },
+    {
+      "label": "CMLL",
+      "recognitionMs": 720,
+      "executionMs": 7470,
+      "turns": 28
+    },
+    {
+      "label": "EO",
+      "group": "LSE",
+      "recognitionMs": 3231,
+      "executionMs": 3808,
+      "turns": 15
+    },
+    {
+      "label": "UL+UR",
+      "group": "LSE",
+      "recognitionMs": 2801,
+      "executionMs": 4983,
+      "turns": 10
+    },
+    {
+      "label": "EP",
+      "group": "LSE",
+      "recognitionMs": 0,
+      "executionMs": 0,
+      "turns": 0
+    }
+  ],
+  "quaternionSnapshots": [
+    {
+      "quaternion": {
+        "x": -0.13053,
+        "y": 0.06796,
+        "z": 0.47188,
+        "w": 0.86926
+      },
+      "relativeMs": 51
+    },
+    {
+      "quaternion": {
+        "x": -0.15488,
+        "y": 0.03043,
+        "z": 0.47777,
+        "w": 0.86416
+      },
+      "relativeMs": 261
+    },
+    {
+      "quaternion": {
+        "x": -0.14948,
+        "y": 0.03592,
+        "z": 0.4839,
+        "w": 0.86148
+      },
+      "relativeMs": 442
+    },
+    {
+      "quaternion": {
+        "x": -0.16831,
+        "y": 0.02927,
+        "z": 0.50279,
+        "w": 0.84732
+      },
+      "relativeMs": 622
+    },
+    {
+      "quaternion": {
+        "x": -0.17148,
+        "y": 0.02655,
+        "z": 0.50194,
+        "w": 0.84729
+      },
+      "relativeMs": 741
+    },
+    {
+      "quaternion": {
+        "x": -0.21592,
+        "y": 0.00497,
+        "z": 0.50404,
+        "w": 0.83621
+      },
+      "relativeMs": 921
+    },
+    {
+      "quaternion": {
+        "x": -0.13495,
+        "y": 0.02872,
+        "z": 0.43379,
+        "w": 0.89038
+      },
+      "relativeMs": 1107
+    },
+    {
+      "quaternion": {
+        "x": -0.12482,
+        "y": 0.02112,
+        "z": 0.45,
+        "w": 0.88397
+      },
+      "relativeMs": 1311
+    },
+    {
+      "quaternion": {
+        "x": -0.05411,
+        "y": 0.06235,
+        "z": 0.44273,
+        "w": 0.89282
+      },
+      "relativeMs": 1492
+    },
+    {
+      "quaternion": {
+        "x": -0.03787,
+        "y": 0.0629,
+        "z": 0.44337,
+        "w": 0.89331
+      },
+      "relativeMs": 1672
+    },
+    {
+      "quaternion": {
+        "x": 0.00839,
+        "y": 0.09955,
+        "z": 0.41899,
+        "w": 0.90246
+      },
+      "relativeMs": 1881
+    },
+    {
+      "quaternion": {
+        "x": 0.01926,
+        "y": 0.15345,
+        "z": 0.44005,
+        "w": 0.88455
+      },
+      "relativeMs": 2061
+    },
+    {
+      "quaternion": {
+        "x": 0.05011,
+        "y": 0.1442,
+        "z": 0.43571,
+        "w": 0.88702
+      },
+      "relativeMs": 2242
+    },
+    {
+      "quaternion": {
+        "x": -0.00458,
+        "y": 0.10782,
+        "z": 0.44111,
+        "w": 0.89093
+      },
+      "relativeMs": 2362
+    },
+    {
+      "quaternion": {
+        "x": -0.0192,
+        "y": 0.09787,
+        "z": 0.41923,
+        "w": 0.90234
+      },
+      "relativeMs": 2541
+    },
+    {
+      "quaternion": {
+        "x": -0.03854,
+        "y": 0.08451,
+        "z": 0.41896,
+        "w": 0.90323
+      },
+      "relativeMs": 2725
+    },
+    {
+      "quaternion": {
+        "x": -0.05509,
+        "y": 0.08777,
+        "z": 0.41124,
+        "w": 0.90561
+      },
+      "relativeMs": 2841
+    },
+    {
+      "quaternion": {
+        "x": -0.10837,
+        "y": 0.01984,
+        "z": 0.42573,
+        "w": 0.8981
+      },
+      "relativeMs": 3022
+    },
+    {
+      "quaternion": {
+        "x": -0.27543,
+        "y": -0.08234,
+        "z": 0.26847,
+        "w": 0.91937
+      },
+      "relativeMs": 3202
+    },
+    {
+      "quaternion": {
+        "x": -0.27586,
+        "y": 0.01407,
+        "z": 0.26579,
+        "w": 0.92358
+      },
+      "relativeMs": 3411
+    },
+    {
+      "quaternion": {
+        "x": -0.06088,
+        "y": 0.28318,
+        "z": 0.49513,
+        "w": 0.81909
+      },
+      "relativeMs": 3591
+    },
+    {
+      "quaternion": {
+        "x": 0.28385,
+        "y": 0.49065,
+        "z": 0.52098,
+        "w": 0.63814
+      },
+      "relativeMs": 3771
+    },
+    {
+      "quaternion": {
+        "x": 0.33058,
+        "y": 0.4366,
+        "z": 0.48714,
+        "w": 0.68026
+      },
+      "relativeMs": 3891
+    },
+    {
+      "quaternion": {
+        "x": 0.2223,
+        "y": 0.3191,
+        "z": 0.3918,
+        "w": 0.8338
+      },
+      "relativeMs": 4071
+    },
+    {
+      "quaternion": {
+        "x": -0.01096,
+        "y": 0.03638,
+        "z": 0.35813,
+        "w": 0.93286
+      },
+      "relativeMs": 4251
+    },
+    {
+      "quaternion": {
+        "x": -0.07559,
+        "y": 0.01505,
+        "z": 0.39839,
+        "w": 0.91394
+      },
+      "relativeMs": 4461
+    },
+    {
+      "quaternion": {
+        "x": -0.12024,
+        "y": 0.02255,
+        "z": 0.46294,
+        "w": 0.8779
+      },
+      "relativeMs": 4641
+    },
+    {
+      "quaternion": {
+        "x": -0.1037,
+        "y": 0.03305,
+        "z": 0.8656,
+        "w": 0.48872
+      },
+      "relativeMs": 4821
+    },
+    {
+      "quaternion": {
+        "x": -0.16993,
+        "y": 0.03378,
+        "z": 0.87738,
+        "w": 0.44737
+      },
+      "relativeMs": 4941
+    },
+    {
+      "quaternion": {
+        "x": -0.02951,
+        "y": -0.10797,
+        "z": 0.87115,
+        "w": 0.47801
+      },
+      "relativeMs": 5122
+    },
+    {
+      "quaternion": {
+        "x": -0.01437,
+        "y": -0.00565,
+        "z": 0.87957,
+        "w": 0.47545
+      },
+      "relativeMs": 5303
+    },
+    {
+      "quaternion": {
+        "x": 0.00452,
+        "y": 0.06915,
+        "z": 0.84106,
+        "w": 0.53645
+      },
+      "relativeMs": 5512
+    },
+    {
+      "quaternion": {
+        "x": 0.03931,
+        "y": 0.02698,
+        "z": 0.43971,
+        "w": 0.89685
+      },
+      "relativeMs": 5692
+    },
+    {
+      "quaternion": {
+        "x": 0.03592,
+        "y": 0.02194,
+        "z": 0.30451,
+        "w": 0.95157
+      },
+      "relativeMs": 5871
+    },
+    {
+      "quaternion": {
+        "x": 0.0459,
+        "y": -0.00772,
+        "z": 0.29868,
+        "w": 0.95318
+      },
+      "relativeMs": 5992
+    },
+    {
+      "quaternion": {
+        "x": -0.07007,
+        "y": -0.04932,
+        "z": 0.34046,
+        "w": 0.93631
+      },
+      "relativeMs": 6174
+    },
+    {
+      "quaternion": {
+        "x": -0.05081,
+        "y": -0.06281,
+        "z": 0.33949,
+        "w": 0.9371
+      },
+      "relativeMs": 6354
+    },
+    {
+      "quaternion": {
+        "x": 0.17585,
+        "y": -0.05139,
+        "z": 0.25019,
+        "w": 0.95068
+      },
+      "relativeMs": 6561
+    },
+    {
+      "quaternion": {
+        "x": 0.40013,
+        "y": -0.03729,
+        "z": 0.14191,
+        "w": 0.9046
+      },
+      "relativeMs": 6741
+    },
+    {
+      "quaternion": {
+        "x": 0.13382,
+        "y": 0.00494,
+        "z": 0.27534,
+        "w": 0.95196
+      },
+      "relativeMs": 6921
+    },
+    {
+      "quaternion": {
+        "x": -0.08316,
+        "y": -0.0144,
+        "z": 0.3863,
+        "w": 0.91849
+      },
+      "relativeMs": 7041
+    },
+    {
+      "quaternion": {
+        "x": -0.08737,
+        "y": -0.06577,
+        "z": 0.52028,
+        "w": 0.84695
+      },
+      "relativeMs": 7221
+    },
+    {
+      "quaternion": {
+        "x": -0.18659,
+        "y": -0.29176,
+        "z": 0.38392,
+        "w": 0.85592
+      },
+      "relativeMs": 7403
+    },
+    {
+      "quaternion": {
+        "x": -0.22886,
+        "y": -0.42003,
+        "z": 0.25651,
+        "w": 0.83984
+      },
+      "relativeMs": 7611
+    },
+    {
+      "quaternion": {
+        "x": 0.02042,
+        "y": -0.08731,
+        "z": 0.48268,
+        "w": 0.87115
+      },
+      "relativeMs": 7800
+    },
+    {
+      "quaternion": {
+        "x": 0.1344,
+        "y": 0.00723,
+        "z": 0.51845,
+        "w": 0.84442
+      },
+      "relativeMs": 7971
+    },
+    {
+      "quaternion": {
+        "x": -0.03006,
+        "y": -0.14164,
+        "z": 0.49269,
+        "w": 0.85806
+      },
+      "relativeMs": 8091
+    },
+    {
+      "quaternion": {
+        "x": -0.27274,
+        "y": -0.27232,
+        "z": 0.37239,
+        "w": 0.84423
+      },
+      "relativeMs": 8271
+    },
+    {
+      "quaternion": {
+        "x": -0.31578,
+        "y": -0.33653,
+        "z": 0.34068,
+        "w": 0.81909
+      },
+      "relativeMs": 8451
+    },
+    {
+      "quaternion": {
+        "x": -0.3054,
+        "y": -0.33702,
+        "z": 0.36149,
+        "w": 0.8139
+      },
+      "relativeMs": 8572
+    },
+    {
+      "quaternion": {
+        "x": -0.16791,
+        "y": -0.20054,
+        "z": 0.47832,
+        "w": 0.83831
+      },
+      "relativeMs": 8752
+    },
+    {
+      "quaternion": {
+        "x": -0.0723,
+        "y": -0.04367,
+        "z": 0.55852,
+        "w": 0.82516
+      },
+      "relativeMs": 8932
+    },
+    {
+      "quaternion": {
+        "x": -0.14228,
+        "y": -0.11628,
+        "z": 0.5551,
+        "w": 0.81121
+      },
+      "relativeMs": 9141
+    },
+    {
+      "quaternion": {
+        "x": -0.35472,
+        "y": -0.31675,
+        "z": 0.30836,
+        "w": 0.82385
+      },
+      "relativeMs": 9321
+    },
+    {
+      "quaternion": {
+        "x": -0.55321,
+        "y": -0.41533,
+        "z": 0.35041,
+        "w": 0.63137
+      },
+      "relativeMs": 9501
+    },
+    {
+      "quaternion": {
+        "x": -0.42824,
+        "y": -0.41655,
+        "z": 0.4861,
+        "w": 0.63778
+      },
+      "relativeMs": 9711
+    },
+    {
+      "quaternion": {
+        "x": -0.45589,
+        "y": -0.41618,
+        "z": 0.44972,
+        "w": 0.6455
+      },
+      "relativeMs": 9892
+    },
+    {
+      "quaternion": {
+        "x": -0.52519,
+        "y": -0.37907,
+        "z": 0.41667,
+        "w": 0.63781
+      },
+      "relativeMs": 10071
+    },
+    {
+      "quaternion": {
+        "x": -0.52126,
+        "y": -0.37681,
+        "z": 0.36784,
+        "w": 0.67153
+      },
+      "relativeMs": 10191
+    },
+    {
+      "quaternion": {
+        "x": -0.33323,
+        "y": -0.31602,
+        "z": 0.35838,
+        "w": 0.81277
+      },
+      "relativeMs": 10371
+    },
+    {
+      "quaternion": {
+        "x": -0.09357,
+        "y": -0.0716,
+        "z": 0.54146,
+        "w": 0.83242
+      },
+      "relativeMs": 10553
+    },
+    {
+      "quaternion": {
+        "x": -0.01996,
+        "y": -0.06095,
+        "z": 0.58452,
+        "w": 0.8088
+      },
+      "relativeMs": 10761
+    },
+    {
+      "quaternion": {
+        "x": 0.01852,
+        "y": 0.0314,
+        "z": 0.60375,
+        "w": 0.79632
+      },
+      "relativeMs": 10942
+    },
+    {
+      "quaternion": {
+        "x": -0.01682,
+        "y": 0.00488,
+        "z": 0.60604,
+        "w": 0.79522
+      },
+      "relativeMs": 11121
+    },
+    {
+      "quaternion": {
+        "x": 0.0116,
+        "y": 0.03934,
+        "z": 0.62697,
+        "w": 0.77792
+      },
+      "relativeMs": 11241
+    },
+    {
+      "quaternion": {
+        "x": -0.03787,
+        "y": -0.02554,
+        "z": 0.62258,
+        "w": 0.78121
+      },
+      "relativeMs": 11424
+    },
+    {
+      "quaternion": {
+        "x": -0.06433,
+        "y": -0.08258,
+        "z": 0.59072,
+        "w": 0.80004
+      },
+      "relativeMs": 11601
+    },
+    {
+      "quaternion": {
+        "x": -0.04379,
+        "y": -0.07062,
+        "z": 0.60546,
+        "w": 0.7915
+      },
+      "relativeMs": 11721
+    },
+    {
+      "quaternion": {
+        "x": -0.04212,
+        "y": -0.02387,
+        "z": 0.60506,
+        "w": 0.79467
+      },
+      "relativeMs": 11905
+    },
+    {
+      "quaternion": {
+        "x": -0.0846,
+        "y": -0.0365,
+        "z": 0.59035,
+        "w": 0.80184
+      },
+      "relativeMs": 12081
+    },
+    {
+      "quaternion": {
+        "x": -0.27955,
+        "y": -0.2595,
+        "z": 0.45308,
+        "w": 0.80572
+      },
+      "relativeMs": 12294
+    },
+    {
+      "quaternion": {
+        "x": -0.58956,
+        "y": -0.4658,
+        "z": 0.30866,
+        "w": 0.58324
+      },
+      "relativeMs": 12471
+    },
+    {
+      "quaternion": {
+        "x": -0.3997,
+        "y": -0.39027,
+        "z": 0.53682,
+        "w": 0.63222
+      },
+      "relativeMs": 12653
+    },
+    {
+      "quaternion": {
+        "x": -0.31858,
+        "y": -0.31532,
+        "z": 0.57924,
+        "w": 0.68081
+      },
+      "relativeMs": 12771
+    },
+    {
+      "quaternion": {
+        "x": -0.38667,
+        "y": -0.35563,
+        "z": 0.44407,
+        "w": 0.72576
+      },
+      "relativeMs": 12953
+    },
+    {
+      "quaternion": {
+        "x": -0.52324,
+        "y": -0.412,
+        "z": 0.27555,
+        "w": 0.69317
+      },
+      "relativeMs": 13132
+    },
+    {
+      "quaternion": {
+        "x": -0.54814,
+        "y": -0.43553,
+        "z": 0.27918,
+        "w": 0.65716
+      },
+      "relativeMs": 13232
+    },
+    {
+      "quaternion": {
+        "x": -0.5649,
+        "y": -0.44038,
+        "z": 0.30918,
+        "w": 0.62554
+      },
+      "relativeMs": 13341
+    },
+    {
+      "quaternion": {
+        "x": -0.39573,
+        "y": -0.31523,
+        "z": 0.45906,
+        "w": 0.73022
+      },
+      "relativeMs": 13521
+    },
+    {
+      "quaternion": {
+        "x": -0.17924,
+        "y": -0.10678,
+        "z": 0.553,
+        "w": 0.8066
+      },
+      "relativeMs": 13701
+    },
+    {
+      "quaternion": {
+        "x": -0.14521,
+        "y": -0.04227,
+        "z": 0.57662,
+        "w": 0.80285
+      },
+      "relativeMs": 13821
+    },
+    {
+      "quaternion": {
+        "x": -0.16263,
+        "y": -0.00772,
+        "z": 0.64202,
+        "w": 0.74917
+      },
+      "relativeMs": 14005
+    },
+    {
+      "quaternion": {
+        "x": -0.12107,
+        "y": -0.01822,
+        "z": 0.62703,
+        "w": 0.76928
+      },
+      "relativeMs": 14182
+    },
+    {
+      "quaternion": {
+        "x": -0.09772,
+        "y": -0.05307,
+        "z": 0.52028,
+        "w": 0.84671
+      },
+      "relativeMs": 14391
+    },
+    {
+      "quaternion": {
+        "x": -0.14765,
+        "y": -0.14164,
+        "z": 0.35655,
+        "w": 0.91159
+      },
+      "relativeMs": 14571
+    },
+    {
+      "quaternion": {
+        "x": -0.25568,
+        "y": -0.14966,
+        "z": 0.57994,
+        "w": 0.75884
+      },
+      "relativeMs": 14751
+    },
+    {
+      "quaternion": {
+        "x": -0.31242,
+        "y": -0.13587,
+        "z": 0.71117,
+        "w": 0.61492
+      },
+      "relativeMs": 14871
+    },
+    {
+      "quaternion": {
+        "x": -0.52116,
+        "y": -0.26182,
+        "z": 0.60317,
+        "w": 0.54405
+      },
+      "relativeMs": 15055
+    },
+    {
+      "quaternion": {
+        "x": -0.61904,
+        "y": -0.40913,
+        "z": 0.40345,
+        "w": 0.53529
+      },
+      "relativeMs": 15231
+    },
+    {
+      "quaternion": {
+        "x": -0.62566,
+        "y": -0.43684,
+        "z": 0.35658,
+        "w": 0.53896
+      },
+      "relativeMs": 15441
+    },
+    {
+      "quaternion": {
+        "x": -0.59468,
+        "y": -0.45289,
+        "z": 0.36287,
+        "w": 0.55632
+      },
+      "relativeMs": 15621
+    },
+    {
+      "quaternion": {
+        "x": -0.57558,
+        "y": -0.46098,
+        "z": 0.37962,
+        "w": 0.55861
+      },
+      "relativeMs": 15801
+    },
+    {
+      "quaternion": {
+        "x": -0.56584,
+        "y": -0.46141,
+        "z": 0.38234,
+        "w": 0.56627
+      },
+      "relativeMs": 15921
+    },
+    {
+      "quaternion": {
+        "x": -0.42964,
+        "y": -0.40382,
+        "z": 0.4405,
+        "w": 0.67693
+      },
+      "relativeMs": 16102
+    },
+    {
+      "quaternion": {
+        "x": -0.10004,
+        "y": -0.15217,
+        "z": 0.58312,
+        "w": 0.79168
+      },
+      "relativeMs": 16284
+    },
+    {
+      "quaternion": {
+        "x": -0.09616,
+        "y": -0.13099,
+        "z": 0.60295,
+        "w": 0.78103
+      },
+      "relativeMs": 16491
+    },
+    {
+      "quaternion": {
+        "x": -0.1287,
+        "y": -0.16181,
+        "z": 0.60488,
+        "w": 0.76897
+      },
+      "relativeMs": 16671
+    },
+    {
+      "quaternion": {
+        "x": -0.55852,
+        "y": -0.51061,
+        "z": 0.36799,
+        "w": 0.54024
+      },
+      "relativeMs": 16852
+    },
+    {
+      "quaternion": {
+        "x": -0.62819,
+        "y": -0.46138,
+        "z": 0.40724,
+        "w": 0.47603
+      },
+      "relativeMs": 16971
+    },
+    {
+      "quaternion": {
+        "x": -0.59941,
+        "y": -0.45402,
+        "z": 0.42216,
+        "w": 0.50621
+      },
+      "relativeMs": 17155
+    },
+    {
+      "quaternion": {
+        "x": -0.55449,
+        "y": -0.42235,
+        "z": 0.48833,
+        "w": 0.52498
+      },
+      "relativeMs": 17332
+    },
+    {
+      "quaternion": {
+        "x": -0.51888,
+        "y": -0.37352,
+        "z": 0.55031,
+        "w": 0.53697
+      },
+      "relativeMs": 17458
+    },
+    {
+      "quaternion": {
+        "x": -0.36625,
+        "y": -0.20112,
+        "z": 0.58834,
+        "w": 0.69225
+      },
+      "relativeMs": 17631
+    },
+    {
+      "quaternion": {
+        "x": -0.02795,
+        "y": -0.10117,
+        "z": 0.59713,
+        "w": 0.79522
+      },
+      "relativeMs": 17811
+    },
+    {
+      "quaternion": {
+        "x": -0.09107,
+        "y": -0.08435,
+        "z": 0.60219,
+        "w": 0.7886
+      },
+      "relativeMs": 18022
+    },
+    {
+      "quaternion": {
+        "x": -0.0246,
+        "y": -0.06931,
+        "z": 0.59731,
+        "w": 0.79861
+      },
+      "relativeMs": 18202
+    },
+    {
+      "quaternion": {
+        "x": -0.03479,
+        "y": -0.05884,
+        "z": 0.59587,
+        "w": 0.80013
+      },
+      "relativeMs": 18381
+    },
+    {
+      "quaternion": {
+        "x": -0.03656,
+        "y": 0.02628,
+        "z": 0.6274,
+        "w": 0.77737
+      },
+      "relativeMs": 18502
+    },
+    {
+      "quaternion": {
+        "x": -0.04209,
+        "y": 0.0556,
+        "z": 0.66552,
+        "w": 0.7431
+      },
+      "relativeMs": 18681
+    },
+    {
+      "quaternion": {
+        "x": -0.08991,
+        "y": -0.03595,
+        "z": 0.6216,
+        "w": 0.77731
+      },
+      "relativeMs": 18861
+    },
+    {
+      "quaternion": {
+        "x": -0.05951,
+        "y": -0.03046,
+        "z": 0.64791,
+        "w": 0.75875
+      },
+      "relativeMs": 19071
+    },
+    {
+      "quaternion": {
+        "x": -0.05969,
+        "y": -0.16514,
+        "z": 0.61452,
+        "w": 0.7691
+      },
+      "relativeMs": 19252
+    },
+    {
+      "quaternion": {
+        "x": 0.08921,
+        "y": -0.0766,
+        "z": 0.63323,
+        "w": 0.76495
+      },
+      "relativeMs": 19434
+    },
+    {
+      "quaternion": {
+        "x": 0.15549,
+        "y": 0.04144,
+        "z": 0.63878,
+        "w": 0.75234
+      },
+      "relativeMs": 19552
+    },
+    {
+      "quaternion": {
+        "x": -0.04987,
+        "y": -0.01202,
+        "z": 0.61312,
+        "w": 0.78829
+      },
+      "relativeMs": 19732
+    },
+    {
+      "quaternion": {
+        "x": -0.10288,
+        "y": -0.09207,
+        "z": 0.5949,
+        "w": 0.79183
+      },
+      "relativeMs": 19911
+    },
+    {
+      "quaternion": {
+        "x": -0.05615,
+        "y": -0.10578,
+        "z": 0.61296,
+        "w": 0.78097
+      },
+      "relativeMs": 20122
+    },
+    {
+      "quaternion": {
+        "x": 0.00369,
+        "y": -0.05631,
+        "z": 0.64385,
+        "w": 0.76305
+      },
+      "relativeMs": 20302
+    },
+    {
+      "quaternion": {
+        "x": -0.02512,
+        "y": -0.04874,
+        "z": 0.63131,
+        "w": 0.77355
+      },
+      "relativeMs": 20481
+    },
+    {
+      "quaternion": {
+        "x": 0.02963,
+        "y": -0.00851,
+        "z": 0.6436,
+        "w": 0.7647
+      },
+      "relativeMs": 20601
+    },
+    {
+      "quaternion": {
+        "x": 0.00604,
+        "y": 0.0448,
+        "z": 0.64928,
+        "w": 0.75918
+      },
+      "relativeMs": 20781
+    },
+    {
+      "quaternion": {
+        "x": -0.04114,
+        "y": -0.01035,
+        "z": 0.62902,
+        "w": 0.77621
+      },
+      "relativeMs": 20961
+    },
+    {
+      "quaternion": {
+        "x": -0.04672,
+        "y": -0.05188,
+        "z": 0.6122,
+        "w": 0.78759
+      },
+      "relativeMs": 21171
+    },
+    {
+      "quaternion": {
+        "x": -0.09577,
+        "y": -0.13245,
+        "z": 0.60515,
+        "w": 0.77911
+      },
+      "relativeMs": 21352
+    },
+    {
+      "quaternion": {
+        "x": -0.22748,
+        "y": -0.32438,
+        "z": 0.45082,
+        "w": 0.79983
+      },
+      "relativeMs": 21532
+    },
+    {
+      "quaternion": {
+        "x": -0.17545,
+        "y": -0.26713,
+        "z": 0.47023,
+        "w": 0.82263
+      },
+      "relativeMs": 21651
+    },
+    {
+      "quaternion": {
+        "x": -0.03461,
+        "y": -0.05768,
+        "z": 0.55153,
+        "w": 0.83142
+      },
+      "relativeMs": 21831
+    },
+    {
+      "quaternion": {
+        "x": 0.06638,
+        "y": 0.21787,
+        "z": 0.62154,
+        "w": 0.7495
+      },
+      "relativeMs": 22011
+    },
+    {
+      "quaternion": {
+        "x": 0.17911,
+        "y": 0.47023,
+        "z": 0.66558,
+        "w": 0.55113
+      },
+      "relativeMs": 22221
+    },
+    {
+      "quaternion": {
+        "x": 0.21152,
+        "y": 0.24522,
+        "z": 0.62304,
+        "w": 0.71197
+      },
+      "relativeMs": 22403
+    },
+    {
+      "quaternion": {
+        "x": 0.26734,
+        "y": -0.03485,
+        "z": 0.502,
+        "w": 0.82174
+      },
+      "relativeMs": 22581
+    },
+    {
+      "quaternion": {
+        "x": 0.20441,
+        "y": -0.04743,
+        "z": 0.53627,
+        "w": 0.81753
+      },
+      "relativeMs": 22701
+    },
+    {
+      "quaternion": {
+        "x": 0.02661,
+        "y": -0.00775,
+        "z": 0.61351,
+        "w": 0.78918
+      },
+      "relativeMs": 22882
+    },
+    {
+      "quaternion": {
+        "x": 0.07437,
+        "y": 0.01926,
+        "z": 0.62654,
+        "w": 0.77554
+      },
+      "relativeMs": 23063
+    },
+    {
+      "quaternion": {
+        "x": 0.24857,
+        "y": 0.29487,
+        "z": 0.56557,
+        "w": 0.72893
+      },
+      "relativeMs": 23271
+    },
+    {
+      "quaternion": {
+        "x": 0.40413,
+        "y": 0.31437,
+        "z": 0.52565,
+        "w": 0.67934
+      },
+      "relativeMs": 23452
+    },
+    {
+      "quaternion": {
+        "x": 0.4644,
+        "y": 0.32411,
+        "z": 0.49422,
+        "w": 0.65954
+      },
+      "relativeMs": 23632
+    },
+    {
+      "quaternion": {
+        "x": 0.48289,
+        "y": 0.34114,
+        "z": 0.48689,
+        "w": 0.6429
+      },
+      "relativeMs": 23751
+    },
+    {
+      "quaternion": {
+        "x": 0.44942,
+        "y": 0.35374,
+        "z": 0.5005,
+        "w": 0.64986
+      },
+      "relativeMs": 23931
+    },
+    {
+      "quaternion": {
+        "x": 0.16422,
+        "y": 0.19596,
+        "z": 0.6028,
+        "w": 0.75579
+      },
+      "relativeMs": 24112
+    },
+    {
+      "quaternion": {
+        "x": -0.06998,
+        "y": -0.013,
+        "z": 0.63878,
+        "w": 0.76605
+      },
+      "relativeMs": 24322
+    },
+    {
+      "quaternion": {
+        "x": 0.08036,
+        "y": 0.23258,
+        "z": 0.66829,
+        "w": 0.70196
+      },
+      "relativeMs": 24504
+    },
+    {
+      "quaternion": {
+        "x": 0.5013,
+        "y": 0.29676,
+        "z": 0.5172,
+        "w": 0.62697
+      },
+      "relativeMs": 24681
+    },
+    {
+      "quaternion": {
+        "x": 0.56713,
+        "y": 0.2346,
+        "z": 0.58357,
+        "w": 0.53172
+      },
+      "relativeMs": 24801
+    },
+    {
+      "quaternion": {
+        "x": 0.72329,
+        "y": 0.18979,
+        "z": 0.5302,
+        "w": 0.39961
+      },
+      "relativeMs": 24982
+    },
+    {
+      "quaternion": {
+        "x": 0.79171,
+        "y": 0.48033,
+        "z": 0.2891,
+        "w": 0.24256
+      },
+      "relativeMs": 25161
+    },
+    {
+      "quaternion": {
+        "x": 0.79833,
+        "y": 0.58602,
+        "z": 0.09171,
+        "w": 0.10373
+      },
+      "relativeMs": 25281
+    },
+    {
+      "quaternion": {
+        "x": 0.78372,
+        "y": 0.61943,
+        "z": 0.02908,
+        "w": 0.03485
+      },
+      "relativeMs": 25462
+    },
+    {
+      "quaternion": {
+        "x": 0.78433,
+        "y": 0.60671,
+        "z": 0.11917,
+        "w": 0.04968
+      },
+      "relativeMs": 25644
+    },
+    {
+      "quaternion": {
+        "x": 0.36982,
+        "y": 0.12961,
+        "z": 0.55095,
+        "w": 0.73678
+      },
+      "relativeMs": 25858
+    },
+    {
+      "quaternion": {
+        "x": -0.1283,
+        "y": 0.0098,
+        "z": 0.5858,
+        "w": 0.80016
+      },
+      "relativeMs": 26031
+    },
+    {
+      "quaternion": {
+        "x": -0.18204,
+        "y": 0.02731,
+        "z": 0.61519,
+        "w": 0.76656
+      },
+      "relativeMs": 26213
+    },
+    {
+      "quaternion": {
+        "x": -0.15516,
+        "y": 0.01645,
+        "z": 0.6325,
+        "w": 0.75866
+      },
+      "relativeMs": 26332
+    },
+    {
+      "quaternion": {
+        "x": -0.10364,
+        "y": 0.00189,
+        "z": 0.6071,
+        "w": 0.7878
+      },
+      "relativeMs": 26512
+    },
+    {
+      "quaternion": {
+        "x": -0.06784,
+        "y": 0.01144,
+        "z": 0.59496,
+        "w": 0.80078
+      },
+      "relativeMs": 26613
+    },
+    {
+      "quaternion": {
+        "x": 0.18439,
+        "y": -0.03769,
+        "z": 0.47996,
+        "w": 0.85684
+      },
+      "relativeMs": 26783
+    },
+    {
+      "quaternion": {
+        "x": 0.20774,
+        "y": -0.04425,
+        "z": 0.44777,
+        "w": 0.86853
+      },
+      "relativeMs": 26901
+    },
+    {
+      "quaternion": {
+        "x": 0.0459,
+        "y": -0.09888,
+        "z": 0.51256,
+        "w": 0.85168
+      },
+      "relativeMs": 27082
+    },
+    {
+      "quaternion": {
+        "x": -0.28532,
+        "y": -0.40318,
+        "z": 0.43379,
+        "w": 0.75353
+      },
+      "relativeMs": 27261
+    },
+    {
+      "quaternion": {
+        "x": -0.41755,
+        "y": -0.5407,
+        "z": 0.28263,
+        "w": 0.6733
+      },
+      "relativeMs": 27385
+    },
+    {
+      "quaternion": {
+        "x": -0.4395,
+        "y": -0.60863,
+        "z": 0.16089,
+        "w": 0.64068
+      },
+      "relativeMs": 27562
+    },
+    {
+      "quaternion": {
+        "x": -0.40757,
+        "y": -0.61715,
+        "z": 0.125,
+        "w": 0.66131
+      },
+      "relativeMs": 27662
+    },
+    {
+      "quaternion": {
+        "x": -0.29365,
+        "y": -0.57631,
+        "z": 0.16007,
+        "w": 0.74563
+      },
+      "relativeMs": 27831
+    },
+    {
+      "quaternion": {
+        "x": -0.13617,
+        "y": -0.40468,
+        "z": 0.41386,
+        "w": 0.80395
+      },
+      "relativeMs": 27951
+    },
+    {
+      "quaternion": {
+        "x": 0.09705,
+        "y": -0.00882,
+        "z": 0.59093,
+        "w": 0.80078
+      },
+      "relativeMs": 28131
+    },
+    {
+      "quaternion": {
+        "x": 0.1019,
+        "y": 0.03858,
+        "z": 0.6039,
+        "w": 0.78954
+      },
+      "relativeMs": 28312
+    },
+    {
+      "quaternion": {
+        "x": 0.06839,
+        "y": 0.05438,
+        "z": 0.61269,
+        "w": 0.78542
+      },
+      "relativeMs": 28432
+    },
+    {
+      "quaternion": {
+        "x": 0.04862,
+        "y": 0.05393,
+        "z": 0.60512,
+        "w": 0.79278
+      },
+      "relativeMs": 28612
+    },
+    {
+      "quaternion": {
+        "x": 0.03696,
+        "y": 0.03409,
+        "z": 0.59285,
+        "w": 0.8037
+      },
+      "relativeMs": 28713
+    },
+    {
+      "quaternion": {
+        "x": 0.05112,
+        "y": 0.00558,
+        "z": 0.57018,
+        "w": 0.81988
+      },
+      "relativeMs": 28881
+    },
+    {
+      "quaternion": {
+        "x": 0.08676,
+        "y": -0.00015,
+        "z": 0.54311,
+        "w": 0.83514
+      },
+      "relativeMs": 29008
+    },
+    {
+      "quaternion": {
+        "x": 0.24824,
+        "y": -0.04657,
+        "z": 0.42875,
+        "w": 0.86737
+      },
+      "relativeMs": 29182
+    },
+    {
+      "quaternion": {
+        "x": 0.1478,
+        "y": -0.07013,
+        "z": 0.48506,
+        "w": 0.859
+      },
+      "relativeMs": 29361
+    },
+    {
+      "quaternion": {
+        "x": 0.12296,
+        "y": -0.07016,
+        "z": 0.49413,
+        "w": 0.85775
+      },
+      "relativeMs": 29481
+    },
+    {
+      "quaternion": {
+        "x": -0.52177,
+        "y": -0.44462,
+        "z": 0.30372,
+        "w": 0.66164
+      },
+      "relativeMs": 29662
+    },
+    {
+      "quaternion": {
+        "x": -0.53621,
+        "y": -0.43916,
+        "z": 0.35383,
+        "w": 0.62798
+      },
+      "relativeMs": 29762
+    },
+    {
+      "quaternion": {
+        "x": -0.62749,
+        "y": -0.36396,
+        "z": 0.41832,
+        "w": 0.54656
+      },
+      "relativeMs": 29934
+    },
+    {
+      "quaternion": {
+        "x": -0.64287,
+        "y": -0.36564,
+        "z": 0.44221,
+        "w": 0.50737
+      },
+      "relativeMs": 30051
+    },
+    {
+      "quaternion": {
+        "x": -0.54863,
+        "y": -0.34629,
+        "z": 0.44914,
+        "w": 0.61425
+      },
+      "relativeMs": 30231
+    },
+    {
+      "quaternion": {
+        "x": -0.12897,
+        "y": -0.13825,
+        "z": 0.57103,
+        "w": 0.79882
+      },
+      "relativeMs": 30411
+    },
+    {
+      "quaternion": {
+        "x": -0.06915,
+        "y": -0.07453,
+        "z": 0.57894,
+        "w": 0.80898
+      },
+      "relativeMs": 30531
+    },
+    {
+      "quaternion": {
+        "x": 0.14893,
+        "y": -0.06619,
+        "z": 0.49525,
+        "w": 0.8533
+      },
+      "relativeMs": 30712
+    },
+    {
+      "quaternion": {
+        "x": 0.10053,
+        "y": -0.03653,
+        "z": 0.55214,
+        "w": 0.82684
+      },
+      "relativeMs": 30891
+    },
+    {
+      "quaternion": {
+        "x": -0.00772,
+        "y": 0.0137,
+        "z": 0.56163,
+        "w": 0.8272
+      },
+      "relativeMs": 31101
+    },
+    {
+      "quaternion": {
+        "x": -0.02432,
+        "y": 0.02951,
+        "z": 0.58458,
+        "w": 0.81039
+      },
+      "relativeMs": 31281
+    },
+    {
+      "quaternion": {
+        "x": -0.0166,
+        "y": -0.00195,
+        "z": 0.58535,
+        "w": 0.81057
+      },
+      "relativeMs": 31462
+    },
+    {
+      "quaternion": {
+        "x": -0.03366,
+        "y": -0.03244,
+        "z": 0.57906,
+        "w": 0.8139
+      },
+      "relativeMs": 31581
+    },
+    {
+      "quaternion": {
+        "x": -0.02811,
+        "y": -0.06403,
+        "z": 0.58608,
+        "w": 0.80721
+      },
+      "relativeMs": 31761
+    },
+    {
+      "quaternion": {
+        "x": -0.01218,
+        "y": -0.0752,
+        "z": 0.57799,
+        "w": 0.81246
+      },
+      "relativeMs": 31941
+    },
+    {
+      "quaternion": {
+        "x": -0.01862,
+        "y": -0.12897,
+        "z": 0.55971,
+        "w": 0.81835
+      },
+      "relativeMs": 32151
+    },
+    {
+      "quaternion": {
+        "x": -0.58223,
+        "y": -0.46165,
+        "z": 0.33424,
+        "w": 0.57973
+      },
+      "relativeMs": 32331
+    },
+    {
+      "quaternion": {
+        "x": -0.42619,
+        "y": -0.37941,
+        "z": 0.39659,
+        "w": 0.71908
+      },
+      "relativeMs": 32514
+    },
+    {
+      "quaternion": {
+        "x": -0.22416,
+        "y": -0.32676,
+        "z": 0.44615,
+        "w": 0.80242
+      },
+      "relativeMs": 32636
+    },
+    {
+      "quaternion": {
+        "x": -0.04276,
+        "y": -0.14832,
+        "z": 0.56212,
+        "w": 0.81249
+      },
+      "relativeMs": 32814
+    },
+    {
+      "quaternion": {
+        "x": -0.54231,
+        "y": -0.48292,
+        "z": 0.35212,
+        "w": 0.59044
+      },
+      "relativeMs": 32993
+    },
+    {
+      "quaternion": {
+        "x": -0.59066,
+        "y": -0.48866,
+        "z": 0.31455,
+        "w": 0.55977
+      },
+      "relativeMs": 33201
+    },
+    {
+      "quaternion": {
+        "x": -0.52428,
+        "y": -0.45921,
+        "z": 0.33021,
+        "w": 0.63649
+      },
+      "relativeMs": 33381
+    },
+    {
+      "quaternion": {
+        "x": -0.10025,
+        "y": -0.19944,
+        "z": 0.53603,
+        "w": 0.81411
+      },
+      "relativeMs": 33561
+    },
+    {
+      "quaternion": {
+        "x": -0.08924,
+        "y": -0.14203,
+        "z": 0.55913,
+        "w": 0.81188
+      },
+      "relativeMs": 33681
+    },
+    {
+      "quaternion": {
+        "x": -0.01303,
+        "y": -0.02609,
+        "z": 0.58998,
+        "w": 0.80685
+      },
+      "relativeMs": 33863
+    },
+    {
+      "quaternion": {
+        "x": 0.00653,
+        "y": 0.14194,
+        "z": 0.6234,
+        "w": 0.76885
+      },
+      "relativeMs": 34041
+    },
+    {
+      "quaternion": {
+        "x": -0.03262,
+        "y": 0.10855,
+        "z": 0.62728,
+        "w": 0.77047
+      },
+      "relativeMs": 34161
+    },
+    {
+      "quaternion": {
+        "x": -0.23634,
+        "y": -0.08802,
+        "z": 0.52901,
+        "w": 0.81027
+      },
+      "relativeMs": 34341
+    },
+    {
+      "quaternion": {
+        "x": -0.24137,
+        "y": -0.13465,
+        "z": 0.50301,
+        "w": 0.81887
+      },
+      "relativeMs": 34524
+    },
+    {
+      "quaternion": {
+        "x": -0.37037,
+        "y": -0.47658,
+        "z": 0.24366,
+        "w": 0.75912
+      },
+      "relativeMs": 34732
+    },
+    {
+      "quaternion": {
+        "x": -0.40236,
+        "y": -0.52898,
+        "z": 0.16636,
+        "w": 0.72842
+      },
+      "relativeMs": 34914
+    },
+    {
+      "quaternion": {
+        "x": -0.33464,
+        "y": -0.62352,
+        "z": -0.06223,
+        "w": 0.70379
+      },
+      "relativeMs": 35091
+    },
+    {
+      "quaternion": {
+        "x": -0.29603,
+        "y": -0.62294,
+        "z": -0.16059,
+        "w": 0.70602
+      },
+      "relativeMs": 35212
+    },
+    {
+      "quaternion": {
+        "x": -0.26057,
+        "y": -0.59691,
+        "z": -0.11869,
+        "w": 0.74944
+      },
+      "relativeMs": 35391
+    },
+    {
+      "quaternion": {
+        "x": -0.09479,
+        "y": -0.28355,
+        "z": 0.3271,
+        "w": 0.89642
+      },
+      "relativeMs": 35572
+    },
+    {
+      "quaternion": {
+        "x": 0.18595,
+        "y": -0.05747,
+        "z": 0.44478,
+        "w": 0.8742
+      },
+      "relativeMs": 35782
+    },
+    {
+      "quaternion": {
+        "x": 0.1633,
+        "y": 0.01752,
+        "z": 0.51643,
+        "w": 0.84042
+      },
+      "relativeMs": 35963
+    },
+    {
+      "quaternion": {
+        "x": 0.05695,
+        "y": -0.00977,
+        "z": 0.55104,
+        "w": 0.83245
+      },
+      "relativeMs": 36141
+    },
+    {
+      "quaternion": {
+        "x": 0.03833,
+        "y": -0.02029,
+        "z": 0.55162,
+        "w": 0.83294
+      },
+      "relativeMs": 36261
+    },
+    {
+      "quaternion": {
+        "x": 0.06149,
+        "y": -0.00848,
+        "z": 0.5808,
+        "w": 0.81164
+      },
+      "relativeMs": 36442
+    },
+    {
+      "quaternion": {
+        "x": 0.05902,
+        "y": -0.02026,
+        "z": 0.57472,
+        "w": 0.81594
+      },
+      "relativeMs": 36622
+    },
+    {
+      "quaternion": {
+        "x": 0.06375,
+        "y": -0.03476,
+        "z": 0.56444,
+        "w": 0.82226
+      },
+      "relativeMs": 36831
+    },
+    {
+      "quaternion": {
+        "x": 0.04181,
+        "y": -0.05631,
+        "z": 0.56355,
+        "w": 0.82305
+      },
+      "relativeMs": 37013
+    },
+    {
+      "quaternion": {
+        "x": 0.03598,
+        "y": -0.02734,
+        "z": 0.57292,
+        "w": 0.81832
+      },
+      "relativeMs": 37196
+    },
+    {
+      "quaternion": {
+        "x": 0.17298,
+        "y": 0.00055,
+        "z": 0.56914,
+        "w": 0.80383
+      },
+      "relativeMs": 37311
+    },
+    {
+      "quaternion": {
+        "x": 0.2693,
+        "y": 0.04743,
+        "z": 0.56407,
+        "w": 0.77911
+      },
+      "relativeMs": 37491
+    },
+    {
+      "quaternion": {
+        "x": 0.22407,
+        "y": 0.06735,
+        "z": 0.58074,
+        "w": 0.77972
+      },
+      "relativeMs": 37671
+    },
+    {
+      "quaternion": {
+        "x": 0.19486,
+        "y": 0.01129,
+        "z": 0.56728,
+        "w": 0.80004
+      },
+      "relativeMs": 37881
+    },
+    {
+      "quaternion": {
+        "x": -0.24293,
+        "y": -0.19514,
+        "z": 0.53188,
+        "w": 0.78738
+      },
+      "relativeMs": 38063
+    },
+    {
+      "quaternion": {
+        "x": 0.00027,
+        "y": -0.11093,
+        "z": 0.59029,
+        "w": 0.79952
+      },
+      "relativeMs": 38242
+    },
+    {
+      "quaternion": {
+        "x": -0.01212,
+        "y": -0.09748,
+        "z": 0.57118,
+        "w": 0.81487
+      },
+      "relativeMs": 38361
+    },
+    {
+      "quaternion": {
+        "x": -0.08618,
+        "y": -0.17881,
+        "z": 0.5472,
+        "w": 0.8131
+      },
+      "relativeMs": 38541
+    },
+    {
+      "quaternion": {
+        "x": -0.5316,
+        "y": -0.44142,
+        "z": 0.3567,
+        "w": 0.62868
+      },
+      "relativeMs": 38721
+    },
+    {
+      "quaternion": {
+        "x": -0.66924,
+        "y": -0.52516,
+        "z": 0.23353,
+        "w": 0.47087
+      },
+      "relativeMs": 38842
+    },
+    {
+      "quaternion": {
+        "x": -0.81213,
+        "y": -0.57503,
+        "z": -0.01462,
+        "w": 0.0976
+      },
+      "relativeMs": 39021
+    },
+    {
+      "quaternion": {
+        "x": -0.82089,
+        "y": -0.56359,
+        "z": -0.0116,
+        "w": 0.09128
+      },
+      "relativeMs": 39201
+    },
+    {
+      "quaternion": {
+        "x": -0.8095,
+        "y": -0.58037,
+        "z": -0.02969,
+        "w": 0.08347
+      },
+      "relativeMs": 39412
+    },
+    {
+      "quaternion": {
+        "x": -0.80374,
+        "y": -0.58879,
+        "z": -0.04389,
+        "w": 0.07312
+      },
+      "relativeMs": 39591
+    },
+    {
+      "quaternion": {
+        "x": -0.80239,
+        "y": -0.56334,
+        "z": -0.1803,
+        "w": -0.0791
+      },
+      "relativeMs": 39771
+    },
+    {
+      "quaternion": {
+        "x": -0.63936,
+        "y": -0.41371,
+        "z": -0.434,
+        "w": -0.48128
+      },
+      "relativeMs": 39982
+    },
+    {
+      "quaternion": {
+        "x": -0.61702,
+        "y": -0.43333,
+        "z": -0.38069,
+        "w": -0.53529
+      },
+      "relativeMs": 40162
+    },
+    {
+      "quaternion": {
+        "x": -0.60183,
+        "y": -0.4279,
+        "z": -0.4084,
+        "w": -0.53652
+      },
+      "relativeMs": 40262
+    },
+    {
+      "quaternion": {
+        "x": -0.57912,
+        "y": -0.44072,
+        "z": -0.41176,
+        "w": -0.54842
+      },
+      "relativeMs": 40461
+    },
+    {
+      "quaternion": {
+        "x": -0.55913,
+        "y": -0.40016,
+        "z": -0.44276,
+        "w": -0.57546
+      },
+      "relativeMs": 40641
+    },
+    {
+      "quaternion": {
+        "x": 0.02738,
+        "y": 0.01752,
+        "z": -0.61458,
+        "w": -0.78817
+      },
+      "relativeMs": 40822
+    },
+    {
+      "quaternion": {
+        "x": 0.04477,
+        "y": -0.02936,
+        "z": -0.6288,
+        "w": -0.77569
+      },
+      "relativeMs": 41032
+    },
+    {
+      "quaternion": {
+        "x": 0.06064,
+        "y": -0.0239,
+        "z": -0.63878,
+        "w": -0.76659
+      },
+      "relativeMs": 41132
+    }
+  ],
+  "date": 1775625271801,
+  "driver": "cube",
+  "method": "roux",
+  "id": -3,
+  "isExample": true
+}
+
+// ── Collections — add new solves here ─────────────────────────────────────────
+export const CFOP_SOLVES: SolveRecord[] = [CFOP_SOLVE_1, CFOP_SOLVE_2]
+export const ROUX_SOLVES: SolveRecord[] = [ROUX_SOLVE_1]

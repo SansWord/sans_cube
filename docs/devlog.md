@@ -4,6 +4,26 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## v1.8 — Method Update in SolveDetailModal (2026-04-13 19:05)
+**Review:** not yet
+
+**What was built:**
+- **Method selector in SolveDetailModal**: `MethodSelector` added to the "Detailed Analysis" header — lets the user switch a stored solve between CFOP and Roux (and any future method) without leaving the modal.
+- **`recomputePhases` utility** (`src/utils/recomputePhases.ts`): pure function that replays `solve.moves` against facelets, detects phase transitions via `phase.isComplete(facelets)`, computes `recognitionMs`/`executionMs` from `cubeTimestamp` diffs, and applies CFOP merge rules (EOLL/COLL, CPLL/EPLL) matched by label — no-op for non-CFOP methods. Returns `null` if the cube is not solved after all moves.
+- **`updateSolve` in `useSolveHistory`**: replaces a solve by `id` in localStorage, or calls `updateSolveInFirestore` (idempotent `setDoc`) in cloud mode.
+- **Optimistic update with rollback**: `SolveDetailModal` updates `localSolve` immediately for instant UI feedback, disables the MethodSelector and Delete button while saving, and rolls back on error using a `previousSolve` capture before the optimistic update.
+- **Inline error message**: `recomputePhases` returning `null` (corrupt/incomplete solve) shows a 4-second inline error — no toast component exists yet.
+- **Round-trip tests** (`tests/utils/recomputePhases.test.ts`): data-provider style with `it.each` over `CFOP_SOLVES` and `ROUX_SOLVES` arrays. Verifies CFOP→Roux→CFOP and Roux→CFOP→Roux produce exactly identical `turns`, `recognitionMs`, and `executionMs`.
+- **`tests/fixtures/solveFixtures.ts`**: real solve records copied from `exampleSolves.ts` with quaternion fields stripped. `CFOP_SOLVES` (2 solves) and `ROUX_SOLVES` (1 solve) — append to these arrays to expand test coverage.
+
+**Key technical learnings:**
+- **Stale closure in rollback.** Writing `setLocalSolve(localSolve)` in a `catch` block captures `localSolve` from the closure at function-definition time — it may already reflect the optimistic update. The fix: `const previousSolve = localSolve` before any state mutation, then `setLocalSolve(previousSolve)` in `catch`.
+- **Round-trip timing is exact, not approximate.** `recomputePhases` reads raw `cubeTimestamp` integers from `solve.moves` — those never change. The same moves, replayed against the same cube states, hit the same phase boundaries every time. `toBe` (strict equality) is correct, not `toBeCloseTo`.
+- **`phase.isComplete(facelets)` is called after each move, not before.** The while-loop pattern used in `useTimer` advances through phases as each move lands — including multiple phase completions on a single move (e.g. OLL skip completes cross+F2L+OLL simultaneously).
+- **CFOP merge rules are label-matched, making them a safe no-op for other methods.** Checking `phases[i].label === 'EOLL'` means the same merge logic can run unconditionally after any method recompute — if the labels aren't present, nothing happens.
+
+---
+
 ## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09 23:24)
 **Review:** not yet
 

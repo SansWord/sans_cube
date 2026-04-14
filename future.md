@@ -5,6 +5,8 @@
 
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
+- Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412
+- [trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection
 
 ## Solving Methods
 - ZZ method support
@@ -31,6 +33,8 @@
 - ~~for time type toggle - add a toggle to show exec + recog~~ — done in v1.5 (Total/Exec/Recog independently toggleable)
 - ~~for phases - allow to hide/show each phases~~ — done in v1.5 (click legend label to hide/show)
 - ~~range selection: choose a range and show only that range, with a reset-button~~ — done in v1.5 (drag-to-zoom with multi-level stack, ← Back, Reset zoom)
+- ao5, ao12 for phases?
+- filter by driver
 
 
 ## Miscs

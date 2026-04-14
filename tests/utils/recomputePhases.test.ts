@@ -4,7 +4,7 @@ import { recomputePhases } from '../../src/utils/recomputePhases'
 import { isSolvedFacelets } from '../../src/hooks/useCubeState'
 import { CFOP } from '../../src/methods/cfop'
 import { ROUX } from '../../src/methods/roux'
-import { EXAMPLE_SOLVES } from '../../src/data/exampleSolves'
+import { CFOP_SOLVES, ROUX_SOLVES } from '../fixtures/solveFixtures'
 import type { SolveRecord, SolveMethod } from '../../src/types/solve'
 import type { Move } from '../../src/types/cube'
 
@@ -82,64 +82,112 @@ describe('recomputePhases', () => {
     expect(phases[0].executionMs).toBe(2000)
   })
 
-  it('total turns across phases equals move count for a real CFOP example solve', () => {
-    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
-    if (!cfopSolve) throw new Error('No CFOP example solve found')
-    const phases = recomputePhases(cfopSolve, CFOP)
-    expect(phases).not.toBeNull()
-    const totalTurns = phases!.reduce((sum, p) => sum + p.turns, 0)
-    expect(totalTurns).toBe(cfopSolve.moves.length)
+  it.each(CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}`, solve: s })))(
+    'total turns across phases equals move count ($label)',
+    ({ solve }) => {
+      const phases = recomputePhases(solve, CFOP)
+      expect(phases).not.toBeNull()
+      expect(phases!.reduce((sum, p) => sum + p.turns, 0)).toBe(solve.moves.length)
+    }
+  )
+
+  it.each(ROUX_SOLVES.map((s, i) => ({ label: `Roux solve ${i + 1}`, solve: s })))(
+    'total turns across phases equals move count ($label)',
+    ({ solve }) => {
+      const phases = recomputePhases(solve, ROUX)
+      expect(phases).not.toBeNull()
+      expect(phases!.reduce((sum, p) => sum + p.turns, 0)).toBe(solve.moves.length)
+    }
+  )
+
+  it.each(CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}`, solve: s })))(
+    'all phases have non-negative recognitionMs and executionMs ($label)',
+    ({ solve }) => {
+      const phases = recomputePhases(solve, CFOP)
+      expect(phases).not.toBeNull()
+      for (const p of phases!) {
+        expect(p.recognitionMs).toBeGreaterThanOrEqual(0)
+        expect(p.executionMs).toBeGreaterThanOrEqual(0)
+      }
+    }
+  )
+
+  it.each(CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}`, solve: s })))(
+    'phase labels are all from the CFOP phase list ($label)',
+    ({ solve }) => {
+      const phases = recomputePhases(solve, CFOP)
+      expect(phases).not.toBeNull()
+      const validLabels = new Set(CFOP.phases.map((p) => p.label))
+      for (const p of phases!) {
+        expect(validLabels.has(p.label)).toBe(true)
+      }
+    }
+  )
+
+  // ── Round-trip tests ──────────────────────────────────────────────────────
+  // Each case: solve with startMethod → recompute to midMethod → recompute back → compare with original.
+  // turns, recognitionMs, and executionMs must be exactly equal after a full round-trip.
+  // To add a new case: add a solve to CFOP_SOLVES or ROUX_SOLVES in tests/fixtures/solveFixtures.ts.
+
+  const ROUND_TRIP_CASES: {
+    label: string
+    solve: SolveRecord
+    startMethod: SolveMethod
+    midMethod: SolveMethod
+  }[] = [
+    ...CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}: CFOP→Roux→CFOP`, solve: s, startMethod: CFOP, midMethod: ROUX })),
+    ...ROUX_SOLVES.map((s, i) => ({ label: `Roux solve ${i + 1}: Roux→CFOP→Roux`, solve: s, startMethod: ROUX, midMethod: CFOP })),
+  ]
+
+  it.each(ROUND_TRIP_CASES)('round-trip turns: $label', ({ solve, startMethod, midMethod }) => {
+    const original = recomputePhases(solve, startMethod)
+    expect(original).not.toBeNull()
+
+    const mid = recomputePhases(solve, midMethod)
+    expect(mid).not.toBeNull()
+
+    const withMidMethod: SolveRecord = { ...solve, method: midMethod.id, phases: mid! }
+    const roundTrip = recomputePhases(withMidMethod, startMethod)
+    expect(roundTrip).not.toBeNull()
+
+    // same moves → same cube states → same phase boundaries → identical turn counts
+    expect(roundTrip!.map((p) => p.turns)).toEqual(original!.map((p) => p.turns))
   })
 
-  it('total turns across phases equals move count for a real Roux example solve', () => {
-    const rouxSolve = EXAMPLE_SOLVES.find((s) => s.method === 'roux' && s.moves.length > 0)
-    if (!rouxSolve) throw new Error('No Roux example solve found')
-    const phases = recomputePhases(rouxSolve, ROUX)
-    expect(phases).not.toBeNull()
-    const totalTurns = phases!.reduce((sum, p) => sum + p.turns, 0)
-    expect(totalTurns).toBe(rouxSolve.moves.length)
-  })
+  it.each(ROUND_TRIP_CASES)('round-trip timing: $label', ({ solve, startMethod, midMethod }) => {
+    const original = recomputePhases(solve, startMethod)
+    expect(original).not.toBeNull()
 
-  it('all phases have non-negative recognitionMs and executionMs', () => {
-    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
-    if (!cfopSolve) throw new Error('No CFOP example solve found')
-    const phases = recomputePhases(cfopSolve, CFOP)
-    expect(phases).not.toBeNull()
-    for (const p of phases!) {
-      expect(p.recognitionMs).toBeGreaterThanOrEqual(0)
-      expect(p.executionMs).toBeGreaterThanOrEqual(0)
+    const mid = recomputePhases(solve, midMethod)
+    expect(mid).not.toBeNull()
+
+    const withMidMethod: SolveRecord = { ...solve, method: midMethod.id, phases: mid! }
+    const roundTrip = recomputePhases(withMidMethod, startMethod)
+    expect(roundTrip).not.toBeNull()
+
+    // cubeTimestamps are immutable → timing is exactly equal, not just approximately
+    for (let i = 0; i < original!.length; i++) {
+      expect(roundTrip![i].recognitionMs).toBe(original![i].recognitionMs)
+      expect(roundTrip![i].executionMs).toBe(original![i].executionMs)
     }
   })
 
-  it('CFOP recompute produces phases whose labels are all from the CFOP phase list', () => {
-    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
-    if (!cfopSolve) throw new Error('No CFOP example solve found')
-    const phases = recomputePhases(cfopSolve, CFOP)
-    expect(phases).not.toBeNull()
-    const validLabels = new Set(CFOP.phases.map((p) => p.label))
-    for (const p of phases!) {
-      expect(validLabels.has(p.label)).toBe(true)
+  it.each(CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}`, solve: s })))(
+    'CFOP merge rules: phase count <= CFOP phases, CPLL absorbed when 0 turns ($label)',
+    ({ solve }) => {
+      // If the solve contains a CPLL with 0 turns, verify the merge ran correctly.
+      // If it does not trigger this case, this test still validates phase count is <= CFOP.phases.length.
+      const phases = recomputePhases(solve, CFOP)
+      expect(phases).not.toBeNull()
+      expect(phases!.length).toBeLessThanOrEqual(CFOP.phases.length)
+      const cpll = phases!.find((p) => p.label === 'CPLL')
+      const epll = phases!.find((p) => p.label === 'EPLL')
+      if (cpll && epll && cpll.turns === 0) {
+        expect(cpll.recognitionMs).toBe(0)
+        expect(cpll.executionMs).toBe(0)
+        expect(epll.recognitionMs).toBeGreaterThanOrEqual(0)
+        expect(epll.executionMs).toBeGreaterThanOrEqual(0)
+      }
     }
-  })
-
-  it('CFOP merge rules: if CPLL phase has 0 turns it is absorbed (turns=0 and EPLL gets the timing)', () => {
-    // Use real CFOP example solve — if it contains a CPLL with 0 turns, verify the merge ran correctly.
-    // If the example solve does not trigger this case, this test still validates phase count is <= CFOP.phases.length.
-    const cfopSolve = EXAMPLE_SOLVES.find((s) => (s.method ?? 'cfop') === 'cfop' && s.moves.length > 0)
-    if (!cfopSolve) throw new Error('No CFOP example solve found')
-    const phases = recomputePhases(cfopSolve, CFOP)
-    expect(phases).not.toBeNull()
-    // After merge rules, phase count should be <= number of CFOP phases (never more)
-    expect(phases!.length).toBeLessThanOrEqual(CFOP.phases.length)
-    // If CPLL has 0 turns, the merged CPLL should carry 0 turns and EPLL should carry the timing
-    const cpll = phases!.find((p) => p.label === 'CPLL')
-    const epll = phases!.find((p) => p.label === 'EPLL')
-    if (cpll && epll && cpll.turns === 0) {
-      // Merge rule ran: CPLL has 0 recognition and execution, EPLL has the combined timing
-      expect(cpll.recognitionMs).toBe(0)
-      expect(cpll.executionMs).toBe(0)
-      expect(epll.recognitionMs).toBeGreaterThanOrEqual(0)
-      expect(epll.executionMs).toBeGreaterThanOrEqual(0)
-    }
-  })
+  )
 })

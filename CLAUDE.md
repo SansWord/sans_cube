@@ -62,8 +62,18 @@ npm run test      # run Vitest tests
 npm run lint      # ESLint
 ```
 
-## Current State (as of 2026-04-09)
+## Test Fixtures
 
+Real solve records used in tests live in `tests/fixtures/solveFixtures.ts`. Quaternion fields are stripped (not needed for phase logic). To add a new test case:
+
+1. Export a new `const MY_SOLVE: SolveRecord = { ... }` — paste a solve from the app's localStorage (`sans_cube_solves`) and strip the `quaternion` field from each move entry.
+2. Append it to `CFOP_SOLVES` or `ROUX_SOLVES` at the bottom of the file.
+
+All `it.each`-based tests in `recomputePhases.test.ts` expand automatically — no changes to the test file needed.
+
+## Current State (as of 2026-04-13)
+
+- **v1.8** complete — Method update in SolveDetailModal (CFOP ↔ Roux), recomputePhases utility, updateSolve persistence, round-trip tests
 - **v1.7** complete — URL deep link fixes for cloud sync (#solve-N, #trends), hashchange listener, loading overlay, code dedup
 - **v1.6** complete — Hardware clock timing fix (BLE delay), retroactive recalibration buttons, copy solve list as TSV, sidebar scroll fix
 - **v1.51** — Stats Trends polish (click-to-detail, Esc chain, phases multi-toggle)
