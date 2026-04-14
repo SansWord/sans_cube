@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.10 — Solve Sharing (2026-04-13 21:55)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-13-solve-sharing-design.md) · [Plan](superpowers/plans/2026-04-13-solve-sharing.md)
 
 **What was built:**
@@ -43,6 +44,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.8 — Method Update in SolveDetailModal (2026-04-13 19:05)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-13-method-update-design.md) · [Plan](superpowers/plans/2026-04-13-method-update.md)
 
 **What was built:**
@@ -64,6 +66,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09 23:24)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-06-url-autoplay-design.md)
 
 **What was built:**
@@ -128,6 +131,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.51 — Stats Trends Polish (2026-04-09 14:01)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-09-stats-trends-design.md) · [Plan](superpowers/plans/2026-04-09-stats-trends.md)
 
 **What was built:**
@@ -153,6 +157,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.5 — Stats Trends Enhancements (2026-04-09 14:01)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-09-stats-trends-design.md) · [Plan](superpowers/plans/2026-04-09-stats-trends.md)
 
 **What was built:**
@@ -187,6 +192,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.5 — Stats Trends Initial Implementation (2026-04-09 05:18)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-09-stats-trends-design.md) · [Plan](superpowers/plans/2026-04-09-stats-trends.md)
 
 **What was built:**
@@ -213,6 +219,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ## v1.5 — Stats Trends Design Session (2026-04-09 01:59)
 **Review:** complete
+
 **Design docs:** [Spec](superpowers/specs/2026-04-09-stats-trends-design.md)
 
 **What was designed:**
@@ -316,6 +323,7 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ## v1.4 — Method Filter in Solve History Sidebar (2026-04-08 23:05)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-08-method-filter-design.md) · [Plan](superpowers/plans/2026-04-08-method-filter.md)
 
 **What was built:**
@@ -371,6 +379,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ## v1.3 — Firebase Cloud Sync (2026-04-08 13:29)
 **Review:** not yet
+
 **Design docs:** [Plan](superpowers/plans/2026-04-08-firebase-cloud-sync.md)
 
 **What was built:**
@@ -409,6 +418,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ## v1.2 — Mobile & Polish (2026-04-06)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-04-01-mobile-touch-design.md) · [Plan](superpowers/plans/2026-04-01-mobile-touch.md)
 
 **What was built:**
@@ -428,6 +438,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ## v1.1 — Roux Method + Slice Moves (2026-04-03 to 2026-04-05)
 **Review:** not yet
+
 **Design docs:** Roux — [Spec](superpowers/specs/2026-04-07-roux-method-design.md) · [Plan](superpowers/plans/2026-04-07-roux-method.md); Slice moves — [Spec](superpowers/specs/2026-04-07-slice-moves-design.md) · [Plan](superpowers/plans/2026-04-07-slice-moves.md)
 
 **What was built:**
@@ -448,6 +459,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ## v1.0 — Scramble Tracker + Timer + Solve History (2026-03-31 to 2026-04-02)
 **Review:** not yet
+
 **Design docs:** Timer — [Spec](superpowers/specs/2026-03-31-scramble-timer-design.md) · [Plan](superpowers/plans/2026-03-31-scramble-timer.md); Phase bar — [Spec](superpowers/specs/2026-04-01-phase-bar-hover-indicator-design.md) · [Plan](superpowers/plans/2026-04-01-phase-bar-hover-indicator.md)
 
 **What was built:**
@@ -474,6 +486,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ## v0.4 — Example Solves + Button Driver (2026-03-30)
 **Review:** not yet
+
 **Design docs:** [Spec](superpowers/specs/2026-03-30-gan-cube-web-app-design.md) · [Plan](superpowers/plans/2026-03-30-gan-cube-phase1.md)
 
 **What was built:**
