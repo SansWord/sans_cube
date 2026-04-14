@@ -4,6 +4,7 @@ import type { CubeDriver } from '../drivers/CubeDriver'
 import type { ConnectionStatus } from '../drivers/CubeDriver'
 import { STORAGE_KEYS } from '../utils/storageKeys'
 import type { SolveRecord, MethodFilter } from '../types/solve'
+import { useCubeDriverEvent } from '../hooks/useCubeDriverEvent'
 import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
 import type { TrackingState } from '../hooks/useScrambleTracker'
@@ -20,7 +21,7 @@ import { SolveHistorySidebar } from './SolveHistorySidebar'
 import { SolveDetailModal } from './SolveDetailModal'
 import { TrendsModal } from './TrendsModal'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
-import type { Quaternion, Move, Face } from '../types/cube'
+import type { Quaternion, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
 import { shareSolve, unshareSolve, loadSharedSolve, SHARE_ID_RE } from '../services/firestoreSharing'
@@ -62,13 +63,7 @@ export function TimerScreen({
   const resetOrientationRef = useRef<(() => void) | null>(null)
   const { solves, addSolve, deleteSolve, updateSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = (m: Move) => rendererRef.current?.animateMove(m.face, m.direction, 150)
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion])
+  useCubeDriverEvent(driver, 'move', (m) => rendererRef.current?.animateMove(m.face, m.direction, 150), driverVersion)
 
   const { scramble, steps, regenerate, load: loadScramble } = useScramble()
   const [armed, setArmed] = useState(false)
@@ -186,20 +181,14 @@ export function TimerScreen({
   trackingStateRef.current = tracker.trackingState
   const dGestureStatesRef = useRef<TrackingState[]>([])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = (move: Move) => {
-      if (move.face === 'D') {
-        dGestureStatesRef.current.push(trackingStateRef.current)
-        if (dGestureStatesRef.current.length > 4) dGestureStatesRef.current.shift()
-      } else {
-        dGestureStatesRef.current = []
-      }
+  useCubeDriverEvent(driver, 'move', (move) => {
+    if (move.face === 'D') {
+      dGestureStatesRef.current.push(trackingStateRef.current)
+      if (dGestureStatesRef.current.length > 4) dGestureStatesRef.current.shift()
+    } else {
+      dGestureStatesRef.current = []
     }
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion])
+  }, driverVersion)
 
   const { method, setMethod } = useMethod()
 
@@ -384,7 +373,7 @@ export function TimerScreen({
 
           <MethodSelector
             method={method}
-            onChange={(m) => { setMethod(m); setArmed(false); resetTimer() }}
+            onChange={(m) => { setMethod(m); if (!armed) resetTimer() }}
             disabled={status === 'solving'}
           />
 

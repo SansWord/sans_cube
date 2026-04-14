@@ -165,7 +165,7 @@ export function PhaseBar({ phaseRecords, method, interactive = true, indicatorPc
       </div>
 
       {/* Hover tooltip */}
-      {hoveredIndex !== null && (() => {
+      {hoveredIndex !== null && hoveredIndex < phaseRecords.length && (() => {
         const p = phaseRecords[hoveredIndex]
         const stepMs = p.recognitionMs + p.executionMs
         const pct = ((stepMs / totalMs) * 100).toFixed(1)
