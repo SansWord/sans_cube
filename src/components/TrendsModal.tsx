@@ -350,6 +350,7 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   const [hiddenPhases, setHiddenPhases] = useState<Set<string>>(new Set())
   const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
   const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
+  const refAreaRightRef = useRef<number | null>(null)
   const [zoomStack, setZoomStack] = useState<Array<[number, number]>>([])
 
   const filtered = filterSolves(solves, methodFilter)
@@ -444,20 +445,31 @@ export function TrendsModal({ solves, methodFilter, setMethodFilter, onSelectSol
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChartMouseMove = (e: any) => {
     if (refAreaLeft !== null && e?.activeLabel != null) {
-      setRefAreaRight(Number(e.activeLabel))
+      const val = Number(e.activeLabel)
+      setRefAreaRight(val)
+      refAreaRightRef.current = val
     }
   }
 
   const handleChartMouseUp = () => {
-    if (refAreaLeft !== null && refAreaRight !== null && Math.abs(refAreaRight - refAreaLeft) >= 2) {
-      const l = Math.min(refAreaLeft, refAreaRight)
-      const r = Math.max(refAreaLeft, refAreaRight)
+    const right = refAreaRightRef.current
+    if (refAreaLeft !== null && right !== null && Math.abs(right - refAreaLeft) >= 2) {
+      const l = Math.min(refAreaLeft, right)
+      const r = Math.max(refAreaLeft, right)
       setZoomStack(prev => [...prev, [l, r]])
       didZoomRef.current = true
     }
     setRefAreaLeft(null)
     setRefAreaRight(null)
+    refAreaRightRef.current = null
   }
+
+  // Finish drag selection when mouse releases outside the chart (e.g. outside the window)
+  useEffect(() => {
+    if (refAreaLeft === null) return
+    document.addEventListener('mouseup', handleChartMouseUp)
+    return () => document.removeEventListener('mouseup', handleChartMouseUp)
+  }, [refAreaLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChartClick = (_e: any) => {

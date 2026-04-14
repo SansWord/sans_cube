@@ -6,7 +6,7 @@
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
 - Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
-- [trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection
+- ~~[trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection~~ — fixed in v1.13
 
 ## Solving Methods
 - ZZ method support
@@ -35,6 +35,7 @@
 - ~~range selection: choose a range and show only that range, with a reset-button~~ — done in v1.5 (drag-to-zoom with multi-level stack, ← Back, Reset zoom)
 - ao5, ao12 for phases?
 - filter by driver
+- TrendsModal.tsx refactor (786 lines) — god component: chart data transform + color math + tooltips + controls + all state. Consider when actively working on trends features.
 
 
 ## Miscs
@@ -45,14 +46,9 @@
 ## Code Quality (Refactor Backlog)
 Scanned 2026-04-09. Items #1, #2, #4, #5, #8, #9 done. ~~#10 was a false positive~~ (`bestAo` is not exported and IS used). Remaining:
 
-**#3 — TrendsModal.tsx is 786 lines** (High effort)
-- God component: chart data transform + color math + tooltips + controls + all state
-- Fix: extract TrendsControls, TrendsChartContainer, color utils to src/utils/colorConversion.ts
-- Low priority unless actively working on trends
+~~**#3 — TrendsModal.tsx is 786 lines**~~ — moved to Statistic section
 
-**#6 — useReplayController.ts `playFrom` is 70 lines** (Low severity, readability only)
-- Timing + gyro logic are two independent setup blocks inline in one function
-- Fix: extract `startIndicatorAndGyroLoop(startOffsetMs)` helper to make the structure visible
+**~~#6 — useReplayController.ts `playFrom` is 70 lines~~** — skipped; not worth it. The only extract with real value (`scheduleMoves` as a pure function) has low ROI since this code isn't changing. Cosmetic inner-function rename doesn't improve understandability enough to justify the churn.
 
 **~~#7 — TimerScreen.tsx 10 useState declarations~~** — done in v1.13 (`useSharedSolve` extracted)
 
