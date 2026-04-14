@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.16.0](#v1160--mac-address-persistence--internal-user-analytics-filter-2026-04-14) | MAC address persistence — save/reuse BLE MAC on macOS, auto-clear on bad MAC; internal user tagged in Analytics |
 | [v1.15.0](#v1150--driver-filter-for-sidebar-stats-and-trends-2026-04-14-0357) | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
 | [v1.14.0](#v1140--trends-chart-animation-tuning-2026-04-14) | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
 | [v1.13.0](#v1130--usesharedsolve-extraction-shared-link-fixes-drag-to-zoom-fix-2026-04-14-0136) | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
@@ -39,6 +40,23 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.16.0 — MAC address persistence + internal user analytics filter (2026-04-14)
+
+**Review:** not yet
+
+**What was built:**
+- `GanCubeDriver`: saves cube's BLE MAC address to `localStorage` after first manual entry on macOS; reuses it on subsequent connections so the prompt never appears again
+- `GanCubeDriver`: auto-clears saved MAC on connection failure (unless the user cancelled the BLE picker), so a bad MAC doesn't silently block future connections
+- `analytics.ts`: tags the developer's account with `internal_user: 'true'` user property so their sessions can be filtered out in GA4 reports
+
+**Key technical learnings:**
+- `[insight]` macOS hides real BLE MAC addresses from Web Bluetooth apps — the GAN library falls back to prompting the user. Caching the entered value in localStorage makes this a one-time setup.
+- `[gotcha]` Web Bluetooth user-cancellation throws `DOMException` with `name === 'NotFoundError'`. Must distinguish this from a failed connection (bad MAC) to avoid incorrectly clearing a valid saved MAC.
+- `[note]` GA4 custom user properties must be registered under Admin → Custom definitions before they appear as filterable dimensions; 24–48 hour delay after registration.
+- `[note]` Firebase UIDs are not secrets — safe to hardcode in source for internal-user tagging. Firestore security rules are what protect data.
 
 ---
 

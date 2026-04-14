@@ -14,6 +14,7 @@
 | `sans_cube_driver_filter` | `string` | Driver display filter (`'all'`, `'cube'`, or `'mouse'`). Affects sidebar stats and Trends chart. |
 | `sans_cube_cloud_sync_enabled` | `boolean` (JSON) | Whether cloud sync is enabled. Auth state is managed by Firebase SDK separately. |
 | `sans_cube_analytics_acknowledged` | `"true"` | Set when user dismisses the analytics consent banner |
+| `sans_cube_mac_address` | `string` | Cube's Bluetooth MAC address, saved after first manual entry on macOS where the OS hides the real MAC from Web Bluetooth |
 
 ---
 
@@ -81,6 +82,7 @@ Private ownership registry. Empty document — its existence proves the authenti
 | Method display filter | `sans_cube_method_filter` | — | localStorage only. Not synced. |
 | Driver display filter | `sans_cube_driver_filter` | — | localStorage only. Not synced. |
 | Cloud sync enabled | `sans_cube_cloud_sync_enabled` | — | localStorage only. Firebase Auth session is managed by the Firebase SDK independently. |
+| Cube MAC address | `sans_cube_mac_address` | — | localStorage only. Not synced. Only needed on macOS. |
 
 ### Sync rules for the seq counter
 

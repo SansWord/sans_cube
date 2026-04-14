@@ -9,4 +9,5 @@ export const STORAGE_KEYS = {
   DRIVER_FILTER: 'sans_cube_driver_filter',
   CLOUD_SYNC_ENABLED: 'sans_cube_cloud_sync_enabled',
   ANALYTICS_ACKNOWLEDGED: 'sans_cube_analytics_acknowledged',
+  CUBE_MAC_ADDRESS: 'sans_cube_mac_address',
 } as const

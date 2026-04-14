@@ -1,6 +1,7 @@
 import { connectGanCube } from 'gan-web-bluetooth'
 import { CubeEventEmitter, type CubeDriver } from './CubeDriver'
 import type { Move, Quaternion, Face } from '../types/cube'
+import { STORAGE_KEYS } from '../utils/storageKeys'
 
 // GAN face index → standard face letter
 // GAN Gen4: face index 0-5 maps to U,R,F,D,L,B
@@ -13,10 +14,20 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
 
   async connect(): Promise<void> {
     this.emit('connection', 'connecting')
+    let usedSavedMac = false
     try {
       this.connection = await connectGanCube(
-        async (_device: unknown, isFallback: boolean | undefined) =>
-          isFallback ? prompt('Enter cube MAC address (check cube box or nRF Connect app)') : null
+        async (_device: unknown, isFallback: boolean | undefined) => {
+          if (!isFallback) return null
+          const saved = localStorage.getItem(STORAGE_KEYS.CUBE_MAC_ADDRESS)
+          if (saved) {
+            usedSavedMac = true
+            return saved
+          }
+          const entered = prompt('Enter cube MAC address (check cube box or nRF Connect app)')
+          if (entered) localStorage.setItem(STORAGE_KEYS.CUBE_MAC_ADDRESS, entered)
+          return entered
+        }
       )
       this.connection.events$.subscribe((event: Record<string, unknown>) => {
         this._handleGanEvent(event)
@@ -27,6 +38,11 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
         this.connection?.sendCubeCommand({ type: 'REQUEST_BATTERY' }).catch(() => {})
       }, 60_000)
     } catch (err) {
+      // If we used a saved MAC and the failure wasn't the user cancelling the BLE picker,
+      // the MAC is likely wrong — clear it so the next attempt prompts for a fresh one.
+      if (usedSavedMac && !isUserCancellation(err)) {
+        localStorage.removeItem(STORAGE_KEYS.CUBE_MAC_ADDRESS)
+      }
       this.emit('connection', 'disconnected')
       throw err
     }
@@ -89,4 +105,10 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
   _simulateGanDisconnect(): void {
     this._handleGanEvent({ type: 'DISCONNECT' })
   }
+}
+
+// Web Bluetooth throws a NotFoundError DOMException when the user dismisses the
+// device picker without selecting anything. That's not a bad MAC — don't clear it.
+function isUserCancellation(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'NotFoundError'
 }

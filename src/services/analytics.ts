@@ -1,5 +1,7 @@
-import { logEvent, setUserId as firebaseSetUserId } from 'firebase/analytics'
+import { logEvent, setUserId as firebaseSetUserId, setUserProperties } from 'firebase/analytics'
 import { analytics } from './firebase'
+
+const INTERNAL_UIDS = new Set(['AwTLJ8R31eSP3fZWv14BY2kyeKs2'])
 
 export function logSharedSolveViewed(shareId: string): void {
   if (!analytics) return
@@ -34,4 +36,7 @@ export function logCloudSyncEnabled(): void {
 export function setAnalyticsUser(uid: string | null): void {
   if (!analytics) return
   firebaseSetUserId(analytics, uid)
+  setUserProperties(analytics, {
+    internal_user: uid && INTERNAL_UIDS.has(uid) ? 'true' : null,
+  })
 }
