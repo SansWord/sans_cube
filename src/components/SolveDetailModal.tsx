@@ -59,6 +59,8 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
 
 const AUTO_PLAY_DELAY_MS = 500
 
+type ShareState = 'idle' | 'sharing' | 'unsharing'
+
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUpdate, onShare, onUnshare, readOnly }: Props) {
   const [localSolve, setLocalSolve] = useState(solve)
   const [saving, setSaving] = useState(false)
@@ -71,7 +73,6 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copiedSteps, setCopiedSteps] = useState(false)
   const [copiedExample, setCopiedExample] = useState(false)
-  type ShareState = 'idle' | 'sharing' | 'unsharing'
   const [shareState, setShareState] = useState<ShareState>('idle')
   const [shareCopied, setShareCopied] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
@@ -425,9 +426,9 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                <MethodSelector method={method} onChange={handleMethodChange} disabled={saving} />
-                {savedConfirmation && <span style={{ color: '#4c4', fontSize: 11 }}>Saved ✓</span>}
-                {methodError && <span style={{ color: '#e74c3c', fontSize: 11 }}>{methodError}</span>}
+                <MethodSelector method={method} onChange={handleMethodChange} disabled={saving || !!readOnly} />
+                {!readOnly && savedConfirmation && <span style={{ color: '#4c4', fontSize: 11 }}>Saved ✓</span>}
+                {!readOnly && methodError && <span style={{ color: '#e74c3c', fontSize: 11 }}>{methodError}</span>}
               </div>
             </div>
             <div ref={phaseBarRef} className="analysis-phasebar">
