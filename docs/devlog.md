@@ -18,11 +18,11 @@ A record of what was built and what was learned, especially around co-working wi
 - **Firestore data model**: `public_solves/{shareId}` (publicly readable by ID, not listable), `users/{uid}/shared_solves/{shareId}` (empty ownership registry — `exists()` check in rules avoids storing `ownerUid` in the public doc).
 
 **Key technical learnings:**
-- **`useEffect` ordering causes URL-hash clearing before async state applies.** Effects run synchronously in definition order on mount. A URL-update effect that clears the hash fires with `sharedSolveLoading = false` even though the boot effect's `setSharedSolveLoading(true)` call is batched and hasn't taken effect yet. Fix: explicitly restore the `#shared-{shareId}` hash after the fetch resolves, rather than relying on the guard alone.
-- **`request.resource.size` is not a valid Firestore rules property.** It evaluates to `null`, making `null < 200000` always `false` — silently denying all writes. Firestore enforces a 1 MB document limit at the storage layer; no explicit size check is needed in rules.
-- **Write ordering matters for `exists()` checks in security rules.** The registry doc (`users/{uid}/shared_solves/{shareId}`) must be written before the public doc (`public_solves/{shareId}`) — the `create` rule's `exists()` check reads the registry server-side. Unshare reverses the order: delete public doc first (while registry still exists for the `delete` rule), then delete registry.
-- **Wildcard user rule must cover `meta/counter`.** Explicit per-collection rules (`/users/{uid}/solves/{id}`, `/users/{uid}/shared_solves/{id}`) miss the counter doc at `users/{uid}/meta/counter`. The wildcard `match /users/{userId}/{collection}/{docId}` covers all two-segment paths under any user, including `meta/counter`.
-- **`crypto.getRandomValues()` not `Math.random()` for capability URLs.** Share IDs are unguessable tokens — their security depends on entropy. `Math.random()` is not cryptographically secure. `crypto.getRandomValues()` gives the same API surface with proper randomness.
+- `[gotcha]` **`useEffect` ordering causes URL-hash clearing before async state applies.** Effects run synchronously in definition order on mount. A URL-update effect that clears the hash fires with `sharedSolveLoading = false` even though the boot effect's `setSharedSolveLoading(true)` call is batched and hasn't taken effect yet. Fix: explicitly restore the `#shared-{shareId}` hash after the fetch resolves, rather than relying on the guard alone.
+- `[gotcha]` **`request.resource.size` is not a valid Firestore rules property.** It evaluates to `null`, making `null < 200000` always `false` — silently denying all writes. Firestore enforces a 1 MB document limit at the storage layer; no explicit size check is needed in rules.
+- `[insight]` **Write ordering matters for `exists()` checks in security rules.** The registry doc (`users/{uid}/shared_solves/{shareId}`) must be written before the public doc (`public_solves/{shareId}`) — the `create` rule's `exists()` check reads the registry server-side. Unshare reverses the order: delete public doc first (while registry still exists for the `delete` rule), then delete registry.
+- `[gotcha]` **Wildcard user rule must cover `meta/counter`.** Explicit per-collection rules (`/users/{uid}/solves/{id}`, `/users/{uid}/shared_solves/{id}`) miss the counter doc at `users/{uid}/meta/counter`. The wildcard `match /users/{userId}/{collection}/{docId}` covers all two-segment paths under any user, including `meta/counter`.
+- `[insight]` **`crypto.getRandomValues()` not `Math.random()` for capability URLs.** Share IDs are unguessable tokens — their security depends on entropy. `Math.random()` is not cryptographically secure. `crypto.getRandomValues()` gives the same API surface with proper randomness.
 
 ---
 
@@ -36,10 +36,10 @@ A record of what was built and what was learned, especially around co-working wi
 - **Fix flow reuses `SolveDetailModal`**: clicking a flagged solve opens it in `SolveDetailModal` with full `onUpdate`/`onDelete` wiring. After a method change, the mismatch panel re-runs `detectMethodMismatches` on just that solve — removes it from the list if fixed, updates in place if still flagged.
 
 **Key technical learnings:**
-- **M-move count is the strongest signal for BLE Roux solves.** Roux LSE uses only M and U moves — a typical solve has 10–20 M moves. CFOP almost never exceeds 4 M moves. Threshold ≥ 8 avoids false positives.
-- **Recomputing under the wrong method bloats the first phase.** CFOP Cross turns and Roux FB turns each have a natural ceiling (~15 and ~18 respectively). If a solve exceeds the ceiling under method A but not method B, it's a strong signal the solve was done with method B.
-- **Don't flag ambiguous cases.** If both methods produce a plausible first phase, `suggestMethod` returns `null` — the solve is skipped. False positives are more damaging than false negatives for a correction tool.
-- **Reusing `SolveDetailModal` for the fix flow avoids building new UI.** The modal already has `MethodSelector`, `onUpdate`, and `onDelete` — connecting it to the debug panel's `selectedDebugSolve` state was enough to make the full fix flow work.
+- `[insight]` **M-move count is the strongest signal for BLE Roux solves.** Roux LSE uses only M and U moves — a typical solve has 10–20 M moves. CFOP almost never exceeds 4 M moves. Threshold ≥ 8 avoids false positives.
+- `[insight]` **Recomputing under the wrong method bloats the first phase.** CFOP Cross turns and Roux FB turns each have a natural ceiling (~15 and ~18 respectively). If a solve exceeds the ceiling under method A but not method B, it's a strong signal the solve was done with method B.
+- `[insight]` **Don't flag ambiguous cases.** If both methods produce a plausible first phase, `suggestMethod` returns `null` — the solve is skipped. False positives are more damaging than false negatives for a correction tool.
+- `[note]` **Reusing `SolveDetailModal` for the fix flow avoids building new UI.** The modal already has `MethodSelector`, `onUpdate`, and `onDelete` — connecting it to the debug panel's `selectedDebugSolve` state was enough to make the full fix flow work.
 
 ---
 
@@ -59,10 +59,10 @@ A record of what was built and what was learned, especially around co-working wi
 - **`tests/fixtures/solveFixtures.ts`**: real solve records copied from `exampleSolves.ts` with quaternion fields stripped. `CFOP_SOLVES` (2 solves) and `ROUX_SOLVES` (1 solve) — append to these arrays to expand test coverage.
 
 **Key technical learnings:**
-- **Stale closure in rollback.** Writing `setLocalSolve(localSolve)` in a `catch` block captures `localSolve` from the closure at function-definition time — it may already reflect the optimistic update. The fix: `const previousSolve = localSolve` before any state mutation, then `setLocalSolve(previousSolve)` in `catch`.
-- **Round-trip timing is exact, not approximate.** `recomputePhases` reads raw `cubeTimestamp` integers from `solve.moves` — those never change. The same moves, replayed against the same cube states, hit the same phase boundaries every time. `toBe` (strict equality) is correct, not `toBeCloseTo`.
-- **`phase.isComplete(facelets)` is called after each move, not before.** The while-loop pattern used in `useTimer` advances through phases as each move lands — including multiple phase completions on a single move (e.g. OLL skip completes cross+F2L+OLL simultaneously).
-- **CFOP merge rules are label-matched, making them a safe no-op for other methods.** Checking `phases[i].label === 'EOLL'` means the same merge logic can run unconditionally after any method recompute — if the labels aren't present, nothing happens.
+- `[gotcha]` **Stale closure in rollback.** Writing `setLocalSolve(localSolve)` in a `catch` block captures `localSolve` from the closure at function-definition time — it may already reflect the optimistic update. The fix: `const previousSolve = localSolve` before any state mutation, then `setLocalSolve(previousSolve)` in `catch`.
+- `[insight]` **Round-trip timing is exact, not approximate.** `recomputePhases` reads raw `cubeTimestamp` integers from `solve.moves` — those never change. The same moves, replayed against the same cube states, hit the same phase boundaries every time. `toBe` (strict equality) is correct, not `toBeCloseTo`.
+- `[note]` **`phase.isComplete(facelets)` is called after each move, not before.** The while-loop pattern used in `useTimer` advances through phases as each move lands — including multiple phase completions on a single move (e.g. OLL skip completes cross+F2L+OLL simultaneously).
+- `[insight]` **CFOP merge rules are label-matched, making them a safe no-op for other methods.** Checking `phases[i].label === 'EOLL'` means the same merge logic can run unconditionally after any method recompute — if the labels aren't present, nothing happens.
 
 ---
 
@@ -81,10 +81,10 @@ A record of what was built and what was learned, especially around co-working wi
 - **Manual test checklist expanded**: added sections for Connection, Core Timer Flow, Solve History Sidebar, Solve Detail Modal, Cloud Sync, and Debug Mode — previously the checklist only covered Scramble Tracker and Trends.
 
 **Key technical learnings:**
-- **`useEffect` runs on initial mount unconditionally.** A hash-write effect with no guard will fire on first render — even before any async data loads. If that effect clears the URL when state is empty, it wipes the hash that a later effect was meant to read. Always gate side effects that touch the URL on a "resolved" flag.
-- **`window.location.hash =` fires `hashchange`; `history.replaceState` does not.** When adding a `hashchange` listener, any code that writes the hash via `window.location.hash =` will trigger its own listener. Use `history.replaceState` for programmatic URL updates to avoid the loop.
-- **Capturing initial hash in a ref at mount is the safest pattern.** `window.location.hash` read inside a `useEffect` may be stale if another effect already cleared it. A ref initialized with `useRef(window.location.hash)` captures the value synchronously before any effects run.
-- **A single `hashchange` listener replaces repeated "resolve on load" logic.** Rather than multiple effects each trying to read the URL at different lifecycle moments, one listener handles all post-load navigation uniformly.
+- `[note]` **`useEffect` runs on initial mount unconditionally.** A hash-write effect with no guard will fire on first render — even before any async data loads. If that effect clears the URL when state is empty, it wipes the hash that a later effect was meant to read. Always gate side effects that touch the URL on a "resolved" flag.
+- `[gotcha]` **`window.location.hash =` fires `hashchange`; `history.replaceState` does not.** When adding a `hashchange` listener, any code that writes the hash via `window.location.hash =` will trigger its own listener. Use `history.replaceState` for programmatic URL updates to avoid the loop.
+- `[insight]` **Capturing initial hash in a ref at mount is the safest pattern.** `window.location.hash` read inside a `useEffect` may be stale if another effect already cleared it. A ref initialized with `useRef(window.location.hash)` captures the value synchronously before any effects run.
+- `[insight]` **A single `hashchange` listener replaces repeated "resolve on load" logic.** Rather than multiple effects each trying to read the URL at different lifecycle moments, one listener handles all post-load navigation uniformly.
 
 ---
 
@@ -101,10 +101,10 @@ A record of what was built and what was learned, especially around co-working wi
 - `docs/debug-mode.md` added to document all debug mode tools and buttons.
 
 **Key technical learnings:**
-- **BLE delivery time ≠ move timestamp.** `cubeTimestamp` records when the physical move happened on the hardware clock. BLE can deliver the event 1+ second later. `Date.now()` at arrival inflates solve times — always prefer `cubeTimestamp + hwOffset`.
-- **`minHeight: 0` is required on flex scroll containers.** Flex items default to `min-height: auto`, which prevents overflow from engaging. Without it, `overflow-y: auto` does nothing — the child just grows past the viewport.
-- **`height: 100vh` on a sidebar that starts below the top of the page causes overflow.** The sidebar was below `ConnectionBar`, so `100vh` overflowed by ConnectionBar's height. The fix is `height: 100%` — fill the flex parent, not the full viewport.
-- **Sticky `<thead>` works inside `overflow-y: auto` in Chromium.** `position: sticky; top: 0` on `<thead>` within a scrolling `<div>` works correctly — no wrapper gymnastics needed.
+- `[insight]` **BLE delivery time ≠ move timestamp.** `cubeTimestamp` records when the physical move happened on the hardware clock. BLE can deliver the event 1+ second later. `Date.now()` at arrival inflates solve times — always prefer `cubeTimestamp + hwOffset`.
+- `[gotcha]` **`minHeight: 0` is required on flex scroll containers.** Flex items default to `min-height: auto`, which prevents overflow from engaging. Without it, `overflow-y: auto` does nothing — the child just grows past the viewport.
+- `[note]` **`height: 100vh` on a sidebar that starts below the top of the page causes overflow.** The sidebar was below `ConnectionBar`, so `100vh` overflowed by ConnectionBar's height. The fix is `height: 100%` — fill the flex parent, not the full viewport.
+- `[note]` **Sticky `<thead>` works inside `overflow-y: auto` in Chromium.** `position: sticky; top: 0` on `<thead>` within a scrolling `<div>` works correctly — no wrapper gymnastics needed.
 
 ---
 
@@ -123,12 +123,12 @@ A record of what was built and what was learned, especially around co-working wi
 - `docs/debug-mode.md` added to document all debug mode tools
 
 **Key technical learnings:**
-- **BLE delivery delay ≠ move timestamp.** The GAN cube records `cubeTimestamp` when the physical move happens. BLE can deliver that event 1+ second later. `Date.now()` at event arrival was inflating solve times. The fix is to trust the hardware timestamp, not the delivery time.
-- **Per-solve calibration is cleaner than querying hardware clock at connect time.** Calibrating `hwOffset` on the first move is simpler, self-contained, and resets drift each solve. No need to send a hardware time request at connection.
-- **The retro M-move path needs the same fix.** `SliceMoveDetector` emits `replacePreviousMove` when the second half of a slice arrives late. `onReplacePreviousMove` in `useTimer` also had `Date.now()` — same fix applies there.
-- **`ButtonDriver`/`MouseDriver` are unaffected.** They set `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — behavior unchanged for non-hardware drivers.
-- **Retroactive fix is possible without re-simulation.** Stored `moves[].cubeTimestamp` spans give the true `timeMs` directly. Phase timing could also be recalculated using `phase.turns` to attribute move indices, but `timeMs` was the priority.
-- **One-time migration as a debug button beats a localStorage flag.** No startup overhead, no extra key, user controls when it runs. Good pattern for infrequent data migrations that don't need to be automatic.
+- `[insight]` **BLE delivery delay ≠ move timestamp.** The GAN cube records `cubeTimestamp` when the physical move happens. BLE can deliver that event 1+ second later. `Date.now()` at event arrival was inflating solve times. The fix is to trust the hardware timestamp, not the delivery time.
+- `[insight]` **Per-solve calibration is cleaner than querying hardware clock at connect time.** Calibrating `hwOffset` on the first move is simpler, self-contained, and resets drift each solve. No need to send a hardware time request at connection.
+- `[note]` **The retro M-move path needs the same fix.** `SliceMoveDetector` emits `replacePreviousMove` when the second half of a slice arrives late. `onReplacePreviousMove` in `useTimer` also had `Date.now()` — same fix applies there.
+- `[note]` **`ButtonDriver`/`MouseDriver` are unaffected.** They set `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — behavior unchanged for non-hardware drivers.
+- `[insight]` **Retroactive fix is possible without re-simulation.** Stored `moves[].cubeTimestamp` spans give the true `timeMs` directly. Phase timing could also be recalculated using `phase.turns` to attribute move indices, but `timeMs` was the priority.
+- `[insight]` **One-time migration as a debug button beats a localStorage flag.** No startup overhead, no extra key, user controls when it runs. Good pattern for infrequent data migrations that don't need to be automatic.
 
 ---
 
@@ -148,14 +148,14 @@ A record of what was built and what was learned, especially around co-working wi
 - **Default window**: both tabs default to All (mobile still 25)
 
 **Key technical learnings:**
-- **Recharts `onMouseMove` does not populate `activePayload` at chart level.** Only the `Tooltip` component receives the correct payload via internal context. Tracking hover state must happen inside the custom tooltip render, not in `onMouseMove`.
-- **Multiple `window.addEventListener` handlers fire simultaneously** — `stopPropagation` has no effect between them. Guard with a prop (`detailOpen`) to let the lower modal yield to the upper one.
-- **Windowed index ≠ solve sequence number.** `buildTotalData` / `buildPhaseData` assigns `seq: i + 1` as the x-axis position within the current window — not the real solve number. Always use `solveMap.get(solveId).seq` for display.
+- `[gotcha]` **Recharts `onMouseMove` does not populate `activePayload` at chart level.** Only the `Tooltip` component receives the correct payload via internal context. Tracking hover state must happen inside the custom tooltip render, not in `onMouseMove`.
+- `[insight]` **Multiple `window.addEventListener` handlers fire simultaneously** — `stopPropagation` has no effect between them. Guard with a prop (`detailOpen`) to let the lower modal yield to the upper one.
+- `[note]` **Windowed index ≠ solve sequence number.** `buildTotalData` / `buildPhaseData` assigns `seq: i + 1` as the x-axis position within the current window — not the real solve number. Always use `solveMap.get(solveId).seq` for display.
 
 **Process learnings:**
-- **Add console.log before trying another fix.** The click-to-detail bug went through three fix attempts before we added logging. The log immediately revealed `hasPayload: false` in `onClick` and `activePayload: undefined` in `onMouseMove` — two distinct root causes that no amount of guessing would have found. Systematic debugging (Phase 1 evidence gathering) would have saved two cycles.
-- **When a Recharts event handler "should" have data but doesn't, suspect internal context.** Recharts distributes chart state through React context, not through every callback. `Tooltip` is a privileged consumer; chart-level handlers are not. Check the Recharts source or add logging before assuming an event should carry payload.
-- **Refs across event sequences don't need state.** `didZoomRef` and `hoveredSolveIdRef` both needed to survive from one event (mousedown/mousemove) to a later one (click) without triggering re-renders in between. Refs are the right tool — state would reset the value by re-rendering before the click handler reads it.
+- `[insight]` **Add console.log before trying another fix.** The click-to-detail bug went through three fix attempts before we added logging. The log immediately revealed `hasPayload: false` in `onClick` and `activePayload: undefined` in `onMouseMove` — two distinct root causes that no amount of guessing would have found. Systematic debugging (Phase 1 evidence gathering) would have saved two cycles.
+- `[gotcha]` **When a Recharts event handler "should" have data but doesn't, suspect internal context.** Recharts distributes chart state through React context, not through every callback. `Tooltip` is a privileged consumer; chart-level handlers are not. Check the Recharts source or add logging before assuming an event should carry payload.
+- `[insight]` **Refs across event sequences don't need state.** `didZoomRef` and `hoveredSolveIdRef` both needed to survive from one event (mousedown/mousemove) to a later one (click) without triggering re-renders in between. Refs are the right tool — state would reset the value by re-rendering before the click handler reads it.
 
 ---
 
@@ -181,17 +181,17 @@ A record of what was built and what was learned, especially around co-working wi
 
 **Key technical learnings:**
 
-- **Recharts `onMouseMove` at chart level does not provide `activePayload`.** The chart-level event (`CategoricalChartState`) shows `activeLabel` and `activeCoordinate` but `activePayload` is always undefined. The `Tooltip` component receives the correct payload via internal context. Fix: update `hoveredSolveIdRef` inside the custom tooltip render function (where `payload` is always available), rather than in `onMouseMove`.
+- `[gotcha]` **Recharts `onMouseMove` at chart level does not provide `activePayload`.** The chart-level event (`CategoricalChartState`) shows `activeLabel` and `activeCoordinate` but `activePayload` is always undefined. The `Tooltip` component receives the correct payload via internal context. Fix: update `hoveredSolveIdRef` inside the custom tooltip render function (where `payload` is always available), rather than in `onMouseMove`.
 
-- **Recharts `onClick` also never has `activePayload`** (confirmed in prior session). The ref approach captures the solveId during tooltip render; the click handler reads from the ref.
+- `[gotcha]` **Recharts `onClick` also never has `activePayload`** (confirmed in prior session). The ref approach captures the solveId during tooltip render; the click handler reads from the ref.
 
-- **`didZoomRef` vs. state for drag/click disambiguation.** Using a state variable to track "a zoom just happened" causes a re-render between mouseUp and click, resetting the flag before the click handler reads it. A ref holds the value across the event sequence without triggering re-renders.
+- `[insight]` **`didZoomRef` vs. state for drag/click disambiguation.** Using a state variable to track "a zoom just happened" causes a re-render between mouseUp and click, resetting the flag before the click handler reads it. A ref holds the value across the event sequence without triggering re-renders.
 
-- **Multiple `window.addEventListener('keydown')` handlers all fire simultaneously.** `stopPropagation` on a `window` listener does not prevent other `window` listeners from firing. Fix: pass `detailOpen` prop to TrendsModal and guard its Esc handler with `!detailOpen`.
+- `[insight]` **Multiple `window.addEventListener('keydown')` handlers all fire simultaneously.** `stopPropagation` on a `window` listener does not prevent other `window` listeners from firing. Fix: pass `detailOpen` prop to TrendsModal and guard its Esc handler with `!detailOpen`.
 
 **Process learnings:**
-- Systematic debugging (console.log tracing) revealed the root cause in two iterations: first confirmed `activePayload` is absent in `onMouseMove`; second confirmed it's also absent in `onClick`; then found the Tooltip component as the reliable source of truth
-- Zoom UX required careful state design: zoom stack (not a simple on/off), pre-filtered data (not just axis domain), and drag threshold (not just any movement)
+- `[note]` Systematic debugging (console.log tracing) revealed the root cause in two iterations: first confirmed `activePayload` is absent in `onMouseMove`; second confirmed it's also absent in `onClick`; then found the Tooltip component as the reliable source of truth
+- `[insight]` Zoom UX required careful state design: zoom stack (not a simple on/off), pre-filtered data (not just axis domain), and drag threshold (not just any movement)
 
 ---
 
@@ -209,17 +209,17 @@ A record of what was built and what was learned, especially around co-working wi
 
 **Key technical learnings:**
 
-- **`<Scatter>` inside `<ComposedChart>` does not reliably use the chart's top-level `data` prop.** Using `dataKey="value"` alone produces invisible dots. Either pass `data={...}` directly to `<Scatter>`, or use a `<Line stroke="none" dot={...}>` — the Line approach is simpler and definitely works.
+- `[gotcha]` **`<Scatter>` inside `<ComposedChart>` does not reliably use the chart's top-level `data` prop.** Using `dataKey="value"` alone produces invisible dots. Either pass `data={...}` directly to `<Scatter>`, or use a `<Line stroke="none" dot={...}>` — the Line approach is simpler and definitely works.
 
-- **zIndex layering for stacked overlays needs a clear hierarchy.** When SolveDetailModal (zIndex 100) needed to appear on top of TrendsModal (zIndex 200), it rendered behind. Fixed by bumping SolveDetailModal to zIndex 300. Rule: establish the overlay z-stack explicitly when adding a new overlay.
+- `[insight]` **zIndex layering for stacked overlays needs a clear hierarchy.** When SolveDetailModal (zIndex 100) needed to appear on top of TrendsModal (zIndex 200), it rendered behind. Fixed by bumping SolveDetailModal to zIndex 300. Rule: establish the overlay z-stack explicitly when adding a new overlay.
 
-- **State lifting + controlled props breaks tests that use interaction events.** Lifting `methodFilter` from local state to a prop means `userEvent.selectOptions` no longer causes re-renders (the mock `setMethodFilter` doesn't update state). Fix: a `SidebarWrapper` test helper that holds real state — keeps tests testing real behavior without coupling to the parent.
+- `[gotcha]` **State lifting + controlled props breaks tests that use interaction events.** Lifting `methodFilter` from local state to a prop means `userEvent.selectOptions` no longer causes re-renders (the mock `setMethodFilter` doesn't update state). Fix: a `SidebarWrapper` test helper that holds real state — keeps tests testing real behavior without coupling to the parent.
 
-- **`phaseKeys` should union all data points, not just the first.** If the first solve in the window has incomplete phases, later phase keys are missing from the chart. Use `Array.from(phaseData.reduce((set, pt) => { Object.keys(pt).forEach(...) }, new Set()))`.
+- `[gotcha]` **`phaseKeys` should union all data points, not just the first.** If the first solve in the window has incomplete phases, later phase keys are missing from the chart. Use `Array.from(phaseData.reduce((set, pt) => { Object.keys(pt).forEach(...) }, new Set()))`.
 
 **Process learnings:**
-- Subagent-driven development with 7 tasks + two-stage review per task produced clean, well-reviewed code at each step
-- The plan self-review step (spec coverage + placeholder scan + type consistency check) caught the test wrapper gap before execution
+- `[note]` Subagent-driven development with 7 tasks + two-stage review per task produced clean, well-reviewed code at each step
+- `[note]` The plan self-review step (spec coverage + placeholder scan + type consistency check) caught the test wrapper gap before execution
 
 ---
 
@@ -244,9 +244,9 @@ A record of what was built and what was learned, especially around co-working wi
 `selectedSolve` is initialized via a `useState` lazy initializer that calls `solves.find(id)`. When cloud sync is on, `solves` is empty at mount — Firestore hasn't returned yet. Fix: replace lazy initializer with a `useEffect` gated on `isCloudLoading`, using a `urlResolvedRef` to ensure it only fires once.
 
 **Learnings:**
-- Recognition time (`recognitionMs`) and execution time (`executionMs`) per phase are already recorded — the trends feature doesn't need new data, just new visualization
-- Phase grouping is already encoded in the `Phase.group` field — derive from that, don't hardcode method-specific logic
-- URL-triggered state needs to be deferred until cloud data is ready — lazy `useState` initializers run before Firestore returns
+- `[note]` Recognition time (`recognitionMs`) and execution time (`executionMs`) per phase are already recorded — the trends feature doesn't need new data, just new visualization
+- `[note]` Phase grouping is already encoded in the `Phase.group` field — derive from that, don't hardcode method-specific logic
+- `[insight]` URL-triggered state needs to be deferred until cloud data is ready — lazy `useState` initializers run before Firestore returns
 
 ---
 
@@ -346,13 +346,13 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 - Stats pool excludes examples (same as before — examples don't count toward averages)
 
 **Learnings — TDD workflow:**
-- Writing the failing tests first (Task 1 committed before implementation) made the acceptance criteria explicit and caught the exact props contract mismatch immediately
-- The three-commit structure (failing tests → implementation → stats cleanup) produced a clean, reviewable history
-- Plan-driven execution with worktrees made the session fast: no ambiguity mid-task, isolated branch, clean merge
+- `[note]` Writing the failing tests first (Task 1 committed before implementation) made the acceptance criteria explicit and caught the exact props contract mismatch immediately
+- `[note]` The three-commit structure (failing tests → implementation → stats cleanup) produced a clean, reviewable history
+- `[note]` Plan-driven execution with worktrees made the session fast: no ambiguity mid-task, isolated branch, clean merge
 
 **Learnings — component design:**
-- Moving stat derivation into the component that owns the filter (rather than the parent) is the right call when the parent has no use for filtered stats — prop drilling a computed value just to filter it downstream is a smell
-- Extracting `StatsSection` as an inner component kept both render paths (sidebar + overlay) DRY without over-engineering
+- `[insight]` Moving stat derivation into the component that owns the filter (rather than the parent) is the right call when the parent has no use for filtered stats — prop drilling a computed value just to filter it downstream is a smell
+- `[note]` Extracting `StatsSection` as an inner component kept both render paths (sidebar + overlay) DRY without over-engineering
 
 ---
 
@@ -398,30 +398,30 @@ This stays `true` continuously from page load through auth resolution through Fi
 - GitHub Actions deploy workflow for GitHub Pages
 
 **Learnings — Firebase:**
-- Firebase web API keys are not secrets — security comes from Firestore rules, not the key
-- `authDomain` should always be the Firebase-provided domain (`*.firebaseapp.com`), not your hosted domain
-- Firebase Auth automatically whitelists `localhost` — no config needed for local dev
-- Firestore rejects `undefined` values (only accepts `null`) — always sanitize objects before writing with `JSON.parse(JSON.stringify(obj))`
-- `npm ci` in CI fails when `package-lock.json` was generated on macOS (Linux-specific optional native packages like `@emnapi/*` are missing) — use `npm install` instead in the workflow
+- `[note]` Firebase web API keys are not secrets — security comes from Firestore rules, not the key
+- `[note]` `authDomain` should always be the Firebase-provided domain (`*.firebaseapp.com`), not your hosted domain
+- `[note]` Firebase Auth automatically whitelists `localhost` — no config needed for local dev
+- `[gotcha]` Firestore rejects `undefined` values (only accepts `null`) — always sanitize objects before writing with `JSON.parse(JSON.stringify(obj))`
+- `[gotcha]` `npm ci` in CI fails when `package-lock.json` was generated on macOS (Linux-specific optional native packages like `@emnapi/*` are missing) — use `npm install` instead in the workflow
 
 **Learnings — debugging:**
-- When a Firebase popup closes immediately, check the browser console — `CONFIGURATION_NOT_FOUND` means Google sign-in provider isn't enabled in the Firebase Console (Authentication → Sign-in method → Google → Enable)
-- Firestore rejects `undefined` values silently at runtime, not at compile time — TypeScript optional fields (`field?`) become `undefined`, which Firestore refuses. Fix: `JSON.parse(JSON.stringify(obj))` strips them before writing
-- `npm ci` fails in CI when `package-lock.json` was generated on macOS — Linux CI adds platform-specific optional packages (`@emnapi/*`) not in the Mac-generated lock file. Fix: use `npm install` in the workflow instead
+- `[note]` When a Firebase popup closes immediately, check the browser console — `CONFIGURATION_NOT_FOUND` means Google sign-in provider isn't enabled in the Firebase Console (Authentication → Sign-in method → Google → Enable)
+- `[gotcha]` Firestore rejects `undefined` values silently at runtime, not at compile time — TypeScript optional fields (`field?`) become `undefined`, which Firestore refuses. Fix: `JSON.parse(JSON.stringify(obj))` strips them before writing
+- `[gotcha]` `npm ci` fails in CI when `package-lock.json` was generated on macOS — Linux CI adds platform-specific optional packages (`@emnapi/*`) not in the Mac-generated lock file. Fix: use `npm install` in the workflow instead
 
 **Learnings — Firebase concepts:**
-- Firebase Auth authorized domains control which domains can trigger the OAuth popup — `localhost` is whitelisted by default, but `sansword.github.io` must be added manually for GitHub Pages
-- `authDomain` in the config should always be the Firebase-provided domain (`*.firebaseapp.com`), not the hosting domain — it's used internally for the OAuth flow, not to identify where the app lives
-- Firebase web API keys are not secrets — they're safe to expose in the browser bundle; security is enforced by Firestore rules and Auth, not the key itself
-- Firestore document sort order is determined at query time (`orderBy('date', 'asc')`) — there's no default ordering
-- UID is assigned permanently by Firebase when a user first signs in with Google — same account always gets the same UID across all devices, no management needed
+- `[note]` Firebase Auth authorized domains control which domains can trigger the OAuth popup — `localhost` is whitelisted by default, but `sansword.github.io` must be added manually for GitHub Pages
+- `[note]` `authDomain` in the config should always be the Firebase-provided domain (`*.firebaseapp.com`), not the hosting domain — it's used internally for the OAuth flow, not to identify where the app lives
+- `[note]` Firebase web API keys are not secrets — they're safe to expose in the browser bundle; security is enforced by Firestore rules and Auth, not the key itself
+- `[note]` Firestore document sort order is determined at query time (`orderBy('date', 'asc')`) — there's no default ordering
+- `[note]` UID is assigned permanently by Firebase when a user first signs in with Google — same account always gets the same UID across all devices, no management needed
 
 **Learnings — Claude Code workflow:**
-- Subagent-driven development (brainstorm → write plan → execute with subagents + two-stage review) produced high-quality, reviewed code with no surprises
-- Subagents sometimes do more than asked (adding Firebase test stubs) when they hit a blocker — this is correct behavior, not scope creep; review the extra work before accepting
-- Discussing architecture decisions in conversation before writing the plan catches design issues cheaply (e.g. single-user vs multi-user, localStorage default vs cloud default, Firebase-only vs dual-write)
-- CLAUDE.md doc index is better than loading docs eagerly — listing docs with one-line descriptions lets Claude read only what's relevant per session
-- Asking Claude to scan git log to deduce learnings is a fast way to bootstrap a devlog retroactively
+- `[note]` Subagent-driven development (brainstorm → write plan → execute with subagents + two-stage review) produced high-quality, reviewed code with no surprises
+- `[note]` Subagents sometimes do more than asked (adding Firebase test stubs) when they hit a blocker — this is correct behavior, not scope creep; review the extra work before accepting
+- `[note]` Discussing architecture decisions in conversation before writing the plan catches design issues cheaply (e.g. single-user vs multi-user, localStorage default vs cloud default, Firebase-only vs dual-write)
+- `[note]` CLAUDE.md doc index is better than loading docs eagerly — listing docs with one-line descriptions lets Claude read only what's relevant per session
+- `[note]` Asking Claude to scan git log to deduce learnings is a fast way to bootstrap a devlog retroactively
 
 ---
 
@@ -440,9 +440,9 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Various mobile CSS fixes (overflow, font size, text wrapping)
 
 **Learnings:**
-- Mobile touch events require careful handling of `touchAction` and empty touch list guards
-- Sticky positioning inside scroll containers requires specific CSS structure
-- Small UI polish (attribution, font size, wrapping) takes more commits than expected
+- `[note]` Mobile touch events require careful handling of `touchAction` and empty touch list guards
+- `[note]` Sticky positioning inside scroll containers requires specific CSS structure
+- `[note]` Small UI polish (attribution, font size, wrapping) takes more commits than expected
 
 ---
 
@@ -462,10 +462,10 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Retroactive slice move correction with `cubeTimestamp`-gated pairing
 
 **Learnings:**
-- Slice moves (M/E/S) require middleware that infers the move from two sequential face moves — they're not directly reported by the GAN protocol
-- Adding a new solve method requires: detection utils → `SolveMethod` definition → hook integration → UI selector — a clear layered pattern
-- Phase detection bugs are best caught by comparing against known solve recordings
-- `cubeTimestamp` (hardware clock) vs wall clock distinction matters when pairing slice moves retroactively
+- `[insight]` Slice moves (M/E/S) require middleware that infers the move from two sequential face moves — they're not directly reported by the GAN protocol
+- `[insight]` Adding a new solve method requires: detection utils → `SolveMethod` definition → hook integration → UI selector — a clear layered pattern
+- `[note]` Phase detection bugs are best caught by comparing against known solve recordings
+- `[insight]` `cubeTimestamp` (hardware clock) vs wall clock distinction matters when pairing slice moves retroactively
 
 ---
 
@@ -487,14 +487,14 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Example solves with dismissable cards
 
 **Learnings — architecture:**
-- State machines are the right model for scramble verification — tracking states (idle → scrambling → armed → solving → solved) prevents edge cases
-- Separating "recognition time" from "execution time" per phase requires careful timestamp handling
-- Sequential solve IDs need to be persisted independently of the solve list (counter survives deletes)
+- `[insight]` State machines are the right model for scramble verification — tracking states (idle → scrambling → armed → solving → solved) prevents edge cases
+- `[insight]` Separating "recognition time" from "execution time" per phase requires careful timestamp handling
+- `[insight]` Sequential solve IDs need to be persisted independently of the solve list (counter survives deletes)
 
 **Learnings — Claude Code workflow:**
-- The brainstorm → design spec → implementation plan → execute pipeline produced a clean, well-tested feature with clear scope
-- TDD (write failing test first, then implement) caught several edge cases in `computeAo` and phase detection
-- Superpowers skills (brainstorming, writing-plans, executing-plans) provide consistent structure across sessions
+- `[note]` The brainstorm → design spec → implementation plan → execute pipeline produced a clean, well-tested feature with clear scope
+- `[note]` TDD (write failing test first, then implement) caught several edge cases in `computeAo` and phase detection
+- `[note]` Superpowers skills (brainstorming, writing-plans, executing-plans) provide consistent structure across sessions
 
 ---
 
@@ -511,8 +511,8 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Replaced `cubing.js` WASM scrambler with a simpler random-move generator (removed heavy dependency)
 
 **Learnings:**
-- WASM dependencies (like `cubing.js`) add significant bundle size and complexity — a simple random-move generator was sufficient for the use case
-- Negative IDs for example records is a clean way to distinguish them without a separate type field
+- `[insight]` WASM dependencies (like `cubing.js`) add significant bundle size and complexity — a simple random-move generator was sufficient for the use case
+- `[note]` Negative IDs for example records is a clean way to distinguish them without a separate type field
 
 ---
 
@@ -527,9 +527,9 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Draggable sidebar with proportional font scaling
 
 **Learnings:**
-- Quaternion interpolation (SLERP) is needed for smooth gyro replay — linear interpolation produces jerky rotation
-- Replay requires a separate timestamp system (`cubeTimestamp` from hardware) vs wall clock to be accurate
-- CSS `resize` for a draggable sidebar is simpler than a drag handler but less controllable
+- `[insight]` Quaternion interpolation (SLERP) is needed for smooth gyro replay — linear interpolation produces jerky rotation
+- `[note]` Replay requires a separate timestamp system (`cubeTimestamp` from hardware) vs wall clock to be accurate
+- `[note]` CSS `resize` for a draggable sidebar is simpler than a drag handler but less controllable
 
 ---
 
@@ -543,8 +543,8 @@ This stays `true` continuously from page load through auth resolution through Fi
 - Sidebar statistics (single, Ao5, Ao12, Ao100)
 
 **Learnings:**
-- `localStorage` persistence of UI state (sidebar width, mode) makes the app feel polished with minimal effort
-- Ao calculation with trimming (drop best/worst) requires careful index handling for edge cases (n ≤ 4)
+- `[note]` `localStorage` persistence of UI state (sidebar width, mode) makes the app feel polished with minimal effort
+- `[note]` Ao calculation with trimming (drop best/worst) requires careful index handling for edge cases (n ≤ 4)
 
 ---
 
@@ -561,12 +561,12 @@ This stays `true` continuously from page load through auth resolution through Fi
 - GitHub Actions CI + GitHub Pages deploy (Node version matching was first CI lesson)
 
 **Learnings — BLE + GAN protocol:**
-- Web Bluetooth only works in Chromium (Chrome/Edge) — not Firefox or Safari
-- GAN Gen4 protocol uses AES encryption — `gan-web-bluetooth` handles this, but the cube must be in the right mode
-- Face sticker cycles and orientation conventions (green front / yellow bottom) must be established early — they affect everything downstream
-- `cubeTimestamp` from hardware is separate from wall clock and drifts — important for replay accuracy
+- `[note]` Web Bluetooth only works in Chromium (Chrome/Edge) — not Firefox or Safari
+- `[note]` GAN Gen4 protocol uses AES encryption — `gan-web-bluetooth` handles this, but the cube must be in the right mode
+- `[insight]` Face sticker cycles and orientation conventions (green front / yellow bottom) must be established early — they affect everything downstream
+- `[insight]` `cubeTimestamp` from hardware is separate from wall clock and drifts — important for replay accuracy
 
 **Learnings — Claude Code workflow:**
-- Starting with a design spec (phase 1 spec) before any code gave Claude clear constraints and avoided scope creep
-- Hooks-based architecture (`useCubeDriver`, `useCubeState`, etc.) maps well to the event-driven BLE model
-- CI failures early (Node version, `npm ci` vs `npm install`) are cheaper to fix than later
+- `[note]` Starting with a design spec (phase 1 spec) before any code gave Claude clear constraints and avoided scope creep
+- `[insight]` Hooks-based architecture (`useCubeDriver`, `useCubeState`, etc.) maps well to the event-driven BLE model
+- `[note]` CI failures early (Node version, `npm ci` vs `npm install`) are cheaper to fix than later
