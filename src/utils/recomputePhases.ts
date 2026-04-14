@@ -79,12 +79,12 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
   }
 
   // Rule 2: if CPLL and EPLL finished on the same move (EPLL has 0 turns), absorb CPLL into EPLL
-  const n = phases.length
-  if (n >= 2 && phases[n - 2].label === 'CPLL' && phases[n - 1].label === 'EPLL' && phases[n - 1].turns === 0) {
-    const cpll = phases[n - 2]
-    phases.splice(n - 2, 2,
+  const n2 = phases.length
+  if (n2 >= 2 && phases[n2 - 2].label === 'CPLL' && phases[n2 - 1].label === 'EPLL' && phases[n2 - 1].turns === 0) {
+    const cpll = phases[n2 - 2]
+    phases.splice(n2 - 2, 2,
       { ...cpll, recognitionMs: 0, executionMs: 0, turns: 0 },
-      { ...phases[n - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
+      { ...phases[n2 - 1], recognitionMs: cpll.recognitionMs, executionMs: cpll.executionMs, turns: cpll.turns },
     )
   }
 
