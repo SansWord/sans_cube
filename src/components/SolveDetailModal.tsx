@@ -21,6 +21,9 @@ interface Props {
   onDelete: (id: number) => void
   onUseScramble?: (scramble: string) => void
   onUpdate: (solve: SolveRecord) => Promise<void>
+  onShare?: (solve: SolveRecord) => Promise<string>
+  onUnshare?: (shareId: string) => Promise<void>
+  readOnly?: boolean
 }
 
 function formatDate(ts: number): string {
@@ -56,7 +59,7 @@ function getPhaseLabelAtIndex(solve: SolveRecord, moveIndex: number): string {
 
 const AUTO_PLAY_DELAY_MS = 500
 
-export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUpdate }: Props) {
+export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUpdate, onShare, onUnshare, readOnly }: Props) {
   const [localSolve, setLocalSolve] = useState(solve)
   const [saving, setSaving] = useState(false)
   const [methodError, setMethodError] = useState<string | null>(null)
@@ -68,6 +71,9 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copiedSteps, setCopiedSteps] = useState(false)
   const [copiedExample, setCopiedExample] = useState(false)
+  type ShareState = 'idle' | 'sharing' | 'unsharing'
+  const [shareState, setShareState] = useState<ShareState>('idle')
+  const [shareCopied, setShareCopied] = useState(false)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const modalRef = useRef<HTMLDivElement>(null)
@@ -144,6 +150,36 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
     setTimeout(() => setCopiedExample(false), 1500)
   }
 
+  async function handleShare() {
+    if (!onShare || shareState !== 'idle') return
+    setShareState('sharing')
+    try {
+      const shareId = await onShare(localSolve)
+      const updated = { ...localSolve, shareId }
+      setLocalSolve(updated)
+      await onUpdate(updated)
+    } catch {
+      // silently revert — share failure is non-critical
+    } finally {
+      setShareState('idle')
+    }
+  }
+
+  async function handleUnshare() {
+    if (!onUnshare || !localSolve.shareId || shareState !== 'idle') return
+    setShareState('unsharing')
+    try {
+      await onUnshare(localSolve.shareId)
+      const updated = { ...localSolve, shareId: undefined }
+      setLocalSolve(updated)
+      await onUpdate(updated)
+    } catch {
+      // silently revert
+    } finally {
+      setShareState('idle')
+    }
+  }
+
   async function handleMethodChange(newMethod: SolveMethod) {
     if (saving) return
     const newPhases = recomputePhases(localSolve, newMethod)
@@ -213,6 +249,10 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const totalRecMs = localSolve.phases.reduce((s, p) => s + p.recognitionMs, 0)
   const recPct = totalMs > 0 ? ((totalRecMs / totalMs) * 100).toFixed(0) : '0'
   const execPct = totalMs > 0 ? ((totalExecMs / totalMs) * 100).toFixed(0) : '0'
+
+  const shareUrl = localSolve.shareId
+    ? `${window.location.origin}${window.location.pathname}#shared-${localSolve.shareId}`
+    : null
 
   return (
     <div style={{
@@ -479,40 +519,106 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
         </div>
 
         {/* Actions */}
-        <div className="solve-detail-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          {confirmDelete ? (
-            <>
-              <span style={{ color: '#e74c3c', fontSize: 12, marginRight: 8, alignSelf: 'center' }}>
-                Delete this solve?
-              </span>
-              <button onClick={() => onDelete(localSolve.id)} style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 6 }}>
-                Confirm
-              </button>
-              <button onClick={() => setConfirmDelete(false)} style={{ padding: '6px 14px' }}>
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              {!localSolve.isExample && (
-                <button
-                  onClick={copyAsExample}
-                  style={{ padding: '6px 14px', background: copiedExample ? '#27ae60' : '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 8, transition: 'background 0.2s' }}
-                  title="Copy solve JSON for use as an example solve in exampleSolves.ts"
-                >
-                  {copiedExample ? 'Copied!' : 'Copy as example'}
-                </button>
+        {!readOnly && (
+          <div className="solve-detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+            {/* Share row — only shown when onShare is provided */}
+            {onShare && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {shareUrl ? (
+                  <>
+                    <input
+                      readOnly
+                      value={shareUrl}
+                      style={{
+                        flex: 1, padding: '5px 8px', fontSize: 11,
+                        background: '#161626', border: '1px solid #333',
+                        borderRadius: 4, color: '#aaa', fontFamily: 'monospace',
+                      }}
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareUrl)
+                        setShareCopied(true)
+                        setTimeout(() => setShareCopied(false), 1500)
+                      }}
+                      style={{
+                        padding: '5px 10px', fontSize: 11,
+                        background: shareCopied ? '#27ae60' : '#2980b9',
+                        color: '#fff', border: 'none', borderRadius: 4,
+                        cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0,
+                      }}
+                    >
+                      {shareCopied ? 'Copied!' : 'Copy link'}
+                    </button>
+                    <button
+                      onClick={handleUnshare}
+                      disabled={shareState !== 'idle'}
+                      style={{
+                        padding: '5px 10px', fontSize: 11,
+                        background: shareState === 'unsharing' ? '#555' : '#7f8c8d',
+                        color: '#fff', border: 'none', borderRadius: 4,
+                        cursor: shareState !== 'idle' ? 'not-allowed' : 'pointer', flexShrink: 0,
+                      }}
+                    >
+                      {shareState === 'unsharing' ? 'Removing…' : 'Unshare'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleShare}
+                    disabled={shareState !== 'idle'}
+                    style={{
+                      padding: '5px 12px', fontSize: 11,
+                      background: shareState === 'sharing' ? '#555' : '#2980b9',
+                      color: '#fff', border: 'none', borderRadius: 4,
+                      cursor: shareState !== 'idle' ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {shareState === 'sharing' ? 'Sharing…' : 'Share'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Delete / confirm-delete row */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              {confirmDelete ? (
+                <>
+                  <span style={{ color: '#e74c3c', fontSize: 12, marginRight: 8, alignSelf: 'center' }}>
+                    Delete this solve?
+                  </span>
+                  <button onClick={() => onDelete(localSolve.id)} style={{ padding: '6px 14px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 6 }}>
+                    Confirm
+                  </button>
+                  <button onClick={() => setConfirmDelete(false)} style={{ padding: '6px 14px' }}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  {!localSolve.isExample && (
+                    <button
+                      onClick={copyAsExample}
+                      style={{ padding: '6px 14px', background: copiedExample ? '#27ae60' : '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 8, transition: 'background 0.2s' }}
+                      title="Copy solve JSON for use as an example solve in exampleSolves.ts"
+                    >
+                      {copiedExample ? 'Copied!' : 'Copy as example'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={saving || shareState !== 'idle'}
+                    style={{ padding: '6px 14px', background: (saving || shareState !== 'idle') ? '#555' : '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: (saving || shareState !== 'idle') ? 'not-allowed' : 'pointer' }}
+                  >
+                    Delete
+                  </button>
+                </>
               )}
-              <button
-                onClick={() => setConfirmDelete(true)}
-                disabled={saving}
-                style={{ padding: '6px 14px', background: saving ? '#555' : '#e74c3c', color: '#fff', border: 'none', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer' }}
-              >
-                Delete
-              </button>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
