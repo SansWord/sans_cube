@@ -49,8 +49,7 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if request.auth != null
         && exists(/databases/$(database)/documents/users/$(request.auth.uid)/shared_solves/$(shareId))
-        && request.resource.data.keys().hasAll(['solve'])
-        && request.resource.size < 200000;
+        && request.resource.data.keys().hasAll(['solve']);
       allow delete: if request.auth != null
         && exists(/databases/$(database)/documents/users/$(request.auth.uid)/shared_solves/$(shareId));
     }
