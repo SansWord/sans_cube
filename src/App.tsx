@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { useCubeDriverEvent } from './hooks/useCubeDriverEvent'
 import { STORAGE_KEYS } from './utils/storageKeys'
 import { useCubeDriver } from './hooks/useCubeDriver'
 import { useCubeState } from './hooks/useCubeState'
@@ -50,19 +51,13 @@ export default function App() {
   }, [status])
 
   const hasFiredFirstMoveRef = useRef(false)
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = () => {
-      if (hasFiredFirstMoveRef.current) return
-      hasFiredFirstMoveRef.current = true
-      const isTouch = window.matchMedia('(pointer: coarse)').matches
-      const driverParam = driverType === 'cube' ? 'ble' : isTouch ? 'touch' : 'mouse'
-      logCubeFirstMove(driverParam)
-    }
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion, driverType])
+  useCubeDriverEvent(driver, 'move', () => {
+    if (hasFiredFirstMoveRef.current) return
+    hasFiredFirstMoveRef.current = true
+    const isTouch = window.matchMedia('(pointer: coarse)').matches
+    const driverParam = driverType === 'cube' ? 'ble' : isTouch ? 'touch' : 'mouse'
+    logCubeFirstMove(driverParam)
+  }, driverVersion)
 
   const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
@@ -107,35 +102,14 @@ export default function App() {
     if (d instanceof MouseDriver) d.sendMove(face, direction)
   }, [driver])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onBattery = (pct: number) => setBattery(pct)
-    d.on('battery', onBattery)
-    return () => d.off('battery', onBattery)
-  }, [driver, driverVersion])
+  useCubeDriverEvent(driver, 'battery', (pct) => setBattery(pct), driverVersion)
 
   useEffect(() => {
     if (status === 'disconnected') setBattery(null)
   }, [status])
 
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = (m: Move) => setMoves((prev) => [...prev.slice(-100), m])
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion])
-
-  useEffect(() => {
-    const d = driver.current
-    if (!d) return
-    const onMove = (m: Move) => {
-      rendererRef.current?.animateMove(m.face, m.direction, 150)
-    }
-    d.on('move', onMove)
-    return () => d.off('move', onMove)
-  }, [driver, driverVersion])
+  useCubeDriverEvent(driver, 'move', (m) => setMoves((prev) => [...prev.slice(-100), m]), driverVersion)
+  useCubeDriverEvent(driver, 'move', (m) => rendererRef.current?.animateMove(m.face, m.direction, 150), driverVersion)
 
   useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef, driverVersion)
 
