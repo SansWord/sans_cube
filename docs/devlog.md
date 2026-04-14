@@ -2,6 +2,29 @@
 
 A record of what was built and what was learned, especially around co-working with Claude Code.
 
+## TL;DR
+
+| Version | What shipped |
+|---|---|
+| v1.11 | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
+| v1.10 | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
+| v1.9 | Debug tool — detect CFOP/Roux method mismatches across solve history |
+| v1.8 | Method update in SolveDetailModal — CFOP ↔ Roux with recomputePhases |
+| v1.7 | URL deep link fixes — `#solve-N`, `#trends`, hashchange listener, loading overlay |
+| v1.6 | Hardware clock timing fix — BLE delay correction, recalibration buttons, copy-as-TSV |
+| v1.5 | Stats Trends modal — scatter + phase lines, Ao5/Ao12, zoom, day lines, URL sync |
+| v1.4 | Method filter in solve history sidebar |
+| v1.3 | Firebase cloud sync — opt-in Google sign-in, Firestore storage, GitHub Pages deploy |
+| v1.2 | Mobile layout, polish |
+| v1.1 | Roux method + slice moves |
+| v1.0 | Scramble tracker, timer, solve history |
+| v0.4 | Example solves, button driver |
+| v0.3 | Replay + phase highlighting |
+| v0.2 | Layout + sidebar |
+| v0.1 | Foundation — BLE connection, 3D cube, move recording |
+
+---
+
 ### Learning tags
 
 | Tag | Meaning |
@@ -9,6 +32,30 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.11 — Firebase Analytics (2026-04-14 00:25)
+**Review:** not yet
+
+**Design docs:**
+- Analytics: [Spec](superpowers/specs/2026-04-13-analytics-design.md) [Plan](superpowers/plans/2026-04-13-analytics.md)
+
+**What was built:**
+- **Firebase Analytics initialized** in `src/services/firebase.ts` — exports `analytics` as `Analytics | null`, guarded by `VITE_FIREBASE_MEASUREMENT_ID` env var so it's a no-op in local dev without the key set.
+- **`src/services/analytics.ts`** (new): typed wrappers for all events — `logSharedSolveViewed`, `logSolveShared`, `logSolveRecorded`, `logCubeConnected`, `logCubeFirstMove`, `logCloudSyncEnabled`, `setAnalyticsUser`. Every function guards `if (!analytics) return`.
+- **`AnalyticsBanner`** (new): fixed bottom bar, one-time dismiss, stored in `localStorage` under `sans_cube_analytics_acknowledged`.
+- **User identity**: `setAnalyticsUser(uid)` called in `useCloudSync` on auth state change — links events across devices for signed-in users.
+- **Events wired**: `shared_solve_viewed` (boot effect), `solve_recorded` (solve complete), `solve_shared` (after share succeeds), `cube_connected` (BLE connect), `cube_first_move` (first move per page load with `driver: ble|mouse|touch`), `cloud_sync_enabled` (toggle on).
+- **`cube_first_move` driver detection**: `driverType === 'cube'` → `'ble'`; else `window.matchMedia('(pointer: coarse)')` → `'touch'`; else `'mouse'`.
+- **`tests/__mocks__/firebase-analytics.ts`** (new): vi.fn() stubs for `getAnalytics`, `logEvent`, `setUserId` — wired in `vite.config.ts` alias to fix 3 test suite failures.
+- **`docs/analytics.md`** (new): event reference, consent banner docs, local dev and DebugView instructions.
+
+**Key technical learnings:**
+- `[gotcha]` **`getAnalytics(app)` throws at import time if the firebase stub app is not a real app instance.** Even with a null-guard on the env var, Vitest loads the real `firebase/analytics` module and its `getAnalytics` call crashes against the stub `{}` app. Fix: add `firebase/analytics` to the test alias map just like `firebase/app`, `firebase/auth`, and `firebase/firestore`.
+- `[insight]` **`Analytics | null` export is the right pattern for optional Firebase services.** Guard at the service boundary (`firebase.ts`) and let every consumer be a no-op. Don't push the env-var check into every call site.
+- `[note]` **Firebase Analytics is free with no usage limits.** The only Firebase costs are Firestore reads/writes (cloud sync and solve sharing). Analytics adds zero cost.
+- `[note]` **DebugView shows events in real time; the Events page has a 24–48 hour delay.** Use DebugView or the Google Analytics Debugger Chrome extension for testing.
 
 ---
 
