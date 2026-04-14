@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import type { SolveRecord } from '../types/solve'
 
@@ -13,7 +13,7 @@ export function newShareId(): string {
 }
 
 function publicSolveRef(shareId: string) {
-  return doc(collection(db, 'public_solves'), shareId)
+  return doc(db, 'public_solves', shareId)
 }
 
 function registryRef(uid: string, shareId: string) {
