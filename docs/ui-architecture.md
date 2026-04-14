@@ -28,7 +28,8 @@ main.tsx
             ├── PhaseBar
             ├── SolveHistorySidebar  ← mobile overlay (rendered when showHistory=true)
             ├── TrendsModal          ← rendered when showTrends=true
-            └── SolveDetailModal     ← rendered when a solve is selected (can overlay TrendsModal)
+            ├── SolveDetailModal     ← rendered when a solve is selected (can overlay TrendsModal)
+            └── SolveDetailModal     ← rendered in read-only mode when #shared-{shareId} is open
                 ├── PhaseBar
                 └── CubeCanvas
 ```
@@ -82,9 +83,9 @@ Note: `TimerScreen` is unmounted while debug mode is active, so direct storage w
 
 Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on method change), `saving` (disables `MethodSelector` and Delete during async save), `methodError` (inline error shown if phase recompute fails or save times out), `savedConfirmation` (shows "Saved ✓" for 2 seconds after a successful save). All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
 
-Props: `onUpdate: (solve: SolveRecord) => Promise<void>` — called after method change with the updated record. The handler races `onUpdate` against a 3-second timeout; if the timeout wins, the method change is rolled back and an error is shown.
+Props: `onUpdate`, `onDelete`, `onShare?`, `onUnshare?`, `readOnly?` — `onShare`/`onUnshare` are only passed when cloud sync is enabled and the user is signed in. When `readOnly` is true (viewer mode), all action controls (delete, share, copy-as-example) are hidden.
 
-Rendered in two contexts: inside `TimerScreen` (timer mode) and directly in `App` (debug mode — opened from the method mismatch detector results list).
+Rendered in three contexts: inside `TimerScreen` (timer mode, editable), directly in `App` (debug mode — opened from the method mismatch detector results list), and in viewer mode when `#shared-{shareId}` is open (read-only).
 
 ### `SolveReplayer` (`src/components/SolveReplayer.tsx`)
 

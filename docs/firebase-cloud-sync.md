@@ -25,18 +25,39 @@ Solve history is stored locally in `localStorage` by default. Cloud sync is an o
 
 ### 3. Set Firestore security rules
 
-In Firebase Console → Firestore → Rules:
+In Firebase Console → Firestore → Rules, copy and paste the rules below, then click **Publish**:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Private solves — owner only
     match /users/{userId}/solves/{solveId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Private ownership registry for shared solves — owner only
+    match /users/{userId}/shared_solves/{shareId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Public shared solves — anyone can fetch by ID, only owner can write
+    match /public_solves/{shareId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/shared_solves/$(shareId))
+        && request.resource.data.keys().hasAll(['solve'])
+        && request.resource.size < 200000;
+      allow delete: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/shared_solves/$(shareId));
     }
   }
 }
 ```
+
+> **Note:** You must manually apply these rules in the Firebase Console. Copy the entire rules block above, paste it in the Firestore Rules editor, and click **Publish**.
 
 ### 4. Configure environment variables
 
@@ -180,3 +201,24 @@ This limits each solve document to 100KB and requires the core fields to be pres
 Even without the above mitigations, the Firebase free tier caps at 20k writes/day and 1GB total storage across all users. For a personal cubing app this is unlikely to be a concern, but it does bound worst-case abuse.
 
 **Recommended priority:** Add App Check before sharing the app URL publicly. The document size rule is a low-effort addition worth including in the Firestore rules from the start.
+
+## Solve Sharing
+
+Cloud sync users can share individual solves publicly via a link (`#shared-{shareId}`). The viewer does not need to be logged in.
+
+### How it works
+
+- Share is opt-in per solve, via the Share button in `SolveDetailModal`
+- Clicking Share writes two documents:
+  1. `users/{uid}/shared_solves/{shareId}` — empty ownership registry (private)
+  2. `public_solves/{shareId}` — solve snapshot (publicly readable by ID)
+- The `shareId` is stored in `SolveRecord.shareId` and persisted via `updateSolve`
+- When the owner updates the solve (e.g. changes method), `useSolveHistory.updateSolve` automatically syncs the public copy
+- Unsharing deletes the public doc then the registry doc
+- Deleting a solve does NOT delete the shared copy — the public link persists
+
+### Security
+
+- `public_solves` allows `get` (fetch by ID) but not `list` (enumerate collection)
+- Ownership is verified server-side via `exists()` on the private registry — the owner's UID is never stored in the public document
+- Document size is capped at 200 KB

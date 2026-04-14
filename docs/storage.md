@@ -45,6 +45,22 @@ Stores a full `SolveRecord`. Key fields relevant to storage:
 |-------|------|-------------|
 | `nextSeq` | `number` | The next seq value to assign. Only ever increments — deletions do not lower it. Written on every new solve and after a renumber operation. |
 
+### `public_solves/{shareId}`
+
+Publicly readable solve snapshot. Created when an owner shares a solve.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `solve` | `SolveRecord` | Full solve snapshot at time of last share/update |
+
+### `users/{uid}/shared_solves/{shareId}`
+
+Private ownership registry. Empty document — its existence proves the authenticated user owns the share.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| *(empty)* | — | Presence is the ownership signal |
+
 ---
 
 ## What Syncs from Firestore vs. localStorage Only
@@ -53,6 +69,8 @@ Stores a full `SolveRecord`. Key fields relevant to storage:
 |------|-------------|-----------|-------|
 | Solve records | `sans_cube_solves` | `solves/{date}` | Mutually exclusive: local mode uses localStorage, cloud mode uses Firestore. Migration copies local → Firestore on first cloud enable. |
 | Next seq counter | `sans_cube_next_id` | `meta/counter.nextSeq` | localStorage is the working copy. On page load (cloud mode), Firestore value wins if higher. Written to both on every new solve. |
+| Shared solve snapshot | — | `public_solves/{shareId}` | Written on share, updated on solve update, deleted on unshare |
+| Share ownership registry | — | `users/{uid}/shared_solves/{shareId}` | Private; presence proves ownership for Firestore rules |
 | Dismissed examples | `sans_cube_dismissed_examples` | — | localStorage only. Not synced. |
 | Orientation config | `cubeOrientationConfig` | — | localStorage only. Not synced. |
 | Sidebar width | `sidebarWidth` | — | localStorage only. Not synced. |
