@@ -6,4 +6,5 @@ export const STORAGE_KEYS = {
   SIDEBAR_WIDTH: 'sidebarWidth',
   METHOD: 'sans_cube_method',
   CLOUD_SYNC_ENABLED: 'sans_cube_cloud_sync_enabled',
+  ANALYTICS_ACKNOWLEDGED: 'sans_cube_analytics_acknowledged',
 } as const

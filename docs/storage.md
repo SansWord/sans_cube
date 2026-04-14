@@ -11,6 +11,7 @@
 | `sidebarWidth` | `number` | Width of the solve history sidebar in pixels. |
 | `sans_cube_method` | `string` | Selected solve method (`'cfop'` or `'roux'`). |
 | `sans_cube_cloud_sync_enabled` | `boolean` (JSON) | Whether cloud sync is enabled. Auth state is managed by Firebase SDK separately. |
+| `sans_cube_analytics_acknowledged` | `"true"` | Set when user dismisses the analytics consent banner |
 
 ---
 
