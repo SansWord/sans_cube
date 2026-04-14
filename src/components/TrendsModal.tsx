@@ -414,7 +414,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
       tphase: activePhaseTypes,
     })
     window.location.hash = `trends?${params.toString()}`
-  }, [solveFilter, tab, windowSize, grouped, totalToggle, phaseToggle])
+  }, [solveFilter.method, solveFilter.driver, tab, windowSize, grouped, totalToggle, phaseToggle])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
