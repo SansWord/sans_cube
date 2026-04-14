@@ -14,6 +14,7 @@ import { useReplayController, SPEED_OPTIONS } from '../hooks/useReplayController
 import { MethodSelector } from './MethodSelector'
 import { recomputePhases } from '../utils/recomputePhases'
 import type { SolveMethod } from '../types/solve'
+import { logSolveShared } from '../services/analytics'
 
 interface Props {
   solve: SolveRecord
@@ -157,6 +158,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
     let shareId: string | undefined
     try {
       shareId = await onShare(localSolve)
+      logSolveShared(localSolve.method ?? 'cfop')
     } catch (e) {
       console.error('[share] onShare failed:', e)
       setShareState('idle')
