@@ -144,12 +144,14 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   }
 
   async function handleMethodChange(newMethod: SolveMethod) {
+    if (saving) return
     const newPhases = recomputePhases(localSolve, newMethod)
     if (newPhases === null) {
       setMethodError('Could not recompute phases — solve record appears incomplete.')
       setTimeout(() => setMethodError(null), 4000)
       return
     }
+    const previousSolve = localSolve
     const updated = { ...localSolve, method: newMethod.id, phases: newPhases }
     setLocalSolve(updated)
     setSaving(true)
@@ -158,7 +160,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
     } catch {
       setMethodError('Failed to save — please try again.')
       setTimeout(() => setMethodError(null), 4000)
-      setLocalSolve(localSolve)  // roll back optimistic update on save failure
+      setLocalSolve(previousSolve)
     } finally {
       setSaving(false)
     }
