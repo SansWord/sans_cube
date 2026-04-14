@@ -48,3 +48,10 @@ export interface SolveMethod {
 }
 
 export type MethodFilter = 'all' | 'cfop' | 'roux'
+
+export type DriverFilter = 'all' | 'cube' | 'mouse'
+
+export interface SolveFilter {
+  method: MethodFilter
+  driver: DriverFilter
+}

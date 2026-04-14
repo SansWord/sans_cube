@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   ORIENTATION_CONFIG: 'cubeOrientationConfig',
   SIDEBAR_WIDTH: 'sidebarWidth',
   METHOD: 'sans_cube_method',
+  METHOD_FILTER: 'sans_cube_method_filter',
+  DRIVER_FILTER: 'sans_cube_driver_filter',
   CLOUD_SYNC_ENABLED: 'sans_cube_cloud_sync_enabled',
   ANALYTICS_ACKNOWLEDGED: 'sans_cube_analytics_acknowledged',
 } as const
