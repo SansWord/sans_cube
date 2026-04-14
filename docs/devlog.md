@@ -6,26 +6,29 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
-| [v1.15](#v115--driver-filter-for-sidebar-stats-and-trends-2026-04-14-0357) | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
-| [v1.14](#v114--trends-chart-animation-tuning-2026-04-14) | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
-| [v1.13](#v113--usesharedsolve-extraction-shared-link-fixes-drag-to-zoom-fix-2026-04-14-0136) | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
-| [v1.12](#v112--code-quality-sweep--bug-fixes-2026-04-14-0113) | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
-| [v1.11](#v111--firebase-analytics-2026-04-14-0025) | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
-| [v1.10](#v110--solve-sharing-2026-04-13-2155) | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
-| [v1.9](#v19--detect-method-mismatches-debug-tool-2026-04-13-2117) | Debug tool — detect CFOP/Roux method mismatches across solve history |
-| [v1.8](#v18--method-update-in-solvedetailmodal-2026-04-13-1905) | Method update in SolveDetailModal — CFOP ↔ Roux with recomputePhases |
-| [v1.7](#v17--url-deep-link-fixes--cloud-sync-loading-overlay-2026-04-09-2324) | URL deep link fixes — `#solve-N`, `#trends`, hashchange listener, loading overlay |
-| [v1.6](#v16--hardware-clock-timing-fix--solve-list-copy-2026-04-09-2240) | Hardware clock timing fix — BLE delay correction, recalibration buttons, copy-as-TSV |
-| [v1.5](#v15--stats-trends-enhancements-2026-04-09-1401) | Stats Trends modal — scatter + phase lines, Ao5/Ao12, zoom, day lines, URL sync |
-| [v1.4](#v14--method-filter-in-solve-history-sidebar-2026-04-08-2305) | Method filter in solve history sidebar |
-| [v1.3](#v13--firebase-cloud-sync-2026-04-08-1329) | Firebase cloud sync — opt-in Google sign-in, Firestore storage, GitHub Pages deploy |
-| [v1.2](#v12--mobile--polish-2026-04-06) | Mobile layout, polish |
-| [v1.1](#v11--roux-method--slice-moves-2026-04-03-to-2026-04-05) | Roux method + slice moves |
-| [v1.0](#v10--scramble-tracker--timer--solve-history-2026-03-31-to-2026-04-02) | Scramble tracker, timer, solve history |
-| [v0.4](#v04--example-solves--button-driver-2026-03-30) | Example solves, button driver |
-| [v0.3](#v03--replay--phase-highlighting-2026-03-28) | Replay + phase highlighting |
-| [v0.2](#v02--layout--sidebar-2026-03-27) | Layout + sidebar |
-| [v0.1](#v01--foundation-2026-03-25-to-2026-03-26) | Foundation — BLE connection, 3D cube, move recording |
+| [v1.15.0](#v1150--driver-filter-for-sidebar-stats-and-trends-2026-04-14-0357) | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
+| [v1.14.0](#v1140--trends-chart-animation-tuning-2026-04-14) | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
+| [v1.13.0](#v1130--usesharedsolve-extraction-shared-link-fixes-drag-to-zoom-fix-2026-04-14-0136) | `useSharedSolve` hook; shared link fixes (Firestore error, invalid ID); drag-to-zoom mouse-out fix |
+| [v1.12.0](#v1120--code-quality-sweep--bug-fixes-2026-04-14-0113) | Code quality sweep + bug fixes — useCubeDriverEvent hook, CubieData WeakMap, phase merge helper, method-change armed state |
+| [v1.11.0](#v1110--firebase-analytics-2026-04-14-0025) | Firebase Analytics — page views, solve events, shared-solve views, driver tracking, consent banner |
+| [v1.10.0](#v1100--solve-sharing-2026-04-13-2155) | Solve sharing — capability URLs, public Firestore doc, read-only viewer modal |
+| [v1.9.0](#v190--detect-method-mismatches-debug-tool-2026-04-13-2117) | Debug tool — detect CFOP/Roux method mismatches across solve history |
+| [v1.8.0](#v180--method-update-in-solvedetailmodal-2026-04-13-1905) | Method update in SolveDetailModal — CFOP ↔ Roux with recomputePhases |
+| [v1.7.0](#v170--url-deep-link-fixes--cloud-sync-loading-overlay-2026-04-09-2324) | URL deep link fixes — `#solve-N`, `#trends`, hashchange listener, loading overlay |
+| [v1.6.0](#v160--hardware-clock-timing-fix--solve-list-copy-2026-04-09-2240) | Hardware clock timing fix — BLE delay correction, recalibration buttons, copy-as-TSV |
+| [v1.5.1](#v151--stats-trends-enhancements--polish-2026-04-09-1401) | Stats Trends enhancements + polish — zoom, day lines, click-to-detail fix, multi-toggle, Esc chain |
+| [v1.5.0](#v150--stats-trends-initial-implementation-2026-04-09-0518) | Stats Trends initial implementation — scatter + phase lines, Ao5/Ao12, URL sync |
+| [v1.5.0-design](#v150-design--stats-trends-design-session-2026-04-09-0159) | Stats Trends design session — spec created |
+| [v1.4.0](#v140--method-filter-in-solve-history-sidebar-2026-04-08-2305) | Method filter in solve history sidebar |
+| [v1.3.1](#v131--cloud-loading-ux-2026-04-08-1510) | Cloud loading UX — loading spinner, cloud-ready flash fix |
+| [v1.3.0](#v130--firebase-cloud-sync-2026-04-08-1329) | Firebase cloud sync — opt-in Google sign-in, Firestore storage, GitHub Pages deploy |
+| [v1.2.0](#v120--mobile--polish-2026-04-06) | Mobile layout, polish |
+| [v1.1.0](#v110--roux-method--slice-moves-2026-04-03-to-2026-04-05) | Roux method + slice moves |
+| [v1.0.0](#v100--scramble-tracker--timer--solve-history-2026-03-31-to-2026-04-02) | Scramble tracker, timer, solve history |
+| [v0.4.0](#v040--example-solves--button-driver-2026-03-30) | Example solves, button driver |
+| [v0.3.0](#v030--replay--phase-highlighting-2026-03-28) | Replay + phase highlighting |
+| [v0.2.0](#v020--layout--sidebar-2026-03-27) | Layout + sidebar |
+| [v0.1.0](#v010--foundation-2026-03-25-to-2026-03-26) | Foundation — BLE connection, 3D cube, move recording |
 
 ---
 
@@ -39,7 +42,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.15 — Driver filter for sidebar stats and Trends (2026-04-14 03:57)
+## v1.15.0 — Driver filter for sidebar stats and Trends (2026-04-14 03:57)
 
 **Review:** not yet
 
@@ -60,7 +63,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.14 — Trends chart animation tuning (2026-04-14)
+## v1.14.0 — Trends chart animation tuning (2026-04-14)
 
 **Review:** not yet
 
@@ -76,7 +79,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.13 — useSharedSolve extraction, shared link fixes, drag-to-zoom fix (2026-04-14 01:36)
+## v1.13.0 — useSharedSolve extraction, shared link fixes, drag-to-zoom fix (2026-04-14 01:36)
 **Review:** not yet
 
 **What was built:**
@@ -95,7 +98,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.12 — Code quality sweep + bug fixes (2026-04-14 01:13)
+## v1.12.0 — Code quality sweep + bug fixes (2026-04-14 01:13)
 **Review:** not yet
 
 **What was built:**
@@ -116,7 +119,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.11 — Firebase Analytics (2026-04-14 00:25)
+## v1.11.0 — Firebase Analytics (2026-04-14 00:25)
 **Review:** not yet
 
 **Design docs:**
@@ -140,7 +143,10 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.10 — Solve Sharing (2026-04-13 21:55)
+<!-- anchor below is a backward-compat alias: v1.10.0 was shared publicly as v1.10 before the semver migration -->
+<a name="v110--solve-sharing-2026-04-13-2155"></a>
+
+## v1.10.0 — Solve Sharing (2026-04-13 21:55)
 **Review:** not yet
 
 **Design docs:**
@@ -162,7 +168,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.9 — Detect Method Mismatches Debug Tool (2026-04-13 21:17)
+## v1.9.0 — Detect Method Mismatches Debug Tool (2026-04-13 21:17)
 **Review:** not yet
 
 **What was built:**
@@ -179,7 +185,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.8 — Method Update in SolveDetailModal (2026-04-13 19:05)
+## v1.8.0 — Method Update in SolveDetailModal (2026-04-13 19:05)
 **Review:** not yet
 
 **Design docs:**
@@ -202,7 +208,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.7 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09 23:24)
+## v1.7.0 — URL Deep Link Fixes + Cloud Sync Loading Overlay (2026-04-09 23:24)
 **Review:** not yet
 
 **Design docs:**
@@ -224,7 +230,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.6 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09 22:40)
+## v1.6.0 — Hardware Clock Timing Fix + Solve List Copy (2026-04-09 22:40)
 **Review:** not yet
 
 **What was built:**
@@ -244,65 +250,14 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.52 — Hardware Clock Timing Fix (2026-04-09 22:21)
-**Review:** not yet
-
-**What was built:**
-- `useTimer` now uses `cubeTimestamp + hwOffset` instead of `Date.now()` for all timing
-- On the first move of each solve, `hwOffset = Date.now() - move.cubeTimestamp` is calibrated once
-- Fixes `timeMs`, `executionMs`, and `recognitionMs` — all phase timing is now hardware-accurate
-- Specifically fixes the ~1s inflation on Roux solves where the final M/M' arrives via the retro BLE path in `SliceMoveDetector`
-- Two new tests in `tests/hooks/useTimer.test.ts` verifying both the normal path and the `replacePreviousMove` path
-- `recalibrateSolveTimes()` utility to retroactively fix stored solve records from `moves[].cubeTimestamp`
-- Debug mode buttons for recalibrating both localStorage and Firestore solves
-- Fixed `exampleSolves.ts` timeMs for id=-2 (−217ms) and id=-3 (−340ms)
-- `docs/debug-mode.md` added to document all debug mode tools
-
-**Key technical learnings:**
-- `[insight]` **BLE delivery delay ≠ move timestamp.** The GAN cube records `cubeTimestamp` when the physical move happens. BLE can deliver that event 1+ second later. `Date.now()` at event arrival was inflating solve times. The fix is to trust the hardware timestamp, not the delivery time.
-- `[insight]` **Per-solve calibration is cleaner than querying hardware clock at connect time.** Calibrating `hwOffset` on the first move is simpler, self-contained, and resets drift each solve. No need to send a hardware time request at connection.
-- `[note]` **The retro M-move path needs the same fix.** `SliceMoveDetector` emits `replacePreviousMove` when the second half of a slice arrives late. `onReplacePreviousMove` in `useTimer` also had `Date.now()` — same fix applies there.
-- `[note]` **`ButtonDriver`/`MouseDriver` are unaffected.** They set `cubeTimestamp = Date.now()`, so `hwOffset ≈ 0` — behavior unchanged for non-hardware drivers.
-- `[insight]` **Retroactive fix is possible without re-simulation.** Stored `moves[].cubeTimestamp` spans give the true `timeMs` directly. Phase timing could also be recalculated using `phase.turns` to attribute move indices, but `timeMs` was the priority.
-- `[insight]` **One-time migration as a debug button beats a localStorage flag.** No startup overhead, no extra key, user controls when it runs. Good pattern for infrequent data migrations that don't need to be automatic.
-
----
-
-## v1.51 — Stats Trends Polish (2026-04-09 14:01)
+## v1.5.1 — Stats Trends Enhancements & Polish (2026-04-09 14:01)
 **Review:** not yet
 
 **Design docs:**
 - Stats Trends: [Spec](superpowers/specs/2026-04-09-stats-trends-design.md) [Plan](superpowers/plans/2026-04-09-stats-trends.md)
 
 **What was built:**
-- **Click-to-detail fixed**: root cause was Recharts `onMouseMove` at chart level never populates `activePayload` — only the custom Tooltip component receives it. Fix: update `hoveredSolveIdRef` inside the tooltip render function; `handleChartClick` reads from the ref
-- **Tooltip shows correct solve number**: was showing windowed index (`d.seq = 1,2,3…`); now shows actual `solve.seq` via `solveMap`
-- **Esc chain**: TrendsModal closes on Esc only when SolveDetailModal is not open (`detailOpen` prop); full chain: detail → trends → timer
-- **Semi-transparent overlay**: `rgba(10,10,26,0.88)` + `backdropFilter: blur(2px)` so cube shows through
-- **Phases tab multi-toggle**: Total / Exec / Recog independently toggleable; Total=solid, Exec=`5 3` dash, Recog=`2 3` dash; phase colors preserved
-- **Default time type**: both tabs default to Total only
-- **Default window**: both tabs default to All (mobile still 25)
-
-**Key technical learnings:**
-- `[gotcha]` **Recharts `onMouseMove` does not populate `activePayload` at chart level.** Only the `Tooltip` component receives the correct payload via internal context. Tracking hover state must happen inside the custom tooltip render, not in `onMouseMove`.
-- `[insight]` **Multiple `window.addEventListener` handlers fire simultaneously** — `stopPropagation` has no effect between them. Guard with a prop (`detailOpen`) to let the lower modal yield to the upper one.
-- `[note]` **Windowed index ≠ solve sequence number.** `buildTotalData` / `buildPhaseData` assigns `seq: i + 1` as the x-axis position within the current window — not the real solve number. Always use `solveMap.get(solveId).seq` for display.
-
-**Process learnings:**
-- `[insight]` **Add console.log before trying another fix.** The click-to-detail bug went through three fix attempts before we added logging. The log immediately revealed `hasPayload: false` in `onClick` and `activePayload: undefined` in `onMouseMove` — two distinct root causes that no amount of guessing would have found. Systematic debugging (Phase 1 evidence gathering) would have saved two cycles.
-- `[gotcha]` **When a Recharts event handler "should" have data but doesn't, suspect internal context.** Recharts distributes chart state through React context, not through every callback. `Tooltip` is a privileged consumer; chart-level handlers are not. Check the Recharts source or add logging before assuming an event should carry payload.
-- `[insight]` **Refs across event sequences don't need state.** `didZoomRef` and `hoveredSolveIdRef` both needed to survive from one event (mousedown/mousemove) to a later one (click) without triggering re-renders in between. Refs are the right tool — state would reset the value by re-rendering before the click handler reads it.
-
----
-
-## v1.5 — Stats Trends Enhancements (2026-04-09 14:01)
-**Review:** not yet
-
-**Design docs:**
-- Stats Trends: [Spec](superpowers/specs/2026-04-09-stats-trends-design.md) [Plan](superpowers/plans/2026-04-09-stats-trends.md)
-
-**What was built:**
-- **Total tab multi-toggle**: Total / Exec / Recog independently toggleable; all three on by default; ao5/ao12 per type
+- **Total tab multi-toggle**: Total / Exec / Recog independently toggleable; ao5/ao12 per type; both tabs default to Total only
 - **Phase hiding**: click legend label to show/hide individual phase lines
 - **Split color variants**: sub-phases within a group get HSL lightness variants derived from the base phase color
 - **Range zoom**: drag to select range, committed to a `zoomStack`; ← Back (one level) and Reset zoom (clear all); both visible whenever `zoomStack.length >= 1`; drag threshold of ≥2 seq units to avoid trackpad false positives
@@ -310,28 +265,29 @@ A record of what was built and what was learned, especially around co-working wi
 - **X-axis domain padding**: `[firstVisSeq - 0.5, lastVisSeq + 0.5]` prevents blank left section on small zoomed ranges
 - **Day reference lines**: day-boundary `ReferenceLine` at start of each day (browser timezone); `#4a6080` color, `6 3` dash; labels show `M/D`; top margin increased to 24 to prevent label clip
 - **Datetime in tooltips**: both Total and Phase tooltips show `YYYY/MM/DD HH:MM:SS` (browser timezone)
-- **Click-to-detail**: clicking near a hovered dot opens SolveDetailModal; tooltip `seq` label now shows actual `solve.seq`, not windowed index
+- **Click-to-detail fix**: clicking near a hovered dot opens SolveDetailModal; root cause — Recharts `onMouseMove` at chart level never populates `activePayload`, only the custom `Tooltip` component receives it via internal context; fix: update `hoveredSolveIdRef` inside the tooltip render function; tooltip shows actual `solve.seq` via `solveMap`, not windowed index
 - **Disable while cloud loading**: Trends button and method filter select both disabled when `cloudLoading` is true; non-cloud users unaffected (`cloudLoading` undefined)
-- **Esc to close**: TrendsModal closes on Esc unless SolveDetailModal is on top (`detailOpen` prop); Esc chain: detail → trends → timer
+- **Esc chain**: TrendsModal closes on Esc only when SolveDetailModal is not open (`detailOpen` prop); full chain: detail → trends → timer
 - **Semi-transparent background**: `rgba(10,10,26,0.88)` with `backdropFilter: blur(2px)` so the cube shows through
+- **Phases tab multi-toggle**: Total / Exec / Recog independently toggleable; Total=solid, Exec=`5 3` dash, Recog=`2 3` dash; phase colors preserved
+- **Default window**: both tabs default to All (mobile still 25)
 
 **Key technical learnings:**
-
-- `[gotcha]` **Recharts `onMouseMove` at chart level does not provide `activePayload`.** The chart-level event (`CategoricalChartState`) shows `activeLabel` and `activeCoordinate` but `activePayload` is always undefined. The `Tooltip` component receives the correct payload via internal context. Fix: update `hoveredSolveIdRef` inside the custom tooltip render function (where `payload` is always available), rather than in `onMouseMove`.
-
-- `[gotcha]` **Recharts `onClick` also never has `activePayload`** (confirmed in prior session). The ref approach captures the solveId during tooltip render; the click handler reads from the ref.
-
+- `[gotcha]` **Recharts `onMouseMove` at chart level does not provide `activePayload`.** The chart-level event shows `activeLabel` and `activeCoordinate` but `activePayload` is always undefined. The `Tooltip` component receives the correct payload via internal context. Fix: update `hoveredSolveIdRef` inside the custom tooltip render function (where `payload` is always available), rather than in `onMouseMove`.
+- `[gotcha]` **Recharts `onClick` also never has `activePayload`.** The ref approach captures the solveId during tooltip render; the click handler reads from the ref.
 - `[insight]` **`didZoomRef` vs. state for drag/click disambiguation.** Using a state variable to track "a zoom just happened" causes a re-render between mouseUp and click, resetting the flag before the click handler reads it. A ref holds the value across the event sequence without triggering re-renders.
-
 - `[insight]` **Multiple `window.addEventListener('keydown')` handlers all fire simultaneously.** `stopPropagation` on a `window` listener does not prevent other `window` listeners from firing. Fix: pass `detailOpen` prop to TrendsModal and guard its Esc handler with `!detailOpen`.
+- `[gotcha]` **Windowed index ≠ solve sequence number.** `buildTotalData` / `buildPhaseData` assigns `seq: i + 1` as the x-axis position within the current window — not the real solve number. Always use `solveMap.get(solveId).seq` for display.
+- `[insight]` **Refs across event sequences don't need state.** `didZoomRef` and `hoveredSolveIdRef` both needed to survive from one event (mousedown/mousemove) to a later one (click) without triggering re-renders in between. Refs are the right tool — state would reset the value by re-rendering before the click handler reads it.
+- `[note]` Zoom UX required careful state design: zoom stack (not a simple on/off), pre-filtered data (not just axis domain), and drag threshold (not just any movement)
 
 **Process learnings:**
-- `[note]` Systematic debugging (console.log tracing) revealed the root cause in two iterations: first confirmed `activePayload` is absent in `onMouseMove`; second confirmed it's also absent in `onClick`; then found the Tooltip component as the reliable source of truth
-- `[insight]` Zoom UX required careful state design: zoom stack (not a simple on/off), pre-filtered data (not just axis domain), and drag threshold (not just any movement)
+- `[insight]` **Add console.log before trying another fix.** The click-to-detail bug went through three fix attempts before we added logging. The log immediately revealed `hasPayload: false` in `onClick` and `activePayload: undefined` in `onMouseMove` — two distinct root causes that no amount of guessing would have found. Systematic debugging (Phase 1 evidence gathering) would have saved two cycles.
+- `[gotcha]` **When a Recharts event handler "should" have data but doesn't, suspect internal context.** Recharts distributes chart state through React context, not through every callback. `Tooltip` is a privileged consumer; chart-level handlers are not. Check the Recharts source or add logging before assuming an event should carry payload.
 
 ---
 
-## v1.5 — Stats Trends Initial Implementation (2026-04-09 05:18)
+## v1.5.0 — Stats Trends Initial Implementation (2026-04-09 05:18)
 **Review:** not yet
 
 **Design docs:**
@@ -359,7 +315,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
-## v1.5 — Stats Trends Design Session (2026-04-09 01:59)
+## v1.5.0-design — Stats Trends Design Session (2026-04-09 01:59)
 **Review:** complete
 
 **Design docs:**
@@ -464,7 +420,7 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
-## v1.4 — Method Filter in Solve History Sidebar (2026-04-08 23:05)
+## v1.4.0 — Method Filter in Solve History Sidebar (2026-04-08 23:05)
 **Review:** not yet
 
 **Design docs:**
@@ -492,7 +448,7 @@ The key insight: CLAUDE.md is not documentation for humans — it's instructions
 
 ---
 
-## v1.3 post — Cloud Loading UX (2026-04-08 15:10)
+## v1.3.1 — Cloud Loading UX (2026-04-08 15:10)
 **Review:** not yet
 
 **What was built:**
@@ -521,7 +477,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v1.3 — Firebase Cloud Sync (2026-04-08 13:29)
+## v1.3.0 — Firebase Cloud Sync (2026-04-08 13:29)
 **Review:** not yet
 
 **Design docs:**
@@ -561,7 +517,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v1.2 — Mobile & Polish (2026-04-06)
+## v1.2.0 — Mobile & Polish (2026-04-06)
 **Review:** not yet
 
 **Design docs:**
@@ -582,7 +538,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v1.1 — Roux Method + Slice Moves (2026-04-03 to 2026-04-05)
+## v1.1.0 — Roux Method + Slice Moves (2026-04-03 to 2026-04-05)
 **Review:** not yet
 
 **Design docs:**
@@ -605,7 +561,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v1.0 — Scramble Tracker + Timer + Solve History (2026-03-31 to 2026-04-02)
+## v1.0.0 — Scramble Tracker + Timer + Solve History (2026-03-31 to 2026-04-02)
 **Review:** not yet
 
 **Design docs:**
@@ -634,7 +590,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v0.4 — Example Solves + Button Driver (2026-03-30)
+## v0.4.0 — Example Solves + Button Driver (2026-03-30)
 **Review:** not yet
 
 **Design docs:**
@@ -652,7 +608,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v0.3 — Replay + Phase Highlighting (2026-03-28)
+## v0.3.0 — Replay + Phase Highlighting (2026-03-28)
 **Review:** not yet
 
 **What was built:**
@@ -669,7 +625,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v0.2 — Layout + Sidebar (2026-03-27)
+## v0.2.0 — Layout + Sidebar (2026-03-27)
 **Review:** not yet
 
 **What was built:**
@@ -684,7 +640,7 @@ This stays `true` continuously from page load through auth resolution through Fi
 
 ---
 
-## v0.1 — Foundation (2026-03-25 to 2026-03-26)
+## v0.1.0 — Foundation (2026-03-25 to 2026-03-26)
 **Review:** not yet
 
 **What was built:**

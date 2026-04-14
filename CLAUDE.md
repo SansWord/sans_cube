@@ -85,6 +85,10 @@ See `future.md` for the full backlog (single source of truth).
 When writing promotional content (LinkedIn posts, social media, release announcements):
 - Do **not** mention GAN by brand name — refer to it as "smart cube" instead.
 
+## Versioning
+
+This project uses three-part semver: `vX.Y.0` for main releases, `vX.Y.1` / `vX.Y.2` for follow-up sessions on the same version, and `vX.Y.0-design` for design-only sessions (devlog entry only, no git tag). Git tags, devlog headings, and TL;DR anchors must always match. See global CLAUDE.md Project Conventions for the full rule.
+
 ## End of Session
 
 Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format). When writing a new entry, also update the **TL;DR table** at the top of `docs/devlog.md` with a one-line summary of the new version.
