@@ -220,7 +220,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                     onClick={() => onSelectSolve(s)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td style={{ padding: '3px 12px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ padding: '3px 12px', color: s.shareId ? '#4caf7d' : '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
@@ -281,7 +281,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#111')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '3px 8px', color: '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
+                    <td style={{ padding: '3px 8px', color: s.shareId ? '#4caf7d' : '#555' }}>{s.isExample ? '★' : (s.seq ?? s.id)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
