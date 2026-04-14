@@ -23,7 +23,7 @@ import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Move, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
-import { shareSolve, unshareSolve } from '../services/firestoreSharing'
+import { shareSolve, unshareSolve, loadSharedSolve, SHARE_ID_RE } from '../services/firestoreSharing'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -80,6 +80,9 @@ export function TimerScreen({
   const [showHistory, setShowHistory] = useState(false)
   const [methodFilter, setMethodFilter] = useState<MethodFilter>('all')
   const [showTrends, setShowTrends] = useState(false)
+  const [sharedSolve, setSharedSolve] = useState<SolveRecord | null>(null)
+  const [sharedSolveLoading, setSharedSolveLoading] = useState(false)
+  const [sharedSolveNotFound, setSharedSolveNotFound] = useState(false)
   const urlResolvedRef = useRef(false)
   const initialHashRef = useRef(window.location.hash)
 
@@ -101,17 +104,38 @@ export function TimerScreen({
     }
   }, [cloudLoading, solves])
 
+  // Resolve #shared-{shareId} on boot — does not require auth or cloudLoading
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash.startsWith('#shared-')) return
+    const shareId = hash.replace('#shared-', '')
+    if (!SHARE_ID_RE.test(shareId)) return
+
+    setSharedSolveLoading(true)
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+    void Promise.race([loadSharedSolve(shareId), timeout]).then((solve) => {
+      setSharedSolveLoading(false)
+      if (solve) {
+        setSharedSolve(solve)
+      } else {
+        setSharedSolveNotFound(true)
+        history.replaceState(null, '', window.location.pathname + window.location.search)
+        setTimeout(() => setSharedSolveNotFound(false), 3000)
+      }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Write URL hash for selectedSolve (only when TrendsModal is not open).
   // Uses replaceState (not window.location.hash=) to avoid firing a hashchange event.
   useEffect(() => {
     if (!urlResolvedRef.current) return  // don't clear hash before initial URL is resolved
-    if (showTrends) return  // TrendsModal manages the hash while open
+    if (showTrends || !!sharedSolve) return
     if (selectedSolve) {
       history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
     } else {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
-  }, [selectedSolve, showTrends])
+  }, [selectedSolve, showTrends, sharedSolve])
 
   // Respond to user-initiated hash changes (e.g. typing a URL in the address bar)
   useEffect(() => {
@@ -124,6 +148,23 @@ export function TimerScreen({
         const id = parseInt(hash.replace('#solve-', ''), 10)
         const solve = solves.find(s => s.id === id)
         if (solve) { setShowTrends(false); setSelectedSolve(solve) }
+      } else if (hash.startsWith('#shared-')) {
+        const shareId = hash.replace('#shared-', '')
+        if (!SHARE_ID_RE.test(shareId)) return
+        setSharedSolveLoading(true)
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+        void Promise.race([loadSharedSolve(shareId), timeout]).then((solve) => {
+          setSharedSolveLoading(false)
+          if (solve) {
+            setSelectedSolve(null)
+            setShowTrends(false)
+            setSharedSolve(solve)
+          } else {
+            setSharedSolveNotFound(true)
+            history.replaceState(null, '', window.location.pathname + window.location.search)
+            setTimeout(() => setSharedSolveNotFound(false), 3000)
+          }
+        })
       } else {
         setSelectedSolve(null)
         setShowTrends(false)
@@ -392,10 +433,58 @@ export function TimerScreen({
         />
       )}
 
+      {sharedSolve && (
+        <SolveDetailModal
+          solve={sharedSolve}
+          onClose={() => {
+            setSharedSolve(null)
+            history.replaceState(null, '', window.location.pathname + window.location.search)
+          }}
+          onDelete={() => {}}
+          onUpdate={async () => {}}
+          readOnly
+        />
+      )}
+
+      {/* Loading overlay for shared solve */}
+      {sharedSolveLoading && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'all',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#111', border: '1px solid #333', borderRadius: 8,
+            padding: '10px 18px', color: '#888', fontSize: 13,
+          }}>
+            <div style={{
+              width: 14, height: 14, borderRadius: '50%',
+              border: '2px solid #333', borderTopColor: '#888',
+              animation: 'spin 0.8s linear infinite', flexShrink: 0,
+            }} />
+            Loading shared solve…
+          </div>
+        </div>
+      )}
+
+      {/* Not-found banner for shared solve */}
+      {sharedSolveNotFound && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 300, background: '#1a1a2e', border: '1px solid #555',
+          borderRadius: 8, padding: '10px 18px', color: '#aaa', fontSize: 13,
+        }}>
+          Solve not found or no longer shared.
+        </div>
+      )}
+
       {cloudLoading && (() => {
         const h = initialHashRef.current
         const label = h.startsWith('#trends') ? 'Syncing trends from cloud…'
           : h.startsWith('#solve-') ? 'Syncing solve from cloud…'
+          : h.startsWith('#shared-') ? 'Loading shared solve…'
           : null
         if (!label) return null
         return (
