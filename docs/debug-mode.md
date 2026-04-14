@@ -27,12 +27,32 @@ When **signed in**:
 - **Sign out**
 - **Renumber solves (fix seq)** — reassigns sequential `seq` numbers 1..n to all Firestore solves ordered by date. Destructive, requires confirmation. Reloads the page after.
 - **Recalibrate solve times (hw clock)** — fixes `timeMs` inflation in cloud solves caused by BLE delivery delay. Uses `moves[last].cubeTimestamp - moves[0].cubeTimestamp` as the true elapsed time. Only corrects (never inflates). Shows count of updated solves.
+- **Detect method mismatches** — same as the maintenance toolbar button, but reads from Firestore instead of localStorage.
 
 ### Maintenance buttons (bottom toolbar)
 
 - **Clear localStorage** — wipes all local data (solves, settings, everything); reloads
 - **Restore example solves** — un-dismisses the built-in example solves; reloads
 - **Recalibrate solve times (hw clock)** — same recalibration as the cloud button, but for localStorage solves only
+- **Detect method mismatches** — scans localStorage solves and flags ones where the stored method likely disagrees with the actual solving technique used. See below.
+
+### Method mismatch detector
+
+Triggered by **Detect method mismatches** (maintenance toolbar for localStorage, cloud sync panel for Firestore). Scans all non-example solves and flags ones where the stored `method` field likely disagrees with the actual solving technique.
+
+**Signals used (see `src/utils/detectMethod.ts`):**
+- **M-move count ≥ 8** → suggests Roux (Roux LSE is exclusively M+U moves; CFOP rarely exceeds 4)
+- **CFOP Cross > 15 turns** → Cross phase is bloated, probably not CFOP
+- **Roux FB > 18 turns** → FB phase is bloated, probably not Roux
+- Ambiguous cases (both or neither plausible) are skipped — no false positives
+
+**Results table columns:**
+- **Solve** — clickable ID; switches to timer mode and opens the solve detail modal where you can change the method
+- **Stored** — current `method` value (red)
+- **Suggested** — detected method (green)
+- **M** — M-move count (highlighted orange if ≥ 8)
+- **Cross** — CFOP cross turn count (highlighted red if > 20)
+- **FB** — Roux FB turn count (highlighted red if > 20)
 
 ### Solve replayer
 

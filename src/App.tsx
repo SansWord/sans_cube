@@ -17,9 +17,13 @@ import type { CubeRenderer } from './rendering/CubeRenderer'
 import type { Move, Face } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
+import { detectMethodMismatches } from './utils/detectMethod'
+import type { MethodMismatch } from './utils/detectMethod'
+import { SolveDetailModal } from './components/SolveDetailModal'
+import type { SolveRecord } from './types/solve'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -39,6 +43,38 @@ export default function App() {
   const [recalibratedCount, setRecalibratedCount] = useState(0)
   const [recalibratingCloud, setRecalibratingCloud] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibratedCloudCount, setRecalibratedCloudCount] = useState(0)
+  const [methodMismatches, setMethodMismatches] = useState<MethodMismatch[] | null>(null)
+  const [detectingMismatches, setDetectingMismatches] = useState(false)
+  const [selectedDebugSolve, setSelectedDebugSolve] = useState<SolveRecord | null>(null)
+
+  const handleDebugUpdate = async (updated: SolveRecord): Promise<void> => {
+    if (cloudSync.enabled && cloudSync.user) {
+      await updateSolveInFirestore(cloudSync.user.uid, updated)
+    } else {
+      const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+      saveToStorage(STORAGE_KEYS.SOLVES, solves.map((s) => s.id === updated.id ? updated : s))
+    }
+    setSelectedDebugSolve(updated)
+    // Re-check just this solve — remove from list if fixed, update in place if still mismatched
+    setMethodMismatches((prev) => {
+      if (!prev) return prev
+      const recheck = detectMethodMismatches([updated])
+      if (recheck.length === 0) return prev.filter((m) => m.solve.id !== updated.id)
+      return prev.map((m) => m.solve.id === updated.id ? recheck[0] : m)
+    })
+  }
+
+  const handleDebugDelete = (id: number): void => {
+    if (cloudSync.enabled && cloudSync.user) {
+      const solve = selectedDebugSolve
+      if (solve) void deleteSolveFromFirestore(cloudSync.user.uid, solve)
+    } else {
+      const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+      saveToStorage(STORAGE_KEYS.SOLVES, solves.filter((s) => s.id !== id))
+    }
+    setSelectedDebugSolve(null)
+    setMethodMismatches((prev) => prev ? prev.filter((m) => m.solve.id !== id) : prev)
+  }
 
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
@@ -189,6 +225,19 @@ export default function App() {
                 >
                   {recalibratingCloud === 'running' ? 'Recalibrating...' : recalibratingCloud === 'done' ? `Done — ${recalibratedCloudCount} solve${recalibratedCloudCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
                 </button>
+                <button
+                  disabled={detectingMismatches}
+                  onClick={async () => {
+                    if (!cloudSync.user) return
+                    setDetectingMismatches(true)
+                    const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
+                    setMethodMismatches(detectMethodMismatches(solves))
+                    setDetectingMismatches(false)
+                  }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: detectingMismatches ? 'default' : 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
+                >
+                  {detectingMismatches ? 'Detecting...' : 'Detect method mismatches'}
+                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -230,7 +279,70 @@ export default function App() {
             >
               {recalibrating === 'done' ? `Done — ${recalibratedCount} solve${recalibratedCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
             </button>
+            <button
+              onClick={() => {
+                const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                setMethodMismatches(detectMethodMismatches(solves))
+              }}
+              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Detect method mismatches
+            </button>
           </div>
+          {methodMismatches !== null && (
+            <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontWeight: 'bold', color: '#aaa' }}>
+                  Method Mismatches
+                </span>
+                <span style={{ color: methodMismatches.length === 0 ? '#4c4' : '#e8a020' }}>
+                  {methodMismatches.length === 0 ? '✓ No mismatches found' : `${methodMismatches.length} flagged`}
+                </span>
+                <button onClick={() => setMethodMismatches(null)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 13 }}>✕</button>
+              </div>
+              {methodMismatches.length > 0 && (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ color: '#666', textAlign: 'left' }}>
+                      <th style={{ padding: '2px 8px 4px 0' }}>Solve</th>
+                      <th style={{ padding: '2px 8px 4px 0' }}>Stored</th>
+                      <th style={{ padding: '2px 8px 4px 0' }}>Suggested</th>
+                      <th style={{ padding: '2px 8px 4px 0', textAlign: 'right' }}>M</th>
+                      <th style={{ padding: '2px 8px 4px 0', textAlign: 'right' }}>Cross</th>
+                      <th style={{ padding: '2px 0 4px 0', textAlign: 'right' }}>FB</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {methodMismatches.map(({ solve, storedMethod, suggestedMethod, mMoves, cfopCrossTurns, rouxFBTurns }) => (
+                      <tr key={solve.id} style={{ borderTop: '1px solid #222' }}>
+                        <td style={{ padding: '3px 8px 3px 0' }}>
+                          <button
+                            onClick={() => setSelectedDebugSolve(solve)}
+                            style={{ background: 'none', border: 'none', color: '#3498db', cursor: 'pointer', padding: 0, fontSize: 11, fontFamily: 'monospace', textDecoration: 'underline' }}
+                          >
+                            #{solve.id}
+                          </button>
+                        </td>
+                        <td style={{ padding: '3px 8px 3px 0', color: '#e74c3c' }}>{storedMethod}</td>
+                        <td style={{ padding: '3px 8px 3px 0', color: '#4c4' }}>{suggestedMethod}</td>
+                        <td style={{ padding: '3px 8px 3px 0', textAlign: 'right', color: mMoves >= 8 ? '#e8a020' : '#ccc' }}>{mMoves}</td>
+                        <td style={{ padding: '3px 8px 3px 0', textAlign: 'right', color: cfopCrossTurns > 20 ? '#e74c3c' : '#ccc' }}>{cfopCrossTurns}</td>
+                        <td style={{ padding: '3px 0 3px 0', textAlign: 'right', color: rouxFBTurns > 20 ? '#e74c3c' : '#ccc' }}>{rouxFBTurns}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+          {selectedDebugSolve && (
+            <SolveDetailModal
+              solve={selectedDebugSolve}
+              onClose={() => setSelectedDebugSolve(null)}
+              onDelete={handleDebugDelete}
+              onUpdate={handleDebugUpdate}
+            />
+          )}
           {lastSession && (
             <SolveReplayer
               session={lastSession}

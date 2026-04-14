@@ -14,6 +14,9 @@ main.tsx
     │   ├── OrientationConfig
     │   ├── FaceletDebug
     │   ├── MoveHistory
+    │   ├── SolveDetailModal         ← overlay when a mismatch solve is selected
+    │   │   ├── PhaseBar
+    │   │   └── CubeCanvas
     │   └── SolveReplayer            ← shown after a solve completes
     └── [timer mode]
         └── TimerScreen
@@ -49,6 +52,14 @@ Each hook is owned by a single component; data flows down as props.
 
 `App` subscribes to `driver` move events directly (for `rendererRef` animations in debug mode and for populating `moves` state shown in `MoveHistory`).
 
+**Debug-mode solve editing state (App-level):**
+- `selectedDebugSolve: SolveRecord | null` — solve currently open in the debug-mode `SolveDetailModal` overlay
+- `methodMismatches: MethodMismatch[] | null` — results from the method mismatch detector; `null` means not yet run
+- `handleDebugUpdate` — writes updated solve to localStorage or Firestore directly (bypasses `useSolveHistory`); re-checks the updated solve against `methodMismatches` and removes or updates the entry
+- `handleDebugDelete` — deletes solve from storage, closes modal, removes entry from `methodMismatches`
+
+Note: `TimerScreen` is unmounted while debug mode is active, so direct storage writes from `App` are picked up cleanly when timer mode is next opened.
+
 ### `TimerScreen` (`src/components/TimerScreen.tsx`)
 
 | Hook | Provides |
@@ -69,9 +80,11 @@ Each hook is owned by a single component; data flows down as props.
 |---|---|
 | `useReplayController` | `currentIndex`, `indicatorMs`, `isPlaying`, `speed`, `gyroEnabled`, `play`, `pause`, `seekTo`, `stepForward`, `stepBackward`, `fastForward`, `fastBackward`, `setSpeed`, `setGyroEnabled` |
 
-Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on method change), `saving` (disables `MethodSelector` and Delete during async save), `methodError` (inline error shown if phase recompute fails). All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
+Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on method change), `saving` (disables `MethodSelector` and Delete during async save), `methodError` (inline error shown if phase recompute fails or save times out), `savedConfirmation` (shows "Saved ✓" for 2 seconds after a successful save). All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
 
-Props: `onUpdate: (solve: SolveRecord) => Promise<void>` — called after method change with the updated record.
+Props: `onUpdate: (solve: SolveRecord) => Promise<void>` — called after method change with the updated record. The handler races `onUpdate` against a 3-second timeout; if the timeout wins, the method change is rolled back and an error is shown.
+
+Rendered in two contexts: inside `TimerScreen` (timer mode) and directly in `App` (debug mode — opened from the method mismatch detector results list).
 
 ### `SolveReplayer` (`src/components/SolveReplayer.tsx`)
 

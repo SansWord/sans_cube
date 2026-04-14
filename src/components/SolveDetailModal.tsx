@@ -19,7 +19,7 @@ interface Props {
   solve: SolveRecord
   onClose: () => void
   onDelete: (id: number) => void
-  onUseScramble: (scramble: string) => void
+  onUseScramble?: (scramble: string) => void
   onUpdate: (solve: SolveRecord) => Promise<void>
 }
 
@@ -60,6 +60,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [localSolve, setLocalSolve] = useState(solve)
   const [saving, setSaving] = useState(false)
   const [methodError, setMethodError] = useState<string | null>(null)
+  const [savedConfirmation, setSavedConfirmation] = useState(false)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const [orbitChanged, setOrbitChanged] = useState(false)
   const scrambledFacelets = computeScrambledFacelets(localSolve.scramble)
@@ -156,7 +157,12 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
     setLocalSolve(updated)
     setSaving(true)
     try {
-      await onUpdate(updated)
+      const saveTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 3000)
+      )
+      await Promise.race([onUpdate(updated), saveTimeout])
+      setSavedConfirmation(true)
+      setTimeout(() => setSavedConfirmation(false), 2000)
     } catch {
       setMethodError('Failed to save — please try again.')
       setTimeout(() => setMethodError(null), 4000)
@@ -279,12 +285,14 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
           >
             {copiedSteps ? 'Copied!' : 'Copy steps'}
           </button>
-          <button
-            onClick={() => { onUseScramble(localSolve.scramble); onClose() }}
-            style={{ padding: '4px 10px', fontSize: 11, background: '#2ecc71', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-          >
-            Use this scramble
-          </button>
+          {onUseScramble && (
+            <button
+              onClick={() => { onUseScramble(localSolve.scramble); onClose() }}
+              style={{ padding: '4px 10px', fontSize: 11, background: '#2ecc71', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Use this scramble
+            </button>
+          )}
         </div>
 
         {/* Body: Replay + Analysis */}
@@ -378,6 +386,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
               <span style={{ fontWeight: 'bold' }}>Detailed Analysis</span>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                 <MethodSelector method={method} onChange={handleMethodChange} disabled={saving} />
+                {savedConfirmation && <span style={{ color: '#4c4', fontSize: 11 }}>Saved ✓</span>}
                 {methodError && <span style={{ color: '#e74c3c', fontSize: 11 }}>{methodError}</span>}
               </div>
             </div>
