@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.19.1](#v1191--eo-detection-fix--migration-invariant--test-coverage-2026-04-16) | EO detection fix (UD+FB split), relaxed migration invariant, v1 fixture + genuine migration test |
 | [v1.19.0](#v1190--mes-migration-part-2-2026-04-16-1248) | M/E/S migration — auto-correct stored v1 face labels on load; Firestore migration button + review UX |
 | [v1.18.0](#v1180--colormovtranslator--correct-mes-detection-2026-04-16-0506) | `ColorMoveTranslator` — correct M/E/S detection via center tracking; reorientation desync fix |
 | [v1.17.1](#v1171--fix-mouse-driver-in-debug-mode-2026-04-15) | Fix: mouse driver moves not working in debug mode CubeCanvas |
@@ -44,6 +45,29 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.19.1 — EO detection fix + migration invariant + test coverage (2026-04-16)
+
+**Review:** not yet
+
+**What was built:**
+- **`isEODone` split into `isEODoneUD` + `isEODoneFB`** (`src/utils/roux.ts`): after an odd number of M moves, W/Y stickers on M-slice edges shift from U/D face positions to F/B positions. The old single check hardcoded U/D and missed these. The FB variant catches them; the exported `isEODone` returns `true` if either passes.
+- **Relaxed `migrateSolveV1toV2` phase invariant**: only `label`, `group`, and `turns` are compared for structural match; timing differences (`recognitionMs`, `executionMs`) are logged as `console.info` instead of blocking migration. This allows real-data migration to proceed while still capturing timing deltas for observability.
+- **Updated `ROUX_SOLVE_1` phases** to match new EO detection: EO turns 25→15, UL+UR turns 0→10. Previous stored phases reflected the buggy old `isEODone` that detected EO late.
+- **Migrated `exampleSolves.ts` to v2**: all 3 example solves (CFOP mouse, CFOP cube, Roux cube) updated with `schemaVersion: 2`; Roux example has corrected move faces at 10 serials and fresh phase values.
+- **Added `schemaVersion: 2`** to `CFOP_SOLVE_1` and `CFOP_SOLVE_2` fixtures — previously implicit v1.
+- **`ROUX_SOLVE_1_V1` fixture** sourced directly from main branch: genuine pre-migration data with wrong M-adjacent face labels at 10 serials (136=U, 174=F, 175=F, 183=F, 186=U, 189=F, 192=U, 193=U, 198=D, 205=U).
+- **Genuine v1→v2 migration test**: uses `ROUX_SOLVE_1_V1` to verify face corrections, `movesV1` preservation, and phase structure match against `ROUX_SOLVE_1`. Previous "full path" tests only exercised the graceful fallback.
+
+**Key technical learnings:**
+
+- `[insight]` **EO detection needs two cases after M moves.** After an odd number of M moves, the W/Y stickers that belong on M-slice edges appear on F/B faces (not U/D). A single `isEODoneUD` check hardcoded to U/D positions always returns false in this state. The fix splits into UD and FB variants — physically the same condition, just observed from opposite orientations.
+
+- `[insight]` **Timing differences between v1 and v2 phases are expected and correct, not a sign of bugs.** For phases before EO (FB, SB, CMLL), timing is identical because the phase boundary falls at the same move index. For EO and UL+UR, timing differs because the corrected EO logic fires at a different move (index 15 vs 25) — a different cubeTimestamp → different recognitionMs/executionMs. The relaxed invariant lets migration succeed while logging the delta.
+
+- `[gotcha]` **Sourcing a v1 fixture by reversing v2 corrections is fragile — use the main branch directly.** Reverse-engineering 10 face corrections manually risks errors. The main branch has the original recorded data; extracting it with `git show main:...` is authoritative and reproducible.
 
 ---
 
