@@ -1,5 +1,4 @@
 // src/utils/applyMove.ts
-import { SOLVED_FACELETS } from '../types/cube'
 import type { PositionMove } from '../types/cube'
 
 // Face layout in 54-char Kociemba string:
@@ -81,31 +80,21 @@ export function applyMoveToFacelets(facelets: string, move: PositionMove): strin
       cycle(f, 0, 1, 2, 42, 39, 36, 35, 34, 33, 11, 14, 17)
       break
 
-    // TODO (Task 4): replace these recursive approximations with direct middle-layer cycles
-    case 'M': {
-      const lDir = ccw ? 'CW' : 'CCW'
-      const rDir = ccw ? 'CCW' : 'CW'
-      return applyMoveToFacelets(
-        applyMoveToFacelets(facelets, { face: 'L', direction: lDir, cubeTimestamp: 0, serial: 0 }),
-        { face: 'R', direction: rDir, cubeTimestamp: 0, serial: 0 }
-      )
-    }
-    case 'E': {
-      const dDir = ccw ? 'CW' : 'CCW'
-      const uDir = ccw ? 'CCW' : 'CW'
-      return applyMoveToFacelets(
-        applyMoveToFacelets(facelets, { face: 'D', direction: dDir, cubeTimestamp: 0, serial: 0 }),
-        { face: 'U', direction: uDir, cubeTimestamp: 0, serial: 0 }
-      )
-    }
-    case 'S': {
-      const fDir = ccw ? 'CW' : 'CCW'
-      const bDir = ccw ? 'CCW' : 'CW'
-      return applyMoveToFacelets(
-        applyMoveToFacelets(facelets, { face: 'F', direction: fDir, cubeTimestamp: 0, serial: 0 }),
-        { face: 'B', direction: bDir, cubeTimestamp: 0, serial: 0 }
-      )
-    }
+    case 'M':
+      // Middle col between L and R, L direction. U→F→D→B(rev)→U
+      // B reversed: stored looking from behind, so middle col runs 52,49,46 (not 46,49,52)
+      cycle(f, 1, 4, 7,  19, 22, 25,  28, 31, 34,  52, 49, 46)
+      break
+
+    case 'E':
+      // Middle row between U and D, D direction. F→R→B→L→F
+      cycle(f, 21, 22, 23,  12, 13, 14,  48, 49, 50,  39, 40, 41)
+      break
+
+    case 'S':
+      // Middle layer between F and B, F direction. U(row)→R(col)→D(row,rev)→L(col,rev)→U
+      cycle(f, 3, 4, 5,  10, 13, 16,  32, 31, 30,  43, 40, 37)
+      break
 
     case 'x': {
       if (ccw) rotateFaceCCW(f, 9); else rotateFaceCW(f, 9)

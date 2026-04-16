@@ -1,13 +1,13 @@
 import { connectGanCube } from 'gan-web-bluetooth'
-import { CubeEventEmitter, type CubeDriver } from './CubeDriver'
-import type { Move, Quaternion, Face } from '../types/cube'
+import { ColorCubeEventEmitter, type ColorCubeDriver } from './CubeDriver'
+import type { ColorMove, Quaternion, FaceletColor } from '../types/cube'
 import { STORAGE_KEYS } from '../utils/storageKeys'
 
-// GAN face index → standard face letter
-// GAN Gen4: face index 0-5 maps to U,R,F,D,L,B
-const GAN_FACE_MAP: Face[] = ['U', 'R', 'F', 'D', 'L', 'B']
+// GAN face index → color code (face 0 = white center, always)
+// GAN Gen4: face index 0-5 maps to W,R,G,Y,O,B
+const GAN_COLOR_MAP: FaceletColor[] = ['W', 'R', 'G', 'Y', 'O', 'B']
 
-export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
+export class GanCubeDriver extends ColorCubeEventEmitter implements ColorCubeDriver {
   private connection: Awaited<ReturnType<typeof connectGanCube>> | null = null
   private batteryPollInterval: ReturnType<typeof setInterval> | null = null
   private _lastCubeTs = 0  // tracks last valid cubeTimestamp for interpolating missed-move nulls
@@ -69,8 +69,8 @@ export class GanCubeDriver extends CubeEventEmitter implements CubeDriver {
       const rawTs = event.cubeTimestamp as number | null
       const cubeTimestamp = rawTs != null ? rawTs : this._lastCubeTs + 50
       this._lastCubeTs = cubeTimestamp
-      const move: Move = {
-        face: GAN_FACE_MAP[ganFaceIndex],
+      const move: ColorMove = {
+        face: GAN_COLOR_MAP[ganFaceIndex],
         direction: ganDir === 0 ? 'CW' : 'CCW',
         cubeTimestamp,
         serial: event.serial as number,
