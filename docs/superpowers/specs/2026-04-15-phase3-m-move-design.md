@@ -113,14 +113,8 @@ class TypedEventEmitter<TEventMap extends Record<string, unknown>> {
 // Backward-compat alias — all existing code unchanged
 export class CubeEventEmitter extends TypedEventEmitter<EventMap> {}
 
-// New color-based variant
-export type ColorEventMap = {
-  move: ColorMove
-  replacePreviousMove: ColorMove
-  gyro: Quaternion
-  connection: ConnectionStatus
-  battery: number
-}
+// New color-based variant — uses MoveEventMap to avoid duplication
+export type ColorEventMap = MoveEventMap<ColorMove>
 export class ColorCubeEventEmitter extends TypedEventEmitter<ColorEventMap> {}
 
 // New interface for color-based drivers
@@ -130,19 +124,44 @@ export interface ColorCubeDriver extends ColorCubeEventEmitter {
 }
 ```
 
-New type in `src/types/cube.ts`:
+New and updated types in `src/types/cube.ts`:
 
 ```ts
-export interface ColorMove {
-  face: FaceletColor   // 'W' | 'R' | 'G' | 'Y' | 'O' | 'B'
+// Generic base — single source of truth for all move fields
+export interface MoveOf<TFace> {
+  face: TFace
   direction: Direction
   cubeTimestamp: number
   serial: number
   quaternion?: Quaternion
 }
+
+// New canonical name for position-based moves — used in all new code
+export type PositionMove = MoveOf<AnyFace>
+
+// Backward-compat alias — all existing code keeps working unchanged
+export type Move = PositionMove
+
+// Color-based move — emitted by GanCubeDriver before translation
+export type ColorMove = MoveOf<FaceletColor>
 ```
 
-**Why `ColorMove` instead of reusing `Move`:** `FaceletColor` and `AnyFace` share the strings `'R'` and `'B'`. After E moves, the red center drifts to a different geometric face — so `'R'` as a color label no longer means geometric R. A distinct type prevents accidental misuse and makes the compiler enforce the boundary.
+`MoveEventMap` extracted to remove duplication between `EventMap` and `ColorEventMap` (in `CubeDriver.ts`):
+
+```ts
+type MoveEventMap<TMove> = {
+  move: TMove
+  replacePreviousMove: TMove
+  gyro: Quaternion
+  connection: ConnectionStatus
+  battery: number
+}
+
+export type EventMap      = MoveEventMap<PositionMove>  // was MoveEventMap<Move> — same type
+export type ColorEventMap = MoveEventMap<ColorMove>
+```
+
+**Why `ColorMove` instead of reusing `Move`/`PositionMove`:** `FaceletColor` and `AnyFace` share the strings `'R'` and `'B'`. After E moves, the red center drifts to a different geometric face — so `'R'` as a color label no longer means geometric R. A distinct type prevents accidental misuse and makes the compiler enforce the boundary.
 
 Nothing outside `GanCubeDriver` and `ColorMoveTranslator` touches these new types. All existing code using `CubeEventEmitter` and `CubeDriver` is unaffected.
 
