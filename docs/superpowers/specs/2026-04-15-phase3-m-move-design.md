@@ -371,9 +371,7 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
    Apply the corrected move to `_facelets` after each step.
 
-2. **Correctness check + recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e — this is data correction, not a method switch, so `recomputePhases` is not called here. Assert that `freshPhases.map(p => p.turns)` is identical to `solve.phases.map(p => p.turns)`. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index — so turn counts per phase must be preserved exactly. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
-
-   Identical turn counts also guarantee identical phase timing (`recognitionMs`, `executionMs`): same phase boundaries → same moves in each phase → same `cubeTimestamp` differences.
+2. **Correctness check + recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e — this is data correction, not a method switch, so `recomputePhases` is not called here. Assert that `freshPhases` is deeply identical to `solve.phases` — every field: `label`, `group`, `turns`, `recognitionMs`, `executionMs`. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index, producing the same phase labels, turn counts, and timing. Asserting all fields catches edge cases where `isComplete` fires at a wrong index (which would change the label, not just the counts). If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
 
    (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends solved.)
 
@@ -459,9 +457,7 @@ Add two new fixtures to `solveFixtures.ts`:
 **Primary assertion for all tests:**
 ```ts
 expect(result.schemaVersion).toBe(2)
-expect(result.phases.map(p => p.turns)).toEqual(original.phases.map(p => p.turns))
-expect(result.phases.map(p => p.recognitionMs)).toEqual(original.phases.map(p => p.recognitionMs))
-expect(result.phases.map(p => p.executionMs)).toEqual(original.phases.map(p => p.executionMs))
+expect(result.phases).toEqual(original.phases)  // all fields: label, group, turns, recognitionMs, executionMs
 ```
 
 The invariant is self-validating: the original `phases.turns` comes from the real solve, and migration must reproduce the same split using the corrected moves.
