@@ -442,9 +442,7 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 
 ### 2g. Migration tests
 
-**`migrateSolveV1toV2` unit tests** — each test constructs a minimal `SolveRecord` with v1-encoded moves, runs migration, and asserts the turn-count invariant. The "Corrected (right)" labels in the tables below are documentation for the implementer — the test assertion is always the invariant, not a hardcoded face label.
-
-**Test fixture shape:** each fake v1 `SolveRecord` must include `phases` with `turns` set to what the old `applyMoveToFacelets` (L+R/D+U/F+B approximation) would have produced. Since the old code no longer exists at test time, these `turns` values are hardcoded in the test fixture. The invariant check then verifies the migration recomputes the same split.
+**`migrateSolveV1toV2` unit tests** use the existing example solves in `src/data/exampleSolves.ts` as v1 input. These are real recorded solves with `schemaVersion` absent (v1) and real `phases` data computed by the old code — no fake record construction needed. The Roux example solve contains M moves and is the primary fixture for slice migration tests.
 
 **Primary assertion for all tests:**
 ```ts
@@ -452,33 +450,13 @@ expect(result.schemaVersion).toBe(2)
 expect(result.phases.map(p => p.turns)).toEqual(original.phases.map(p => p.turns))
 ```
 
-**Single-slice correction** — after one slice move, subsequent outer-face moves drift. The "Corrected geometric" column shows what migration must produce (documentation only).
+The invariant is self-validating: the original `phases.turns` comes from the real solve, and migration must reproduce the same split using the corrected moves.
 
-| Slice first (v1) | v1 outer stored | Physical color | Corrected geometric |
-|-----------------|----------------|---------------|-------------------|
-| M CW | U CW | White (W) → now at F | F CW |
-| M CCW | U CW | White (W) → now at B | B CW |
-| E CW | F CW | Green (G) → now at R | R CW |
-| E CCW | F CW | Green (G) → now at L | L CW |
-| S CW | U CW | White (W) → now at R | R CW |
-| S CCW | U CW | White (W) → now at L | L CW |
+**Roux example solve (has M moves):** migrate and assert turn-count invariant across all phases.
 
-**Misclassified slice correction** — v1 stored the wrong slice label because center drift made GAN's color pair land on the wrong geometric pair.
+**CFOP example solve (no M/E/S, fast path):** must return `{ ...solve, schemaVersion: 2 }` with `result.moves === original.moves` (reference equality — no reallocation).
 
-| First move | Physical second move | v1 stored (wrong) | Corrected (right) |
-|-----------|---------------------|------------------|------------------|
-| E CW | M CW | S CW | M CW |
-| E CCW | M CW | S CW | M CW |
-| M CW | E CW | S CCW | E CW |
-| M CW | S CW | E CW | S CW |
-| S CW | M CW | E CW | M CW |
-| S CW | E CW | M CCW | E CW |
-
-*(Directions in the "v1 stored" column are illustrative; exact direction depends on which color event arrives first in the fast window. Migration preserves the original direction.)*
-
-**Fast-path: no slice moves** — a CFOP solve with only U/R/F/D/L/B moves must return `{ ...solve, schemaVersion: 2 }` with moves unchanged. Assert `result.moves === original.moves` (reference equality — no reallocation).
-
-**Identity check** — fake v1 solve with moves `M2 U2 M2 U2 M2 U2 M2 U2`. Migrate and assert the turn-count invariant holds across all phases.
+The tables in 2b (single-slice correction, misclassified slice) document the reasoning behind the migration logic and are useful for manual tracing — they are not test assertions.
 
 ---
 
