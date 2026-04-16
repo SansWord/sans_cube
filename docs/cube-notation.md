@@ -248,13 +248,17 @@ q_cube = q_sensor * inv(sensorOffset)
 display = applyReference(q_cube, ref)
 ```
 
-`sensorOffset` is updated by right-multiplying the slice quaternion on each M/E/S move event:
+`sensorOffset` is updated by **left-multiplying** the slice quaternion on each M/E/S move event:
 
 ```
-sensorOffset_new = sensorOffset_old * sliceQ   // right-multiply = body-frame
+sensorOffset_new = sliceQ * sensorOffset_old   // left-multiply = pre-multiply
 ```
 
-**Why right-multiply?** The slice rotation axis is fixed in the cube's body frame (the L/R axis always points in the same direction relative to the cube regardless of how you hold it). Body-frame rotations compose on the right.
+**Why left-multiply?** Each `sliceQ` is defined in the cube's outer-layer frame (GAN +X/+Y/+Z of the held cube), not the sensor's current drifted frame. Rotations defined in the same fixed reference frame compose via pre-multiplication (left-multiply).
+
+**Why not right-multiply?** Right-multiply would mean composing in the sensor's current (drifted) body frame, which is wrong. For a single slice move from identity, both give the same result — but for combinations the difference matters. After E CW (Rz+90°) then M' (Rx-90°):
+- Left-multiply gives: `Rx(-90°) * Rz(+90°)` — correct
+- Right-multiply gives: `Rz(+90°) * Rx(-90°)` — wrong (different matrix, rotations don't commute)
 
 **Why pre-correcting q_sensor works for subsequent tilts:**
 
