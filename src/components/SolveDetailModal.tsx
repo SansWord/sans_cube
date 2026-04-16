@@ -65,6 +65,7 @@ type ShareState = 'idle' | 'sharing' | 'unsharing'
 export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUpdate, onShare, onUnshare, readOnly }: Props) {
   const [localSolve, setLocalSolve] = useState(solve)
   const [saving, setSaving] = useState(false)
+  const [reviewingMigration, setReviewingMigration] = useState(false)
   const [methodError, setMethodError] = useState<string | null>(null)
   const [savedConfirmation, setSavedConfirmation] = useState(false)
   const rendererRef = useRef<CubeRenderer | null>(null)
@@ -527,6 +528,61 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
             </table>
           </div>
         </div>
+
+        {/* Migration review section — shown when movesV1 is present */}
+        {localSolve.movesV1 && (
+          <div style={{ marginTop: 20, padding: 12, background: '#1a1a2a', border: '1px solid #e8a02055', borderRadius: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ color: '#e8a020', fontSize: 12, fontWeight: 'bold' }}>Migration Review</span>
+              {!readOnly && (
+                <button
+                  disabled={reviewingMigration}
+                  onClick={async () => {
+                    setReviewingMigration(true)
+                    const { movesV1: _, ...updated } = localSolve
+                    setLocalSolve(updated as typeof localSolve)
+                    try {
+                      await onUpdate(updated as typeof localSolve)
+                    } catch {
+                      setLocalSolve(localSolve)
+                    } finally {
+                      setReviewingMigration(false)
+                    }
+                  }}
+                  style={{ padding: '2px 10px', fontSize: 11, background: 'transparent', color: '#4c4', border: '1px solid #4c4', borderRadius: 3, cursor: reviewingMigration ? 'default' : 'pointer' }}
+                >
+                  {reviewingMigration ? 'Saving...' : 'Mark as reviewed'}
+                </button>
+              )}
+            </div>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>
+              Face labels corrected for M/E/S center drift. Only changed moves shown.
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr style={{ color: '#555' }}>
+                  <td style={{ padding: '2px 4px' }}>#</td>
+                  <td style={{ padding: '2px 4px' }}>Old</td>
+                  <td style={{ padding: '2px 8px' }}>New</td>
+                </tr>
+              </thead>
+              <tbody>
+                {localSolve.moves.map((m, i) => {
+                  const old = localSolve.movesV1![i]
+                  if (!old || (old.face === m.face && old.direction === m.direction)) return null
+                  const fmt = (mv: typeof m) => mv.face + (mv.direction === 'CCW' ? "'" : '')
+                  return (
+                    <tr key={i}>
+                      <td style={{ padding: '1px 4px', color: '#555' }}>{i + 1}</td>
+                      <td style={{ padding: '1px 4px', color: '#e94560' }}>{fmt(old)}</td>
+                      <td style={{ padding: '1px 8px', color: '#4caf7d' }}>{fmt(m)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Actions */}
         {!readOnly && (
