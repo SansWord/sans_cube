@@ -174,19 +174,43 @@ export function isCMLLDone(f: string): boolean {
 // Column edges differ by block position:
 //   blocks at D (LD+RD) → UL, UR
 //   blocks at U (LU+RU) → DL, DR (UL/UR are inside the blocks)
-export function isEODone(f: string): boolean {
-  const mSlice =
+function isEODoneUD(f: string): boolean {
+  const mSliceUD =
     (f[7]  === 'W' || f[7]  === 'Y') &&   // UF
     (f[1]  === 'W' || f[1]  === 'Y') &&   // UB
     (f[28] === 'W' || f[28] === 'Y') &&   // DF
     (f[34] === 'W' || f[34] === 'Y')       // DB
 
-  return isCMLLDone(f) && mSlice && (
+  return isCMLLDone(f) && mSliceUD && (
     // blocks at D: column edges UL, UR
     ((f[3]  === 'W' || f[3]  === 'Y') && (f[5]  === 'W' || f[5]  === 'Y')) ||
     // blocks at U: column edges DL, DR
     ((f[30] === 'W' || f[30] === 'Y') && (f[32] === 'W' || f[32] === 'Y'))
   )
+}
+
+// All 6 LSE edges oriented: U/D-colored sticker faces F or B.
+// M-slice edges (FU, FD, BU, BD) are always the same.
+// Column edges differ by block position:
+//   blocks at B (LB+RB) → FL, FR
+//   blocks at F (LF+RF) → BL, BR (BL/BR are inside the blocks)
+function isEODoneFB(f: string): boolean {
+  const mSliceFB =
+    (f[19]  === 'W' || f[19]  === 'Y') &&   // FU
+    (f[25]  === 'W' || f[25]  === 'Y') &&   // FD
+    (f[46] === 'W' || f[46] === 'Y') &&   // BU
+    (f[52] === 'W' || f[52] === 'Y')       // BD
+
+  return isCMLLDone(f) && mSliceFB && (
+    // blocks at B: column edges FL, FR
+    ((f[21]  === 'W' || f[21]  === 'Y') && (f[23]  === 'W' || f[23]  === 'Y')) ||
+    // blocks at F: column edges BL, BR
+    ((f[48] === 'W' || f[48] === 'Y') && (f[50] === 'W' || f[50] === 'Y'))
+  )
+}
+
+export function isEODone(f: string): boolean {
+  return isEODoneFB(f) || isEODoneUD(f)
 }
 
 // Two free column edges (not inside the blocks) placed at home.
