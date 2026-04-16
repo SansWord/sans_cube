@@ -123,8 +123,8 @@ describe('SliceMoveDetector', () => {
     expect(quats).toHaveLength(1)
   })
 
-  it('integration: L CCW + R CW emits M CW that correctly applies L CCW + R CW sticker effect', () => {
-    // M CW = L CCW + R CW: U left and right cols get F color; U mid unchanged
+  it('integration: L CCW + R CW emits M CW that correctly applies direct middle-layer cycle', () => {
+    // M CW: U mid col gets B (from B mid col); F mid col gets W (from U); D mid col gets G; B mid col gets Y
     let emittedMove: Move | null = null
     detector.on('move', (m) => { emittedMove = m })
 
@@ -136,11 +136,11 @@ describe('SliceMoveDetector', () => {
     expect(emittedMove!.direction).toBe('CW')
 
     const result = applyMoveToFacelets(SOLVED_FACELETS, emittedMove!)
-    // M CW on solved: U left col (0,3,6) and right col (2,5,8) get F color (green)
-    expect(result[0]).toBe('G')
-    expect(result[2]).toBe('G')
-    expect(result[1]).toBe('W') // U mid unchanged (white)
+    // M CW on solved: U mid col (1,4,7) gets B (blue); U left/right cols unchanged (white)
+    expect(result[1]).toBe('B')
+    expect(result[0]).toBe('W') // U left unchanged
+    expect(result[2]).toBe('W') // U right unchanged
     // Full state check
-    expect(result).toBe('GWGGWGGWGRRRRRRRRRYGYYGYYGYBYBBYBBYBOOOOOOOOOWBWWBWWBW')
+    expect(result).toBe('WBWWBWWBWRRRRRRRRRGWGGWGGWGYGYYGYYGYOOOOOOOOOBYBBYBBYB')
   })
 })

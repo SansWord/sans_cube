@@ -169,29 +169,22 @@ describe('applyMoveToFacelets sticker cycles', () => {
   })
 })
 
-// ── Slice move sticker tests ──────────────────────────────────────────────────
-// M/E/S are implemented as their paired outer-face moves (GAN reports slice moves
-// as two simultaneous outer-face events). M CW = L CCW + R CW, E CW = D CCW + U CW,
-// S CW = F CCW + B CW.
+// M/E/S use direct middle-layer cycles (not paired outer-face approximations).
+// cycle3CW(a,b,c,d): a←d, b←a_old, c←b_old, d←c_old
 
 describe('applyMoveToFacelets — M moves', () => {
-  it('M CW from solved: left and right cols of U get F color; mid unchanged', () => {
+  // M CW: U-mid←B-mid, F-mid←U-mid, D-mid←F-mid, B-mid(rev)←D-mid
+  // cycle(f, 1,4,7, 19,22,25, 28,31,34, 52,49,46)
+  it('M CW from solved: U/F/D/B middle cols cycle; L/R unchanged', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    // U left col (0,3,6) and right col (2,5,8) ← F color (green); mid (1,4,7) stays U color (white)
-    expect(result[0]).toBe('G'); expect(result[2]).toBe('G')
-    expect(result[3]).toBe('G'); expect(result[5]).toBe('G')
-    expect(result[6]).toBe('G'); expect(result[8]).toBe('G')
-    expect(result[1]).toBe('W'); expect(result[4]).toBe('W'); expect(result[7]).toBe('W')
+    // U mid col (1,4,7) gets B blue; F mid col gets W white; D mid col gets G green; B mid col gets Y yellow
+    expect(result).toBe('WBWWBWWBWRRRRRRRRRGWGGWGGWGYGYYGYYGYOOOOOOOOOBYBBYBBYB')
   })
 
-  it('M CW from solved: full state matches L CCW then R CW', () => {
-    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('GWGGWGGWGRRRRRRRRRYGYYGYYGYBYBBYBBYBOOOOOOOOOWBWWBWWBW')
-  })
-
-  it('M CCW from solved: full state matches L CW then R CCW', () => {
+  it('M CCW from solved: reverse cycle', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('BWBBWBBWBRRRRRRRRRWGWWGWWGWGYGGYGGYGOOOOOOOOOYBYYBYYBY')
+    // U mid col gets G green; F mid col gets Y yellow; D mid col gets B blue; B mid col gets W white
+    expect(result).toBe('WGWWGWWGWRRRRRRRRRGYGGYGGYGYBYYBYYBYOOOOOOOOOBWBBWBBWB')
   })
 
   it('M CW then M CCW returns to solved', () => {
@@ -204,9 +197,18 @@ describe('applyMoveToFacelets — M moves', () => {
 })
 
 describe('applyMoveToFacelets — E moves', () => {
-  it('E CW from solved: full state matches D CCW then U CW', () => {
+  // E CW: F-mid-row←L-mid-row, R-mid-row←F-mid-row, B-mid-row←R-mid-row, L-mid-row←B-mid-row
+  // cycle(f, 21,22,23, 12,13,14, 48,49,50, 39,40,41)
+  it('E CW from solved: F/R/B/L middle rows cycle; U/D unchanged', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('WWWWWWWWWBBBRRRBBBRRRGGGRRRYYYYYYYYYGGGOOOGGGOOOBBBOOO')
+    // F mid row gets O orange; R mid row gets G green; B mid row gets R red; L mid row gets B blue
+    expect(result).toBe('WWWWWWWWWRRRGGGRRRGGGOOOGGGYYYYYYYYYOOOBBBOOOBBBRRRBBB')
+  })
+
+  it('E CCW from solved: reverse cycle', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'E', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
+    // F mid row gets R red; R mid row gets B blue; B mid row gets O orange; L mid row gets G green
+    expect(result).toBe('WWWWWWWWWRRRBBBRRRGGGRRRGGGYYYYYYYYYOOOGGGOOOBBBOOOBBB')
   })
 
   it('E CW then E CCW returns to solved', () => {
@@ -219,9 +221,17 @@ describe('applyMoveToFacelets — E moves', () => {
 })
 
 describe('applyMoveToFacelets — S moves', () => {
-  it('S CW from solved: full state matches F CCW then B CW', () => {
+  // S CW: U-mid-row←L-mid-col(rev), R-mid-col←U-mid-row, D-mid-row(rev)←R-mid-col, L-mid-col(rev)←D-mid-row(rev)
+  // cycle(f, 3,4,5, 10,13,16, 32,31,30, 43,40,37)
+  it('S CW from solved: U/R/D/L middle layer cycles; F/B unchanged', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('RRRWWWRRRYRYYRYYRYGGGGGGGGGOOOYYYOOOWOWWOWWOWBBBBBBBBB')
+    // U mid row gets O orange; R mid col gets W white; D mid row gets R red; L mid col gets Y yellow
+    expect(result).toBe('WWWOOOWWWRWRRWRRWRGGGGGGGGGYYYRRRYYYOYOOYOOYOBBBBBBBBB')
+  })
+
+  it('S CCW from solved: reverse cycle', () => {
+    const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'S', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
+    expect(result).toBe('WWWRRRWWWRYRRYRRYRGGGGGGGGGYYYOOOYYYOWOOWOOWOBBBBBBBBB')
   })
 
   it('S CW then S CCW returns to solved', () => {
