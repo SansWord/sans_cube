@@ -3,6 +3,7 @@ import { SOLVED_FACELETS } from '../types/cube'
 import { applyMoveToFacelets, isSolvedFacelets } from './applyMove'
 import { parseScramble } from './scramble'
 import type { SolveRecord, PhaseRecord, SolveMethod } from '../types/solve'
+import type { Move } from '../types/cube'
 
 function computeScrambledFacelets(scramble: string): string {
   let f = SOLVED_FACELETS
@@ -14,12 +15,15 @@ function computeScrambledFacelets(scramble: string): string {
   return f
 }
 
-export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): PhaseRecord[] | null {
-  const moves = solve.moves
+// Exported for use by migrateSolveV1toV2 (Part 2). Not for general use.
+export function computePhases(
+  moves: Move[],
+  scramble: string,
+  method: SolveMethod
+): PhaseRecord[] | null {
   if (moves.length === 0) return null
 
-  let facelets = computeScrambledFacelets(solve.scramble)
-
+  let facelets = computeScrambledFacelets(scramble)
   const phases: PhaseRecord[] = []
   let phaseIndex = 0
   let phaseStart = moves[0].cubeTimestamp
@@ -27,7 +31,7 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
   let phaseMoveCount = 0
 
   function completePhase(endTimestamp: number) {
-    const ph = newMethod.phases[phaseIndex]
+    const ph = method.phases[phaseIndex]
     const firstMove = phaseFirstMove ?? endTimestamp
     phases.push({
       label: ph.label,
@@ -47,8 +51,8 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
     phaseMoveCount++
     if (phaseFirstMove === null) phaseFirstMove = move.cubeTimestamp
 
-    while (phaseIndex < newMethod.phases.length) {
-      if (newMethod.phases[phaseIndex].isComplete(facelets)) {
+    while (phaseIndex < method.phases.length) {
+      if (method.phases[phaseIndex].isComplete(facelets)) {
         completePhase(move.cubeTimestamp)
       } else {
         break
@@ -56,8 +60,7 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
     }
 
     if (isSolvedFacelets(facelets)) {
-      // Complete any remaining phases not caught by the while loop
-      while (phaseIndex < newMethod.phases.length) {
+      while (phaseIndex < method.phases.length) {
         completePhase(move.cubeTimestamp)
       }
       break
@@ -66,8 +69,7 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
 
   if (!isSolvedFacelets(facelets)) return null
 
-  // CFOP merge rules — matched by label, no-op for non-CFOP methods
-  // Rule 1: if EOLL completed OLL on the same move (COLL has 0 turns), absorb EOLL into COLL
+  // CFOP merge rules
   const eollIdx = phases.findIndex((p) => p.label === 'EOLL')
   if (eollIdx >= 0 && eollIdx + 1 < phases.length &&
       phases[eollIdx + 1].label === 'COLL' && phases[eollIdx + 1].turns === 0) {
@@ -78,7 +80,6 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
     )
   }
 
-  // Rule 2: if CPLL and EPLL finished on the same move (EPLL has 0 turns), absorb CPLL into EPLL
   const n2 = phases.length
   if (n2 >= 2 && phases[n2 - 2].label === 'CPLL' && phases[n2 - 1].label === 'EPLL' && phases[n2 - 1].turns === 0) {
     const cpll = phases[n2 - 2]
@@ -89,4 +90,8 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
   }
 
   return phases
+}
+
+export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): PhaseRecord[] | null {
+  return computePhases(solve.moves, solve.scramble, newMethod)
 }
