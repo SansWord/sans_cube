@@ -267,8 +267,8 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
 **Existing CFOP fixtures:** unaffected — no M/E/S moves, face labels identical in v1 and v2.
 
 **Existing M/E/S unit tests** (`tests/hooks/useCubeState.test.ts`, later `applyMove.test.ts`): the describe blocks for M, E, S currently assert the old approximation behavior (e.g. `'M CW from solved: full state matches L CCW then R CW'`). These will break and must be updated:
-- Delete or rewrite the full-string snapshot tests with correct expected values derived from the new direct cycles.
-- Delete the stale comments at the top of the M/E/S section that describe the old L+R/D+U/F+B approximation.
+- Rewrite the full-string snapshot tests with correct expected values derived from the new direct cycles.
+- Update the stale comments at the top of the M/E/S section — remove the old L+R/D+U/F+B approximation description and replace with the correct cycle description.
 - Round-trip tests (`M CW then M CCW returns to solved`) are still valid — keep them.
 
 **New fixture:** add one Roux solve with M moves to `tests/fixtures/solveFixtures.ts` covering LSE. This verifies:
