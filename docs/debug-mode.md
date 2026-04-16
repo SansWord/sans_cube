@@ -31,6 +31,7 @@ When **signed in**:
 
 ### Maintenance buttons (bottom toolbar)
 
+- **Clear recorded moves** — clears the in-memory move list shown in MoveHistory (does not affect saved solves)
 - **Clear localStorage** — wipes all local data (solves, settings, everything); reloads
 - **Restore example solves** — un-dismisses the built-in example solves; reloads
 - **Recalibrate solve times (hw clock)** — same recalibration as the cloud button, but for localStorage solves only
@@ -53,10 +54,6 @@ Triggered by **Detect method mismatches** (maintenance toolbar for localStorage,
 - **M** — M-move count (highlighted orange if ≥ 8)
 - **Cross** — CFOP cross turn count (highlighted red if > 20)
 - **FB** — Roux FB turn count (highlighted red if > 20)
-
-### Solve replayer
-
-If a solve session was just recorded (`lastSession`), a `SolveReplayer` appears at the bottom of the debug view, allowing replay without going through the solve history sidebar.
 
 ## When to update this document
 

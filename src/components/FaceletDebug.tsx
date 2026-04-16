@@ -6,11 +6,11 @@
 import { useState } from 'react'
 
 const FACE_BG: Record<string, string> = {
-  U: '#ffffff', R: '#cc0000', F: '#00aa00',
-  D: '#ffff00', L: '#ff8800', B: '#0000cc',
+  W: '#ffffff', R: '#cc0000', G: '#00aa00',
+  Y: '#ffff00', O: '#ff8800', B: '#0000cc',
 }
 const FACE_LABEL_COLOR: Record<string, string> = {
-  U: '#000', R: '#fff', F: '#fff', D: '#000', L: '#fff', B: '#fff',
+  W: '#000', R: '#fff', G: '#fff', Y: '#000', O: '#fff', B: '#fff',
 }
 
 // Kociemba: U=0-8, R=9-17, F=18-26, D=27-35, L=36-44, B=45-53
@@ -18,7 +18,7 @@ const FACE_OFFSETS: Record<string, number> = { U: 0, R: 9, F: 18, D: 27, L: 36, 
 
 // Map a facelet character to its face key (for coloring)
 function charToFace(ch: string): string {
-  // SOLVED_FACELETS uses face letters: U R F D L B
+  // SOLVED_FACELETS uses color letters: W R G Y O B
   return ch
 }
 

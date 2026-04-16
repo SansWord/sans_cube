@@ -161,13 +161,103 @@ export function applyMoveToFacelets(facelets: string, move: Move): string {
         { face: 'B', direction: bDir, cubeTimestamp: 0, serial: 0 }
       )
     }
+
+    case 'x': {
+      // x CW (R direction): top tilts toward front
+      // U←F, F←D, D←B(reversed), B←U(reversed); R face CW, L face CCW
+      if (ccw) rotateFaceCCW(f, 9); else rotateFaceCW(f, 9)
+      if (ccw) rotateFaceCW(f, 36); else rotateFaceCCW(f, 36)
+      const uSlice = f.slice(0, 9)
+      const fSlice = f.slice(18, 27)
+      const dSlice = f.slice(27, 36)
+      const bSlice = f.slice(45, 54)
+      if (!ccw) {
+        // x CW: U←F, F←D, D←B(rev), B←U(rev)
+        for (let i = 0; i < 9; i++) f[i]      = fSlice[i]
+        for (let i = 0; i < 9; i++) f[18 + i] = dSlice[i]
+        for (let i = 0; i < 9; i++) f[27 + i] = bSlice[8 - i]
+        for (let i = 0; i < 9; i++) f[45 + i] = uSlice[8 - i]
+      } else {
+        // x CCW: U←B(rev), B←D(rev), D←F, F←U
+        for (let i = 0; i < 9; i++) f[i]      = bSlice[8 - i]
+        for (let i = 0; i < 9; i++) f[18 + i] = uSlice[i]
+        for (let i = 0; i < 9; i++) f[27 + i] = fSlice[i]
+        for (let i = 0; i < 9; i++) f[45 + i] = dSlice[8 - i]
+      }
+      break
+    }
+
+    case 'y': {
+      // y CW (U direction): R→F→L→B→R (all direct, no reversal)
+      // R←B, F←R, L←F, B←L; U face CW, D face CCW
+      if (ccw) rotateFaceCCW(f, 0); else rotateFaceCW(f, 0)
+      if (ccw) rotateFaceCW(f, 27); else rotateFaceCCW(f, 27)
+      const rSlice = f.slice(9, 18)
+      const fSlice = f.slice(18, 27)
+      const lSlice = f.slice(36, 45)
+      const bSlice = f.slice(45, 54)
+      if (!ccw) {
+        // y CW: F←R, L←F, B←L, R←B
+        for (let i = 0; i < 9; i++) f[9 + i]  = bSlice[i]
+        for (let i = 0; i < 9; i++) f[18 + i] = rSlice[i]
+        for (let i = 0; i < 9; i++) f[36 + i] = fSlice[i]
+        for (let i = 0; i < 9; i++) f[45 + i] = lSlice[i]
+      } else {
+        // y CCW: R←F, F←L, L←B, B←R
+        for (let i = 0; i < 9; i++) f[9 + i]  = fSlice[i]
+        for (let i = 0; i < 9; i++) f[18 + i] = lSlice[i]
+        for (let i = 0; i < 9; i++) f[36 + i] = bSlice[i]
+        for (let i = 0; i < 9; i++) f[45 + i] = rSlice[i]
+      }
+      break
+    }
+
+    case 'z': {
+      // z CW (F direction): each adjacent-face slice rotates 90° CW as it transfers
+      // Transfer order (CW): U←L, R←U, D←R, L←D (each with 90° CW index remap)
+      // cw90src[p]: read from source at this position to write to dest at position p
+      // cw90src = [6,3,0, 7,4,1, 8,5,2] (column-to-row: left col → top row)
+      if (ccw) rotateFaceCCW(f, 18); else rotateFaceCW(f, 18)
+      if (ccw) rotateFaceCW(f, 45); else rotateFaceCCW(f, 45)
+      const cw90src = [6, 3, 0, 7, 4, 1, 8, 5, 2]
+      const uSlice = f.slice(0, 9)
+      const rSlice = f.slice(9, 18)
+      const dSlice = f.slice(27, 36)
+      const lSlice = f.slice(36, 45)
+      if (!ccw) {
+        // z CW: U←L(cw90), R←U(cw90), D←R(cw90), L←D(cw90)
+        for (let p = 0; p < 9; p++) f[p]       = lSlice[cw90src[p]]
+        for (let p = 0; p < 9; p++) f[9 + p]   = uSlice[cw90src[p]]
+        for (let p = 0; p < 9; p++) f[27 + p]  = rSlice[cw90src[p]]
+        for (let p = 0; p < 9; p++) f[36 + p]  = dSlice[cw90src[p]]
+      } else {
+        // z CCW: U←R(ccw90), R←D(ccw90), D←L(ccw90), L←U(ccw90)
+        // ccw90src[p] = cw90 applied twice ≡ index 8-cw90src[p] by symmetry
+        // Equivalently: ccw90src = [2,5,8, 1,4,7, 0,3,6]
+        const ccw90src = [2, 5, 8, 1, 4, 7, 0, 3, 6]
+        for (let p = 0; p < 9; p++) f[p]       = rSlice[ccw90src[p]]
+        for (let p = 0; p < 9; p++) f[9 + p]   = dSlice[ccw90src[p]]
+        for (let p = 0; p < 9; p++) f[27 + p]  = lSlice[ccw90src[p]]
+        for (let p = 0; p < 9; p++) f[36 + p]  = uSlice[ccw90src[p]]
+      }
+      break
+    }
   }
 
   return f.join('')
 }
 
+// Center sticker positions in the 54-char facelets string (one per face)
+const FACE_CENTERS = [4, 13, 22, 31, 40, 49]
+
 export function isSolvedFacelets(facelets: string): boolean {
-  return facelets === SOLVED_FACELETS
+  for (let face = 0; face < 6; face++) {
+    const center = facelets[FACE_CENTERS[face]]
+    for (let i = 0; i < 9; i++) {
+      if (facelets[face * 9 + i] !== center) return false
+    }
+  }
+  return true
 }
 
 export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driverVersion = 0) {
@@ -207,5 +297,15 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     setIsSolved(solved)
   }, driverVersion)
 
-  return { facelets, isSolved, isSolvedRef, resetState }
+  const handleMove = useCallback((move: Move) => {
+    prevFaceletsRef.current = faceletsRef.current
+    const next = applyMoveToFacelets(faceletsRef.current, move)
+    const solved = isSolvedFacelets(next)
+    faceletsRef.current = next
+    isSolvedRef.current = solved
+    setFacelets(next)
+    setIsSolved(solved)
+  }, [])
+
+  return { facelets, isSolved, isSolvedRef, resetState, handleMove }
 }

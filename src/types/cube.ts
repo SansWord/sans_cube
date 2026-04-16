@@ -1,7 +1,11 @@
 export type Face = 'U' | 'R' | 'F' | 'D' | 'L' | 'B'
 export type SliceFace = 'M' | 'E' | 'S'
-export type AnyFace = Face | SliceFace
+export type RotationFace = 'x' | 'y' | 'z'
+export type AnyFace = Face | SliceFace | RotationFace
 export type Direction = 'CW' | 'CCW'
+
+// Single-letter color codes used in the facelets string (future: will replace face letters)
+export type FaceletColor = 'W' | 'R' | 'G' | 'Y' | 'O' | 'B'
 
 export interface Move {
   face: AnyFace
@@ -40,4 +44,4 @@ export interface GesturePattern {
   windowMs: number
 }
 
-export const SOLVED_FACELETS = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB'
+export const SOLVED_FACELETS = 'WWWWWWWWWRRRRRRRRRGGGGGGGGGYYYYYYYYYOOOOOOOOOBBBBBBBBB'

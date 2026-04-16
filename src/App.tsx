@@ -12,11 +12,10 @@ import { CubeCanvas } from './components/CubeCanvas'
 import { OrientationConfig } from './components/OrientationConfig'
 import { MoveHistory } from './components/MoveHistory'
 import { FaceletDebug } from './components/FaceletDebug'
-import { SolveReplayer } from './components/SolveReplayer'
 import { TimerScreen } from './components/TimerScreen'
 import { AnalyticsBanner } from './components/AnalyticsBanner'
 import type { CubeRenderer } from './rendering/CubeRenderer'
-import type { Move, Face } from './types/cube'
+import type { Move, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
@@ -30,14 +29,16 @@ import type { SolveRecord } from './types/solve'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
-  const { facelets, isSolved, isSolvedRef, resetState } = useCubeState(driver, driverVersion)
+  const { facelets, isSolved, isSolvedRef, resetState, handleMove } = useCubeState(driver, driverVersion)
   const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
-  const { lastSession, clearSession } = useSolveRecorder(driver, isSolved, driverVersion)
+  useSolveRecorder(driver, isSolved, driverVersion)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
   const gestureResetRef = useRef<() => void>(resetState)
   const [moves, setMoves] = useState<Move[]>([])
-  const [mode, setMode] = useState<'debug' | 'timer'>('timer')
+  const [mode, setMode] = useState<'debug' | 'timer'>(() =>
+    window.location.hash === '#debug' ? 'debug' : 'timer'
+  )
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
@@ -108,8 +109,22 @@ export default function App() {
     if (status === 'disconnected') setBattery(null)
   }, [status])
 
+  useEffect(() => {
+    const handler = () => {
+      setMode(window.location.hash === '#debug' ? 'debug' : 'timer')
+    }
+    window.addEventListener('hashchange', handler)
+    return () => window.removeEventListener('hashchange', handler)
+  }, [])
+
   useCubeDriverEvent(driver, 'move', (m) => setMoves((prev) => [...prev.slice(-100), m]), driverVersion)
-  useCubeDriverEvent(driver, 'move', (m) => rendererRef.current?.animateMove(m.face, m.direction, 150), driverVersion)
+  useCubeDriverEvent(driver, 'replacePreviousMove', (m) => setMoves((prev) => [...prev.slice(0, -1), m]), driverVersion)
+  useCubeDriverEvent(driver, 'move', (m) => {
+    // Skip animation for whole-cube rotations (x/y/z) — no single-layer animation applies
+    if (m.face !== 'x' && m.face !== 'y' && m.face !== 'z') {
+      rendererRef.current?.animateMove(m.face, m.direction, 150)
+    }
+  }, driverVersion)
 
   useGestureDetector(driver, { resetGyro, resetState: () => gestureResetRef.current() }, isSolvedRef, isSolvingRef, driverVersion)
 
@@ -125,7 +140,11 @@ export default function App() {
         onConnect={connect}
         onDisconnect={disconnect}
         mode={mode}
-        onToggleMode={() => setMode((m) => (m === 'debug' ? 'timer' : 'debug'))}
+        onToggleMode={() => setMode((m) => {
+          const next = m === 'debug' ? 'timer' : 'debug'
+          window.location.hash = next === 'debug' ? '#debug' : ''
+          return next
+        })}
         battery={battery}
         driverType={driverType}
         onSwitchDriver={switchDriver}
@@ -155,6 +174,8 @@ export default function App() {
             facelets={facelets}
             quaternion={quaternion}
             onRendererReady={(r) => { rendererRef.current = r }}
+            interactive={driverType === 'mouse'}
+            onMove={handleCubeMove}
           />
           <OrientationConfig
             config={config}
@@ -164,6 +185,33 @@ export default function App() {
           />
           <FaceletDebug facelets={facelets} />
           <MoveHistory moves={moves} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['x', 'y', 'z'] as RotationFace[]).flatMap((face) =>
+                (['CW', 'CCW'] as Direction[]).map((dir) => {
+                  const label = `${face}${dir === 'CCW' ? "'" : ''}`
+                  const emitMove = () => {
+                    const move: Move = { face, direction: dir, cubeTimestamp: Date.now(), serial: 0 }
+                    handleMove(move)
+                    setMoves((prev) => [...prev.slice(-100), move])
+                  }
+                  return (
+                    <button key={label} onClick={emitMove}
+                      style={{ padding: '3px 8px', color: '#7ec8e3', border: '1px solid #3a7a8a', background: 'transparent', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+            <button
+              onClick={() => setMoves([])}
+              style={{ padding: '3px 10px', color: '#aaa', border: '1px solid #555', background: 'transparent', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}
+            >
+              Clear
+            </button>
+          </div>
           <div style={{
             fontFamily: 'monospace',
             fontSize: 11,
@@ -341,13 +389,6 @@ export default function App() {
               onClose={() => setSelectedDebugSolve(null)}
               onDelete={handleDebugDelete}
               onUpdate={handleDebugUpdate}
-            />
-          )}
-          {lastSession && (
-            <SolveReplayer
-              session={lastSession}
-              renderer={rendererRef.current}
-              onClose={clearSession}
             />
           )}
         </>

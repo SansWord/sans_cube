@@ -42,6 +42,9 @@
 - case detection - OLL, PLL, EO, LR+LU, EP
 - scramble optimization: for example, if we have UD pattern, it should be able to turn D and then U.
 
+## URL / Routing
+- **hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.
+
 ## Code Quality (Refactor Backlog)
 Scanned 2026-04-09. Items #1, #2, #4, #5, #8, #9 done. ~~#10 was a false positive~~ (`bestAo` is not exported and IS used). Remaining:
 

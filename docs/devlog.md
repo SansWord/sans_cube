@@ -6,6 +6,8 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.17.1](#v1171--fix-mouse-driver-in-debug-mode-2026-04-15) | Fix: mouse driver moves not working in debug mode CubeCanvas |
+| [v1.17.0](#v1170--color-letter-facelets--debug-ux-2026-04-15) | Color-letter facelets rename (W/R/G/Y/O/B), monochromatic solved check, x/y/z rotation moves, #debug URL, debug UX fixes |
 | [v1.16.0](#v1160--mac-address-persistence--internal-user-analytics-filter-2026-04-14) | MAC address persistence — save/reuse BLE MAC on macOS, auto-clear on bad MAC; internal user tagged in Analytics |
 | [v1.15.0](#v1150--driver-filter-for-sidebar-stats-and-trends-2026-04-14-0357) | Driver filter — filter sidebar stats and Trends by input driver (cube / mouse), persisted and URL-honoring |
 | [v1.14.0](#v1140--trends-chart-animation-tuning-2026-04-14) | Trends chart animation tuning — 200 ms draw + ease-out easing, phase chart fix |
@@ -40,6 +42,52 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.17.1 — Fix mouse driver in debug mode (2026-04-15 20:55)
+
+**Review:** not yet
+
+**What was built:**
+- Fixed: debug mode `CubeCanvas` was missing `interactive` and `onMove` props — mouse driver moves were silently dropped. Added both, reusing the existing `handleCubeMove` callback already used in timer mode.
+
+**Key technical learnings:**
+- `[gotcha]` `CubeCanvas` in debug mode was instantiated by `App` directly while timer mode instantiates it inside `TimerScreen`. When the timer-mode canvas got `interactive` + `onMove`, the debug-mode one didn't — easy to miss since they're in different branches of the same file.
+
+---
+
+## v1.17.0 — Color-letter facelets + debug UX (2026-04-15)
+
+**Review:** not yet
+
+**Design docs:**
+- M-move migration: [Plan](phase2-color-facelets.md)
+
+**What was built:**
+- **Phase 1 — non-breaking infrastructure:**
+  - Added `RotationFace = 'x' | 'y' | 'z'` to `types/cube.ts`; `AnyFace` extended to include it
+  - Added `FaceletColor = 'W' | 'R' | 'G' | 'Y' | 'O' | 'B'` type alias
+  - Added `schemaVersion?: number` to `SolveRecord` (absent = v1, 2 = post-fix; groundwork for Phase 3 migration)
+  - Fixed `isSolvedFacelets` to monochromatic center-match check — each face's stickers must match its center, replacing the fixed-string comparison
+  - Added x/y/z whole-cube rotation cases to `applyMoveToFacelets` (not yet emitted by any driver)
+- **Phase 2 — color-letter rename:**
+  - `SOLVED_FACELETS` → `WWWWWWWWWRRRRRRRRRGGGGGGGGGYYYYYYYYYOOOOOOOOOBBBBBBBBB`; U→W, F→G, D→Y, L→O throughout (R and B unchanged)
+  - Updated `cfop.ts`, `roux.ts`, `CubeRenderer.ts` (FACE_COLORS keys), `FaceletDebug.tsx` (color lookup maps), and test fixtures
+  - Facelets strings are never saved to disk; no impact on stored solve records
+- **Bug fix:** debug move list (`MoveHistory`) never updated R→M on slice moves — `App.tsx` handled `'move'` but not `'replacePreviousMove'`; added the missing listener
+- **Debug UX:**
+  - Removed `SolveReplayer` from debug mode (no longer useful)
+  - Moved "Clear recorded moves" button to directly below `MoveHistory`
+  - `#debug` URL hash — opens debug mode on load; toggling the button syncs the hash; `hashchange` listener handles manual address-bar edits
+- **Docs:** created `docs/url-routes.md` (all supported hash routes); created `docs/phase2-color-facelets.md` (migration plan with phase status)
+
+**Key technical learnings:**
+- `[insight]` GAN cube BLE events are color-based, not position-based — face index 0 always means "white center face" regardless of cube orientation. M moves in the old system were `L CCW + R CW` because centers could never shift; Phase 3 will fix this with center tracking.
+- `[insight]` `isSolvedFacelets` as a fixed-string comparison breaks once centers can move (e.g. M2 L2 R2 returns to physically solved but not to `SOLVED_FACELETS`). Monochromatic check is the correct semantic for the new system.
+- `[gotcha]` Adding `RotationFace` to `AnyFace` turns any `Record<AnyFace, ...>` map into a TypeScript error — must add x/y/z entries to `CubeRenderer`'s layer axis/value/angle maps even though they're never animated.
+- `[gotcha]` `App.tsx` built the debug move list by listening for `'move'` only — `'replacePreviousMove'` (emitted when `SliceMoveDetector` pairs L+R into M) was ignored, so the interim R move was never replaced. A single extra `useCubeDriverEvent` call fixes it.
+- `[note]` `window.location.hash = ''` adds a browser history entry and fires `hashchange`; `history.replaceState` does neither. Use `replaceState` when writing URL state that shouldn't be back-navigable or trigger other listeners.
 
 ---
 

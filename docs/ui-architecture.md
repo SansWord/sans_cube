@@ -14,10 +14,9 @@ main.tsx
     │   ├── OrientationConfig
     │   ├── FaceletDebug
     │   ├── MoveHistory
-    │   ├── SolveDetailModal         ← overlay when a mismatch solve is selected
-    │   │   ├── PhaseBar
-    │   │   └── CubeCanvas
-    │   └── SolveReplayer            ← shown after a solve completes
+    │   └── SolveDetailModal         ← overlay when a mismatch solve is selected
+    │       ├── PhaseBar
+    │       └── CubeCanvas
     ├── AnalyticsBanner              ← fixed-position bottom overlay, no props, one-time dismiss
     └── [timer mode]
         └── TimerScreen
@@ -88,10 +87,6 @@ Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on m
 Props: `onUpdate`, `onDelete`, `onShare?`, `onUnshare?`, `readOnly?` — `onShare`/`onUnshare` are only passed when cloud sync is enabled and the user is signed in. When `readOnly` is true (viewer mode), all action controls (delete, share, copy-as-example) are hidden.
 
 Rendered in three contexts: inside `TimerScreen` (timer mode, editable), directly in `App` (debug mode — opened from the method mismatch detector results list), and in viewer mode when `#shared-{shareId}` is open (read-only).
-
-### `SolveReplayer` (`src/components/SolveReplayer.tsx`)
-
-Debug-mode only. Owns its own playback state (`isPlaying`, `currentIndex`, `speed`) via `useState`. Drives the **existing** `CubeRenderer` instance passed down as a prop — it does not mount its own `CubeCanvas`.
 
 ### `SolveHistorySidebar` (`src/components/SolveHistorySidebar.tsx`)
 

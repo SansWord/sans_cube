@@ -136,11 +136,11 @@ describe('SliceMoveDetector', () => {
     expect(emittedMove!.direction).toBe('CW')
 
     const result = applyMoveToFacelets(SOLVED_FACELETS, emittedMove!)
-    // M CW on solved: U left col (0,3,6) and right col (2,5,8) get F color ('F')
-    expect(result[0]).toBe('F')
-    expect(result[2]).toBe('F')
-    expect(result[1]).toBe('U') // U mid unchanged
+    // M CW on solved: U left col (0,3,6) and right col (2,5,8) get F color (green)
+    expect(result[0]).toBe('G')
+    expect(result[2]).toBe('G')
+    expect(result[1]).toBe('W') // U mid unchanged (white)
     // Full state check
-    expect(result).toBe('FUFFUFFUFRRRRRRRRRDFDDFDDFDBDBBDBBDBLLLLLLLLLUBUUBUUBU')
+    expect(result).toBe('GWGGWGGWGRRRRRRRRRYGYYGYYGYBYBBYBBYBOOOOOOOOOWBWWBWWBW')
   })
 })

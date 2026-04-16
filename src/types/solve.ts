@@ -22,6 +22,7 @@ export interface PhaseRecord {
 export interface SolveRecord {
   id: number            // internal key (sequential in local mode, timestamp in cloud mode)
   seq?: number          // display number: stable 1-indexed counter, gaps allowed on delete
+  schemaVersion?: number // 1 = pre-fix (GAN face events stored as fixed color map), 2 = post-fix (center-tracking). Absent = v1.
   scramble: string
   timeMs: number        // wall-clock solve duration
   moves: Move[]         // all moves with cubeTimestamp for replay

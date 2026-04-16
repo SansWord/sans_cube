@@ -16,8 +16,8 @@ export interface FaceHit {
 const BG_COLOR = 0x363c65
 
 const FACE_COLORS: Record<string, number> = {
-  U: 0xe8e8e8, D: 0xf0d000, F: 0x50c050,
-  B: 0x4878d0, R: 0xcc3838, L: 0xe06820,
+  W: 0xe8e8e8, Y: 0xf0d000, G: 0x50c050,
+  B: 0x4878d0, R: 0xcc3838, O: 0xe06820,
 }
 
 function makeStickerTexture(color: number): THREE.CanvasTexture {
@@ -59,10 +59,13 @@ function makeStickerTexture(color: number): THREE.CanvasTexture {
 const LAYER_AXIS: Record<AnyFace, 'x' | 'y' | 'z'> = {
   U: 'y', D: 'y', F: 'z', B: 'z', R: 'x', L: 'x',
   M: 'x', E: 'y', S: 'z',
+  // x/y/z are whole-cube rotations; they are not animated as single layers
+  x: 'x', y: 'y', z: 'z',
 }
 const LAYER_VALUE: Record<AnyFace, number> = {
   U: 1, D: -1, F: 1, B: -1, R: 1, L: -1,
   M: 0, E: 0, S: 0,
+  x: 0, y: 0, z: 0,
 }
 // Rotation angle for CW move (in radians). Slice moves follow their outer-face partner:
 // M follows L, E follows D, S follows F.
@@ -71,6 +74,7 @@ const LAYER_CW_ANGLE: Record<AnyFace, number> = {
   F: -Math.PI / 2, B: Math.PI / 2,
   R: -Math.PI / 2, L: Math.PI / 2,
   M:  Math.PI / 2, E: Math.PI / 2, S: -Math.PI / 2,
+  x: -Math.PI / 2, y: -Math.PI / 2, z: -Math.PI / 2,
 }
 
 export class CubeRenderer {
@@ -168,7 +172,7 @@ export class CubeRenderer {
   }
 
   updateFacelets(facelets: string): void {
-    const texFor = (ch: string) => this.stickerTextures.get(ch) ?? this.stickerTextures.get('U')!
+    const texFor = (ch: string) => this.stickerTextures.get(ch) ?? this.stickerTextures.get('W')!
 
     const setTex = (mat: THREE.MeshLambertMaterial, ch: string) => {
       mat.map = texFor(ch)

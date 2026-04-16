@@ -9,7 +9,7 @@ describe('useCubeState helpers', () => {
 
   it('isSolvedFacelets returns false for scrambled state', () => {
     // Any string that differs from SOLVED_FACELETS
-    const scrambled = 'RUUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB'
+    const scrambled = 'RWWWWWWWWRRRRRRRRRGGGGGGGGGYYYYYYYYYOOOOOOOOOBBBBBBBBB'
     expect(isSolvedFacelets(scrambled)).toBe(false)
   })
 
@@ -177,21 +177,21 @@ describe('applyMoveToFacelets sticker cycles', () => {
 describe('applyMoveToFacelets — M moves', () => {
   it('M CW from solved: left and right cols of U get F color; mid unchanged', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    // U left col (0,3,6) and right col (2,5,8) ← F color; mid (1,4,7) stays U
-    expect(result[0]).toBe('F'); expect(result[2]).toBe('F')
-    expect(result[3]).toBe('F'); expect(result[5]).toBe('F')
-    expect(result[6]).toBe('F'); expect(result[8]).toBe('F')
-    expect(result[1]).toBe('U'); expect(result[4]).toBe('U'); expect(result[7]).toBe('U')
+    // U left col (0,3,6) and right col (2,5,8) ← F color (green); mid (1,4,7) stays U color (white)
+    expect(result[0]).toBe('G'); expect(result[2]).toBe('G')
+    expect(result[3]).toBe('G'); expect(result[5]).toBe('G')
+    expect(result[6]).toBe('G'); expect(result[8]).toBe('G')
+    expect(result[1]).toBe('W'); expect(result[4]).toBe('W'); expect(result[7]).toBe('W')
   })
 
   it('M CW from solved: full state matches L CCW then R CW', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('FUFFUFFUFRRRRRRRRRDFDDFDDFDBDBBDBBDBLLLLLLLLLUBUUBUUBU')
+    expect(result).toBe('GWGGWGGWGRRRRRRRRRYGYYGYYGYBYBBYBBYBOOOOOOOOOWBWWBWWBW')
   })
 
   it('M CCW from solved: full state matches L CW then R CCW', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'M', direction: 'CCW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('BUBBUBBUBRRRRRRRRRUFUUFUUFUFDFFDFFDFLLLLLLLLLDBDDBDDBD')
+    expect(result).toBe('BWBBWBBWBRRRRRRRRRWGWWGWWGWGYGGYGGYGOOOOOOOOOYBYYBYYBY')
   })
 
   it('M CW then M CCW returns to solved', () => {
@@ -206,7 +206,7 @@ describe('applyMoveToFacelets — M moves', () => {
 describe('applyMoveToFacelets — E moves', () => {
   it('E CW from solved: full state matches D CCW then U CW', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'E', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('UUUUUUUUUBBBRRRBBBRRRFFFRRRDDDDDDDDDFFFLLLFFFLLLBBBLLL')
+    expect(result).toBe('WWWWWWWWWBBBRRRBBBRRRGGGRRRYYYYYYYYYGGGOOOGGGOOOBBBOOO')
   })
 
   it('E CW then E CCW returns to solved', () => {
@@ -221,7 +221,7 @@ describe('applyMoveToFacelets — E moves', () => {
 describe('applyMoveToFacelets — S moves', () => {
   it('S CW from solved: full state matches F CCW then B CW', () => {
     const result = applyMoveToFacelets(SOLVED_FACELETS, { face: 'S', direction: 'CW', cubeTimestamp: 0, serial: 0 })
-    expect(result).toBe('RRRUUURRRDRDDRDDRDFFFFFFFFFLLLDDDLLLULUULUULUBBBBBBBBB')
+    expect(result).toBe('RRRWWWRRRYRYYRYYRYGGGGGGGGGOOOYYYOOOWOWWOWWOWBBBBBBBBB')
   })
 
   it('S CW then S CCW returns to solved', () => {
