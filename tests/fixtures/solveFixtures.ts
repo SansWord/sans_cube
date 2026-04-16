@@ -7664,3 +7664,7 @@ export const ROUX_SOLVE_1: SolveRecord = {
 // ── Collections — add new solves here ─────────────────────────────────────────
 export const CFOP_SOLVES: SolveRecord[] = [CFOP_SOLVE_1, CFOP_SOLVE_2]
 export const ROUX_SOLVES: SolveRecord[] = [ROUX_SOLVE_1]
+
+// Alias for migration tests — same data as ROUX_SOLVE_1, which contains M moves
+// recorded under v1 behavior (centers not tracked, fixed GAN face map).
+export const ROUX_SOLVE_WITH_M = ROUX_SOLVE_1
