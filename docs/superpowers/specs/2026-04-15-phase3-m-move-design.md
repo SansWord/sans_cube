@@ -268,6 +268,26 @@ export function recomputePhases(solve: SolveRecord, newMethod: SolveMethod): Pha
 - The corrected M cycle produces correct facelets at each step
 - `recomputePhases` detects Roux phases correctly after the fix
 
+**`ColorMoveTranslator` unit tests** — one sequence per slice move, all starting from solved state.
+
+Each test: send a color-based pair (fast), then a follow-up color event after the window. Assert the emitted geometric moves.
+
+Notation: GAN sends color labels (W=white, R=red, G=green, Y=yellow, O=orange, B=blue).
+
+| Slice | GAN pair (fast) | Detected | Center change | Follow-up GAN → expected geometric |
+|-------|----------------|----------|---------------|-------------------------------------|
+| M CW  | O CCW + R CW  | M CW     | blue → U      | B → U  |
+| M CCW | O CW + R CCW  | M CCW    | green → U     | G → U  |
+| E CW  | Y CCW + W CW  | E CW     | green → R     | G → R  |
+| E CCW | Y CW + W CCW  | E CCW    | blue → R      | B → R  |
+| S CW  | G CCW + B CW  | S CW     | orange → U    | O → U  |
+| S CCW | G CW + B CCW  | S CCW    | red → U       | R → U  |
+
+**Direction convention** (matches existing pairing logic and `applyMoveToFacelets`):
+- M CW = L CCW + R CW; M CCW = L CW + R CCW
+- E CW = D CCW + U CW; E CCW = D CW + U CCW
+- S CW = F CCW + B CW; S CCW = F CW + B CCW
+
 ---
 
 ## Part 2 — Data Migration (separate phase)
