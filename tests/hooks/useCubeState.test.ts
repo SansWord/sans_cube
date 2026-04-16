@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { applyMoveToFacelets, isSolvedFacelets } from '../../src/utils/applyMove'
 import { SOLVED_FACELETS } from '../../src/types/cube'
+import type { PositionMove, Direction } from '../../src/types/cube'
 
 describe('useCubeState helpers', () => {
   it('isSolvedFacelets returns true for solved state', () => {
@@ -240,5 +241,69 @@ describe('applyMoveToFacelets — S moves', () => {
       { face: 'S', direction: 'CCW', cubeTimestamp: 0, serial: 0 }
     )
     expect(after).toBe(SOLVED_FACELETS)
+  })
+})
+
+describe('applyMoveToFacelets — slice + outer = whole-cube rotation', () => {
+  function apply(facelets: string, ...moves: Array<[PositionMove['face'], Direction]>): string {
+    return moves.reduce(
+      (f, [face, direction]) => applyMoveToFacelets(f, { face, direction, cubeTimestamp: 0, serial: 0 }),
+      facelets
+    )
+  }
+
+  it('L CW + M CW + R CCW = x CCW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['L', 'CW'], ['M', 'CW'], ['R', 'CCW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['x', 'CCW'])
+    expect(via_slice).toBe(via_rot)
+  })
+
+  it('L CCW + M CCW + R CW = x CW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['L', 'CCW'], ['M', 'CCW'], ['R', 'CW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['x', 'CW'])
+    expect(via_slice).toBe(via_rot)
+  })
+
+  it('D CW + E CW + U CCW = y CCW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['D', 'CW'], ['E', 'CW'], ['U', 'CCW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['y', 'CCW'])
+    expect(via_slice).toBe(via_rot)
+  })
+
+  it('D CCW + E CCW + U CW = y CW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['D', 'CCW'], ['E', 'CCW'], ['U', 'CW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['y', 'CW'])
+    expect(via_slice).toBe(via_rot)
+  })
+
+  it('F CW + S CW + B CCW = z CW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['F', 'CW'], ['S', 'CW'], ['B', 'CCW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['z', 'CW'])
+    expect(via_slice).toBe(via_rot)
+  })
+
+  it('F CCW + S CCW + B CW = z CCW', () => {
+    const via_slice = apply(SOLVED_FACELETS, ['F', 'CCW'], ['S', 'CCW'], ['B', 'CW'])
+    const via_rot   = apply(SOLVED_FACELETS, ['z', 'CCW'])
+    expect(via_slice).toBe(via_rot)
+  })
+})
+
+describe('applyMoveToFacelets — slice composition identities', () => {
+  function apply(facelets: string, ...moves: Array<[PositionMove['face'], Direction]>): string {
+    return moves.reduce(
+      (f, [face, direction]) => applyMoveToFacelets(f, { face, direction, cubeTimestamp: 0, serial: 0 }),
+      facelets
+    )
+  }
+
+  it('(M2 U2) × 4 = identity', () => {
+    const result = apply(SOLVED_FACELETS,
+      ['M','CW'],['M','CW'],['U','CW'],['U','CW'],
+      ['M','CW'],['M','CW'],['U','CW'],['U','CW'],
+      ['M','CW'],['M','CW'],['U','CW'],['U','CW'],
+      ['M','CW'],['M','CW'],['U','CW'],['U','CW'],
+    )
+    expect(isSolvedFacelets(result)).toBe(true)
   })
 })
