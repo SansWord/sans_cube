@@ -59,11 +59,19 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     saveToStorage(STORAGE_KEYS.ORIENTATION_CONFIG, newConfig)
   }, [config])
 
-  // For each M/E/S move: accumulate the sensor's body-frame rotation offset.
+  // For each M/E/S move: accumulate the sensor's rotation offset.
+  //
+  // Each sliceQ is defined in the cube's outer-layer frame (GAN +X/+Y/+Z axes),
+  // so the update is a LEFT-multiply (pre-multiplication):
+  //   sensorOffset_new = sliceQ * sensorOffset_old
+  //
+  // RIGHT-multiply would be wrong for combinations: after E CW (Rz+90°) then M'
+  // (Rx-90°), right-multiply gives Rz(90°)*Rx(-90°) but the correct accumulated
+  // offset is Rx(-90°)*Rz(90°) — they differ because rotations don't commute.
   useCubeDriverEvent(driver, 'move', (move) => {
     const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
     if (sliceQ) {
-      sensorOffsetRef.current = multiplyQuaternions(sensorOffsetRef.current, sliceQ)
+      sensorOffsetRef.current = multiplyQuaternions(sliceQ, sensorOffsetRef.current)
     }
   }, driverVersion)
 
@@ -71,7 +79,7 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
   useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
     const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
     if (sliceQ) {
-      sensorOffsetRef.current = multiplyQuaternions(sensorOffsetRef.current, sliceQ)
+      sensorOffsetRef.current = multiplyQuaternions(sliceQ, sensorOffsetRef.current)
     }
   }, driverVersion)
 
