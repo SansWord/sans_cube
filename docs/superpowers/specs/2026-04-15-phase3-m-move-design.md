@@ -460,6 +460,8 @@ Add two new fixtures to `solveFixtures.ts`:
 ```ts
 expect(result.schemaVersion).toBe(2)
 expect(result.phases.map(p => p.turns)).toEqual(original.phases.map(p => p.turns))
+expect(result.phases.map(p => p.recognitionMs)).toEqual(original.phases.map(p => p.recognitionMs))
+expect(result.phases.map(p => p.executionMs)).toEqual(original.phases.map(p => p.executionMs))
 ```
 
 The invariant is self-validating: the original `phases.turns` comes from the real solve, and migration must reproduce the same split using the corrected moves.
