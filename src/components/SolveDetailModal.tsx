@@ -106,6 +106,9 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
 
   const totalTurns = localSolve.moves.length
   const tps = totalTurns / (totalMs / 1000)
+  const showMigrationWarning =
+    (localSolve.schemaVersion ?? 1) < 2 &&
+    localSolve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')
   const totalExecMs = localSolve.phases.reduce((s, p) => s + p.executionMs, 0)
 
   // Indices of moves that cancel each other (same face, opposite direction, consecutive)
@@ -304,6 +307,13 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 18, cursor: 'pointer' }}>×</button>
           </div>
         </div>
+
+        {showMigrationWarning && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', background: '#2a1a00', border: '1px solid #e8a02066', borderRadius: 4, fontSize: 11, color: '#e8a020' }}>
+            Phase analysis may be inaccurate — this solve was recorded before M/E/S tracking was fixed.
+            Migrate this solve from the debug panel to correct it.
+          </div>
+        )}
 
         {/* General statistics */}
         <div className="solve-stats" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
