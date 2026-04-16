@@ -5,6 +5,14 @@ import { getMethod } from '../methods/index'
 import { computeStats, filterSolves, type StatEntry, type SolveStats } from '../hooks/useSolveHistory'
 import { buildCopySolveList } from '../utils/copySolveList'
 
+function migrationColor(s: SolveRecord): string | undefined {
+  if ((s.schemaVersion ?? 1) < 2) {
+    return s.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S') ? '#e8a020' : '#60b8ff'
+  }
+  if (s.migrationNote) return '#60b8ff'
+  return undefined
+}
+
 interface Props {
   solves: SolveRecord[]
   onSelectSolve: (solve: SolveRecord) => void
@@ -245,7 +253,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                         />
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: migrationColor(s) }}>{formatSeconds(s.timeMs)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 12px', color: '#555', fontSize: 11 }}>{getMethod(s.method).label}</td>
                   </tr>
@@ -314,7 +322,7 @@ export function SolveHistorySidebar({ solves, onSelectSolve, width, onWidthChang
                         />
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', padding: '3px 4px' }}>{formatSeconds(s.timeMs)}</td>
+                    <td style={{ textAlign: 'right', padding: '3px 4px', color: migrationColor(s) }}>{formatSeconds(s.timeMs)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 4px', color: '#888' }}>{fmtTps(s)}</td>
                     <td style={{ textAlign: 'right', padding: '3px 8px', color: '#555', fontSize: fontSize - 2 }}>{getMethod(s.method).label}</td>
                   </tr>

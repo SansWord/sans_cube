@@ -15,6 +15,7 @@ import { MethodSelector } from './MethodSelector'
 import { recomputePhases } from '../utils/recomputePhases'
 import type { SolveMethod } from '../types/solve'
 import { logSolveShared } from '../services/analytics'
+import { migrateSolveV1toV2, correctMovesV1toV2 } from '../utils/migrateSolveV1toV2'
 
 interface Props {
   solve: SolveRecord
@@ -77,6 +78,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [copiedExample, setCopiedExample] = useState(false)
   const [shareState, setShareState] = useState<ShareState>('idle')
   const [shareCopied, setShareCopied] = useState(false)
+  const [migrationDebugLog, setMigrationDebugLog] = useState<string[] | null>(null)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const modalRef = useRef<HTMLDivElement>(null)
@@ -106,9 +108,10 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
 
   const totalTurns = localSolve.moves.length
   const tps = totalTurns / (totalMs / 1000)
-  const showMigrationWarning =
-    (localSolve.schemaVersion ?? 1) < 2 &&
-    localSolve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')
+  const isV1 = (localSolve.schemaVersion ?? 1) < 2
+  const hasSliceMoves = localSolve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')
+  const showMigrationWarning = isV1 && hasSliceMoves
+  const showSchemaVersionBump = isV1 && !hasSliceMoves
   const totalExecMs = localSolve.phases.reduce((s, p) => s + p.executionMs, 0)
 
   // Indices of moves that cancel each other (same face, opposite direction, consecutive)
@@ -310,8 +313,83 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
 
         {showMigrationWarning && (
           <div style={{ marginBottom: 12, padding: '8px 12px', background: '#2a1a00', border: '1px solid #e8a02066', borderRadius: 4, fontSize: 11, color: '#e8a020' }}>
-            Phase analysis may be inaccurate — this solve was recorded before M/E/S tracking was fixed.
-            Migrate this solve from the debug panel to correct it.
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span>Phase analysis may be inaccurate — this solve was recorded before M/E/S tracking was fixed.</span>
+              <button
+                onClick={() => {
+                  const logs: string[] = []
+                  const origWarn = console.warn
+                  console.warn = (...args: unknown[]) => {
+                    logs.push(args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '))
+                    origWarn(...args)
+                  }
+                  try { migrateSolveV1toV2(localSolve) } finally { console.warn = origWarn }
+
+                  const corrected = correctMovesV1toV2(localSolve)
+                  const changed = corrected.filter((m, i) => m.face !== localSolve.moves[i].face)
+                  if (changed.length > 0) {
+                    logs.push(`\nCorrected moves (${changed.length} face labels changed):`)
+                    corrected.forEach((m, i) => {
+                      const orig = localSolve.moves[i]
+                      if (m.face !== orig.face) {
+                        logs.push(`  [${i}] serial=${orig.serial} ${orig.face} ${orig.direction} → ${m.face} ${m.direction}`)
+                      }
+                    })
+                  } else {
+                    logs.push('\n(no face labels changed by correction)')
+                  }
+
+                  setMigrationDebugLog(logs.length > 0 ? logs : ['(no warnings — migration may have succeeded or fast-pathed)'])
+                }}
+                style={{ flexShrink: 0, background: '#3a2a00', border: '1px solid #e8a02066', borderRadius: 3, color: '#e8a020', fontSize: 10, padding: '2px 8px', cursor: 'pointer' }}
+              >
+                Debug migration
+              </button>
+            </div>
+            {migrationDebugLog && (
+              <pre style={{ marginTop: 8, marginBottom: 0, fontSize: 10, color: '#ffcc66', whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#1a1000', padding: 6, borderRadius: 3 }}>
+                {migrationDebugLog.join('\n')}
+              </pre>
+            )}
+          </div>
+        )}
+
+        {showSchemaVersionBump && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', background: '#001a2a', border: '1px solid #2080e066', borderRadius: 4, fontSize: 11, color: '#60b8ff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span>This solve predates schema versioning. No move corrections needed — just a version stamp.</span>
+              <button
+                onClick={async () => {
+                  const updated = { ...localSolve, schemaVersion: 2 }
+                  setLocalSolve(updated)
+                  await onUpdate(updated)
+                }}
+                style={{ flexShrink: 0, background: '#002040', border: '1px solid #2080e066', borderRadius: 3, color: '#60b8ff', fontSize: 10, padding: '2px 8px', cursor: 'pointer' }}
+              >
+                Stamp v2
+              </button>
+            </div>
+          </div>
+        )}
+
+        {localSolve.migrationNote && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', background: '#001a2a', border: '1px solid #2080e066', borderRadius: 4, fontSize: 11, color: '#60b8ff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontWeight: 600 }}>Migration note — phases changed during v1→v2 migration:</span>
+              <button
+                onClick={async () => {
+                  const updated = { ...localSolve, migrationNote: undefined }
+                  setLocalSolve(updated)
+                  await onUpdate(updated)
+                }}
+                style={{ flexShrink: 0, background: '#002040', border: '1px solid #2080e066', borderRadius: 3, color: '#60b8ff', fontSize: 10, padding: '2px 8px', cursor: 'pointer' }}
+              >
+                Mark reviewed
+              </button>
+            </div>
+            <pre style={{ margin: 0, fontSize: 10, color: '#a0d4ff', whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#001020', padding: 6, borderRadius: 3 }}>
+              {localSolve.migrationNote}
+            </pre>
           </div>
         )}
 

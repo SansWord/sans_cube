@@ -23,10 +23,20 @@ export function computePhases(
 ): PhaseRecord[] | null {
   if (moves.length === 0) return null
 
+  // Null cubeTimestamps (retroactively-detected M-pair moves) coerce to 0 and
+  // produce negative phase durations. Fill nulls with the nearest non-null
+  // neighbour so timing stays monotonic.
+  const timestamps: number[] = moves.map((m) => (m.cubeTimestamp as number | null) ?? -1)
+  let lastValid = timestamps.find((t) => t >= 0) ?? 0
+  for (let i = 0; i < timestamps.length; i++) {
+    if (timestamps[i] < 0) timestamps[i] = lastValid
+    else lastValid = timestamps[i]
+  }
+
   let facelets = computeScrambledFacelets(scramble)
   const phases: PhaseRecord[] = []
   let phaseIndex = 0
-  let phaseStart = moves[0].cubeTimestamp
+  let phaseStart = timestamps[0]
   let phaseFirstMove: number | null = null
   let phaseMoveCount = 0
 
@@ -46,14 +56,16 @@ export function computePhases(
     phaseMoveCount = 0
   }
 
-  for (const move of moves) {
+  for (let i = 0; i < moves.length; i++) {
+    const move = moves[i]
+    const ts = timestamps[i]
     facelets = applyMoveToFacelets(facelets, move)
     phaseMoveCount++
-    if (phaseFirstMove === null) phaseFirstMove = move.cubeTimestamp
+    if (phaseFirstMove === null) phaseFirstMove = ts
 
     while (phaseIndex < method.phases.length) {
       if (method.phases[phaseIndex].isComplete(facelets)) {
-        completePhase(move.cubeTimestamp)
+        completePhase(ts)
       } else {
         break
       }
@@ -61,7 +73,7 @@ export function computePhases(
 
     if (isSolvedFacelets(facelets)) {
       while (phaseIndex < method.phases.length) {
-        completePhase(move.cubeTimestamp)
+        completePhase(ts)
       }
       break
     }

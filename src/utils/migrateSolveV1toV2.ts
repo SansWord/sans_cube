@@ -35,6 +35,25 @@ function geoFaceForColor(facelets: string, color: string): string {
   return GEO_FACES[i]
 }
 
+/** Re-derive geometric face labels for all moves in a v1 solve via center tracking. */
+export function correctMovesV1toV2(solve: SolveRecord): Move[] {
+  let facelets = SOLVED_FACELETS
+  return solve.moves.map(move => {
+    let correctedFace: string
+    if (move.face === 'M' || move.face === 'E' || move.face === 'S') {
+      const [colorA, colorB] = SLICE_TO_COLORS[move.face]
+      const faceA = geoFaceForColor(facelets, colorA)
+      const faceB = geoFaceForColor(facelets, colorB)
+      correctedFace = PAIR_TO_SLICE[faceA + faceB] ?? move.face
+    } else {
+      correctedFace = geoFaceForColor(facelets, FACE_TO_COLOR[move.face])
+    }
+    const corrected: Move = { ...move, face: correctedFace as Move['face'] }
+    facelets = applyMoveToFacelets(facelets, corrected)
+    return corrected
+  })
+}
+
 /**
  * Migrate a v1 SolveRecord to v2.
  *
@@ -58,25 +77,7 @@ export function migrateSolveV1toV2(solve: SolveRecord): SolveRecord {
   }
 
   // Full path: re-derive geometric face for each move via center tracking
-  let facelets = SOLVED_FACELETS
-  const correctedMoves: Move[] = []
-
-  for (const move of solve.moves) {
-    let correctedFace: string
-
-    if (move.face === 'M' || move.face === 'E' || move.face === 'S') {
-      const [colorA, colorB] = SLICE_TO_COLORS[move.face]
-      const faceA = geoFaceForColor(facelets, colorA)
-      const faceB = geoFaceForColor(facelets, colorB)
-      correctedFace = PAIR_TO_SLICE[faceA + faceB] ?? move.face
-    } else {
-      correctedFace = geoFaceForColor(facelets, FACE_TO_COLOR[move.face])
-    }
-
-    const corrected: Move = { ...move, face: correctedFace as Move['face'] }
-    correctedMoves.push(corrected)
-    facelets = applyMoveToFacelets(facelets, corrected)
-  }
+  const correctedMoves = correctMovesV1toV2(solve)
 
   // Correctness check: recomputed phases must be deeply identical to stored phases
   const method = getMethod(solve.method)
@@ -87,34 +88,21 @@ export function migrateSolveV1toV2(solve: SolveRecord): SolveRecord {
     return solve
   }
 
-  if (freshPhases.length !== solve.phases.length) {
-    console.warn(
-      `migrateSolveV1toV2: phase count mismatch for id=${solve.id}` +
-      ` — fresh=${freshPhases.length} vs stored=${solve.phases.length}` +
-      ` — fresh labels: [${freshPhases.map(p => p.label).join(', ')}]` +
-      ` — stored labels: [${solve.phases.map(p => p.label).join(', ')}]`
-    )
-    return solve
-  }
-
-  for (let i = 0; i < freshPhases.length; i++) {
+  const diffs: string[] = []
+  for (let i = 0; i < Math.max(freshPhases.length, solve.phases.length); i++) {
     const a = freshPhases[i], b = solve.phases[i]
-    if (
-      a.label !== b.label ||
-      a.group !== b.group ||
-      a.turns !== b.turns ||
-      a.recognitionMs !== b.recognitionMs ||
-      a.executionMs !== b.executionMs
-    ) {
-      const fields: string[] = []
-      if (a.label !== b.label) fields.push(`label: ${a.label} vs ${b.label}`)
-      if (a.group !== b.group) fields.push(`group: ${a.group} vs ${b.group}`)
-      if (a.turns !== b.turns) fields.push(`turns: ${a.turns} vs ${b.turns}`)
-      if (a.recognitionMs !== b.recognitionMs) fields.push(`recognitionMs: ${a.recognitionMs} vs ${b.recognitionMs}`)
-      if (a.executionMs !== b.executionMs) fields.push(`executionMs: ${a.executionMs} vs ${b.executionMs}`)
-      console.warn(`migrateSolveV1toV2: phase[${i}] mismatch for id=${solve.id} — ${fields.join(', ')} — returning unchanged`)
-      return solve
-    }
+    if (!a || !b) { diffs.push(`phase[${i}]: ${b ? `removed ${b.label}` : `added ${a.label}`}`); continue }
+    const fields: string[] = []
+    if (a.label !== b.label) fields.push(`label ${b.label}→${a.label}`)
+    if (a.group !== b.group) fields.push(`group ${b.group}→${a.group}`)
+    if (a.turns !== b.turns) fields.push(`turns ${b.turns}→${a.turns}`)
+    if (a.recognitionMs !== b.recognitionMs) fields.push(`recognitionMs ${b.recognitionMs}→${a.recognitionMs}`)
+    if (a.executionMs !== b.executionMs) fields.push(`executionMs ${b.executionMs}→${a.executionMs}`)
+    if (fields.length > 0) diffs.push(`phase[${i}] ${a.label}: ${fields.join(', ')}`)
+  }
+  const migrationNote = diffs.length > 0 ? diffs.join('\n') : undefined
+  if (migrationNote) {
+    console.warn(`migrateSolveV1toV2: phases changed for id=${solve.id} — migrating anyway:\n  ${diffs.join('\n  ')}`)
   }
 
   return {
@@ -123,5 +111,6 @@ export function migrateSolveV1toV2(solve: SolveRecord): SolveRecord {
     movesV1: solve.moves,
     phases: freshPhases,
     schemaVersion: 2,
+    ...(migrationNote ? { migrationNote } : {}),
   }
 }

@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.19.2](#v1192--migration-debug-ux--relaxed-invariant--solve-list-color-coding-2026-04-16) | Migration debug button, relaxed invariant (cube-solved only), migrationNote persisted, solve list color coding |
 | [v1.19.1](#v1191--eo-detection-fix--migration-invariant--test-coverage-2026-04-16) | EO detection fix (UD+FB split), relaxed migration invariant, v1 fixture + genuine migration test |
 | [v1.19.0](#v1190--mes-migration-part-2-2026-04-16-1248) | M/E/S migration — auto-correct stored v1 face labels on load; Firestore migration button + review UX |
 | [v1.18.0](#v1180--colormovtranslator--correct-mes-detection-2026-04-16-0506) | `ColorMoveTranslator` — correct M/E/S detection via center tracking; reorientation desync fix |
@@ -45,6 +46,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.19.2 — migration debug UX + relaxed invariant + solve list color coding (2026-04-16)
+
+**Review:** not yet
+
+**What was built:**
+- **Null `cubeTimestamp` guard** (`useReplayController`, `recomputePhases`): M-pair moves retroactively inserted during v2 migration have `null` timestamps. Both replay scheduling and phase timing now fill nulls with the nearest prior valid timestamp, preventing NaN propagation and stalled playback.
+- **`correctMovesV1toV2` exported** (`migrateSolveV1toV2.ts`): extracts the center-tracking move correction loop into a standalone function reusable outside the migration invariant path.
+- **Fully relaxed migration invariant**: migration now succeeds as long as the corrected moves solve the cube (`freshPhases !== null`). Phase count, labels, turns, and timing differences are logged as a diff summary but no longer block migration.
+- **`migrationNote?: string`** added to `SolveRecord`: when phases differ between v1 and fresh recomputed values, the per-phase diff is stored in the record and persisted (localStorage + Firestore). Cleared by user on review.
+- **"Debug migration" button** in `SolveDetailModal` unmigrated warning banner: intercepts `console.warn`, runs `migrateSolveV1toV2`, then calls `correctMovesV1toV2` to list every face-label change (index, serial, old→new). Output shown inline below the button.
+- **`migrationNote` banner** in `SolveDetailModal`: blue block showing the phase diff, with a "Mark reviewed" button that clears the field and calls `onUpdate`.
+- **"Stamp v2" banner** in `SolveDetailModal`: shown for v1 solves without M/E/S moves — no corrections needed, just sets `schemaVersion: 2` and persists.
+- **Solve list migration color coding** (`SolveHistorySidebar`): time cell colored orange (v1 + M/E/S, migration failed), blue (v1 without M/E/S needing stamp, OR migrated with `migrationNote`), normal (clean v2).
+
+**Key technical learnings:**
+
+- `[gotcha]` **Null cubeTimestamps propagate as NaN through arithmetic.** M-pair moves inserted retroactively have `null` timestamps. Without guarding, `NaN` enters cumulative delay calculations and stalls replay entirely. Fill nulls with the nearest prior valid timestamp before any arithmetic.
+- `[insight]` **Migration invariant was blocking valid migrations.** Correcting M face labels changes the simulated cube state at each step, which can shift phase boundaries and change turn counts and timing. The stored phases (computed with wrong labels) won't match freshly recomputed ones — but both the old and new data are self-consistent. The right signal is just "did the corrected moves solve the cube?" — not "did the phases reproduce exactly?"
+- `[insight]` **Extracting the move-correction loop as a separate function pays off immediately.** The debug button needs corrected moves even when migration "fails" (to show what changed). Without `correctMovesV1toV2`, the debug button would have had to duplicate the center-tracking loop.
 
 ---
 

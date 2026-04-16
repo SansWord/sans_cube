@@ -6,6 +6,18 @@ import { IDENTITY_QUATERNION, findSlerpedQuaternion } from '../utils/quaternion'
 
 export const SPEED_OPTIONS = [0.5, 1, 2, 3, 5]
 
+// Null cubeTimestamps (retroactively-detected M-pair moves) must not reach
+// replay scheduling — NaN propagates through cumulativeDelay and stalls playback.
+function fillTimestamps(moves: SolveRecord['moves']): number[] {
+  const ts = moves.map((m) => (m.cubeTimestamp as number | null) ?? -1)
+  let last = ts.find((t) => t >= 0) ?? 0
+  for (let i = 0; i < ts.length; i++) {
+    if (ts[i] < 0) ts[i] = last
+    else last = ts[i]
+  }
+  return ts
+}
+
 export function useReplayController(solve: SolveRecord, rendererRef: RefObject<CubeRenderer | null>) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [indicatorMs, setIndicatorMs] = useState(0)
@@ -53,16 +65,17 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
     setIsPlaying(true)
     const moves = solve.moves
     const snapshots = solve.quaternionSnapshots ?? []
+    const ts = fillTimestamps(moves)
 
     const startOffsetMs = startIdx > 0
-      ? Math.max(0, moves[startIdx - 1].cubeTimestamp - moves[0].cubeTimestamp)
+      ? Math.max(0, ts[startIdx - 1] - ts[0])
       : 0
 
     let cumulativeDelay = 0
     moves.slice(startIdx).forEach((m, i) => {
       const globalIdx = startIdx + i
       if (globalIdx > 0) {
-        cumulativeDelay += Math.max(0, m.cubeTimestamp - moves[globalIdx - 1].cubeTimestamp) / speed
+        cumulativeDelay += Math.max(0, ts[globalIdx] - ts[globalIdx - 1]) / speed
       }
       const t = setTimeout(() => {
         rendererRef.current?.animateMove(m.face, m.direction, 150)
@@ -124,8 +137,9 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
     setIsPlaying(false)
     const clamped = Math.max(0, Math.min(solve.moves.length, idx))
     setCurrentIndex(clamped)
+    const ts = fillTimestamps(solve.moves)
     const ms = clamped > 0
-      ? Math.max(0, solve.moves[clamped - 1].cubeTimestamp - solve.moves[0].cubeTimestamp)
+      ? Math.max(0, ts[clamped - 1] - ts[0])
       : 0
     setIndicatorMs(ms)
     const snapshots = solve.quaternionSnapshots ?? []

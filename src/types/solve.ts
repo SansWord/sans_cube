@@ -28,6 +28,7 @@ export interface SolveRecord {
   moves: Move[]         // all moves with cubeTimestamp for replay
   movesV1?: Move[]      // original pre-migration moves; present only on Firestore-migrated
                         // records awaiting user review. Absent on localStorage and new records.
+  migrationNote?: string // diff summary from v1→v2 migration when phases changed; cleared on review
   phases: PhaseRecord[]
   date: number          // Unix timestamp (Date.now())
   quaternionSnapshots?: QuaternionSnapshot[]
