@@ -29,6 +29,8 @@ Move `applyMoveToFacelets` and `isSolvedFacelets` out of `src/hooks/useCubeState
 Update import paths in:
 - `src/hooks/useCubeState.ts`
 - `src/utils/recomputePhases.ts`
+- `tests/hooks/useCubeState.test.ts` — imports `applyMoveToFacelets` and `isSolvedFacelets` from the old location
+- `tests/utils/recomputePhases.test.ts` — imports `isSolvedFacelets` from the old location
 
 Replace the three recursive approximations with direct middle-layer cycles. The cycle primitive `cycle3CW(f, a0,a1,a2, b0,b1,b2, c0,c1,c2, d0,d1,d2)` moves content `a→b→c→d→a`. `cycle3CCW` is the reverse.
 
