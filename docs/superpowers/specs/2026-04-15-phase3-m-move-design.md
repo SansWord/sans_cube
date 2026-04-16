@@ -370,8 +370,6 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
 3. **Return** `{ ...solve, moves: correctedMoves, phases: freshPhases, schemaVersion: 2 }`.
 
-**Phase timing guarantee:** `cubeTimestamp` values on each move are unchanged by migration. Phase durations are derived from `cubeTimestamp` differences. The recomputed phases reflect the same physical events at the same timestamps, now correctly attributed to phases because the simulated cube state matches what was actually played.
-
 ---
 
 ### 2c. localStorage migration
