@@ -52,6 +52,18 @@ export class ColorMoveTranslator extends CubeEventEmitter implements CubeDriver 
     this._clearFastTimeout()
   }
 
+  /** Sync internal facelets to an externally-computed value (e.g. after reorientToStandard).
+   *  Also clears pending retroactive detection state to avoid stale corrections.
+   *  No-op if facelets are unchanged, to avoid disrupting in-progress slice detection. */
+  syncFacelets(facelets: string): void {
+    if (facelets === this._facelets) return
+    this._facelets = facelets
+    this._prevFacelets = facelets
+    this._pending = null
+    this._lastEmitted = null
+    this._clearFastTimeout()
+  }
+
   /** Look up which geometric face currently has this color's center sticker. */
   private _geometricFace(color: FaceletColor): Face {
     const i = ColorMoveTranslator.CENTERS.findIndex(pos => this._facelets[pos] === color)

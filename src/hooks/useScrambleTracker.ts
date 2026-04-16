@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move } from '../types/cube'
@@ -181,6 +181,8 @@ export function useScrambleTracker(
   driverVersion = 0,
 ) {
   const [state, setState] = useState<TrackerState>(() => makeInitialTrackerState(steps))
+  // Saved before each move so replacePreviousMove (e.g. M detected after R) can revert + re-apply.
+  const prevStateRef = useRef<TrackerState | null>(null)
 
   useEffect(() => {
     setState(makeInitialTrackerState(steps))
@@ -188,6 +190,7 @@ export function useScrambleTracker(
 
   useCubeDriverEvent(driver, 'move', (move) => {
     setState((prev) => {
+      prevStateRef.current = prev
       const next = applyTrackerMove(prev, steps, move)
       if (next.trackingState === 'armed' && prev.trackingState !== 'armed') {
         onArmed?.()
@@ -196,7 +199,22 @@ export function useScrambleTracker(
     })
   }, driverVersion)
 
-  const reset = useCallback(() => setState(makeInitialTrackerState(steps)), [steps])
+  useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
+    setState((prev) => {
+      const base = prevStateRef.current ?? prev
+      prevStateRef.current = null
+      const next = applyTrackerMove(base, steps, move)
+      if (next.trackingState === 'armed' && prev.trackingState !== 'armed') {
+        onArmed?.()
+      }
+      return next
+    })
+  }, driverVersion)
+
+  const reset = useCallback(() => {
+    prevStateRef.current = null
+    setState(makeInitialTrackerState(steps))
+  }, [steps])
 
   return { ...state, reset }
 }

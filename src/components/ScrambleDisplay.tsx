@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { ScrambleStep } from '../types/solve'
 import type { StepState, TrackingState, WrongSegment } from '../hooks/useScrambleTracker'
 import { scrambleStepToString } from '../utils/scramble'
@@ -14,6 +14,7 @@ interface Props {
   onResetCube: () => void
   onResetGyro: () => void
   onAutoScramble?: () => void
+  onLoad?: (scramble: string) => void
 }
 
 const STATE_COLOR: Record<StepState, string> = {
@@ -44,8 +45,24 @@ export function ScrambleDisplay({
   onResetCube,
   onResetGyro,
   onAutoScramble,
+  onLoad,
 }: Props) {
   const [showFullSequence, setShowFullSequence] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleEditOpen = () => {
+    setEditValue(scramble ?? '')
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  const handleEditSubmit = () => {
+    const trimmed = editValue.trim()
+    if (trimmed && onLoad) onLoad(trimmed)
+    setEditing(false)
+  }
 
   // Reset the toggle whenever we exit wrong mode or the sequence drops back within the limit
   useEffect(() => {
@@ -69,6 +86,20 @@ export function ScrambleDisplay({
 
   return (
     <div style={{ textAlign: 'center', padding: '8px 0', width: '100%' }}>
+      {editing && onLoad ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 80 }}>
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleEditSubmit(); if (e.key === 'Escape') setEditing(false) }}
+            placeholder="e.g. M U M' U' M U2 M'"
+            style={{ fontFamily: 'monospace', fontSize: 18, padding: '6px 10px', background: '#111', color: '#fff', border: '1px solid #555', borderRadius: 4, width: 360 }}
+          />
+          <button onClick={handleEditSubmit} style={{ padding: '6px 12px', fontSize: 14 }}>Load</button>
+          <button onClick={() => setEditing(false)} style={{ padding: '6px 10px', fontSize: 14, background: 'none', border: '1px solid #555', color: '#aaa', borderRadius: 4, cursor: 'pointer' }}>✕</button>
+        </div>
+      ) : (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
         <div className="scramble-area" style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {inWrong ? (
@@ -121,7 +152,17 @@ export function ScrambleDisplay({
         >
           ↻
         </button>
+        {onLoad && (
+          <button
+            onClick={handleEditOpen}
+            title="Enter a custom scramble"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#777', padding: '2px 4px', lineHeight: 1 }}
+          >
+            ✎
+          </button>
+        )}
       </div>
+      )} {/* end editing conditional */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 6 }}>
         <button onClick={onResetCube} style={{ padding: '6px 14px' }}>Reset Cube</button>
         <button onClick={onResetGyro} style={{ padding: '6px 14px' }}>Reset Gyro</button>

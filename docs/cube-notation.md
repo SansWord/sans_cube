@@ -297,6 +297,32 @@ So `q_cube = q_sensor * inv(offset)` correctly maps the sensor's -Z rotation bac
 
 If you press "Reset Gyro" without pressing "Reset Cube State", the reference is captured in `q_cube` space (already corrected), so the calibration remains valid regardless of `sensorState`.
 
+### FSM reset on frame change (reorientToStandard)
+
+`sensorState` must **also** be reset to 0 when `reorientToStandard` is applied to the facelets.
+
+**Why:** The FSM tracks sensor drift relative to the cube's outer-layer frame. `reorientToStandard` applies a whole-cube rotation (e.g. x CW after M CW) that **changes what the outer-layer frame means** — it declares "white is now at U." The accumulated FSM offset was expressed in the old frame; after the frame change, that offset is no longer valid in the new frame. Resetting to state 0 declares "sensor is at home in the new standard frame."
+
+Empirical confirmation: after M CW (FSM→1), pressing **Reset Center Tracking** without FSM reset left the 3D rendering wrong. Pressing **Reset FSM to 0** immediately fixed it. This is why `resetCenterTracking` in `App.tsx` calls both `resetCenterPositions()` and `resetSensorOffset()`.
+
+**Contrast with whole-cube physical rotations (x/y/z):** those move sensor and outer layers together — the relative offset is unchanged — so the FSM should NOT be updated for physical x/y/z tilts. Only M/E/S (which move the sensor independently of the outer frame) and `reorientToStandard` (which changes the frame definition) trigger an FSM change.
+
+### Whole-cube reorientation: reorientToStandard
+
+`reorientToStandard(facelets)` in `src/utils/applyMove.ts` applies the minimum whole-cube rotation sequence to bring white to U and green to F:
+
+```
+Step 1 — tilt: bring white center to U
+  white at R → z CCW   white at F → x CW   white at D → x CW × 2
+  white at L → z CW    white at B → x CCW  white at U → (nothing)
+
+Step 2 — spin: bring green center to F (y rotation only; white stays at U)
+  green at R → y CW    green at L → y CCW  green at B → y CW × 2
+  green at F → (nothing)
+```
+
+This transforms all 54 stickers correctly (not just center colors). Used at solve start, solve end, and when the user presses **Reset Center Tracking** in debug mode. Always paired with `resetSensorOffset()` — see FSM reset on frame change above.
+
 ---
 
 ## Solve Record Schema Versions

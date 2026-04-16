@@ -4,7 +4,7 @@ import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 import { SOLVED_FACELETS } from '../types/cube'
-import { applyMoveToFacelets, isSolvedFacelets } from '../utils/applyMove'
+import { applyMoveToFacelets, isSolvedFacelets, reorientToStandard } from '../utils/applyMove'
 
 export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driverVersion = 0) {
   const [facelets, setFacelets] = useState<string>(SOLVED_FACELETS)
@@ -18,6 +18,23 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     isSolvedRef.current = true
     setFacelets(SOLVED_FACELETS)
     setIsSolved(true)
+  }, [driver])
+
+  /**
+   * Apply the whole-cube rotation (x/z then y) that brings white to U and
+   * green to F, transforming all 54 stickers. This models the user physically
+   * reorienting to white-top/green-front before solving.
+   *
+   * GAN hardware doesn't report whole-cube rotations, so this must be called
+   * explicitly at solve start/end (and via the debug button) to keep the
+   * center-tracking map in sync with reality.
+   */
+  const resetCenterPositions = useCallback((): string => {
+    const next = reorientToStandard(faceletsRef.current)
+    driver.current?.syncFacelets?.(next)
+    faceletsRef.current = next
+    setFacelets(next)
+    return next
   }, [driver])
 
   // Saved before each move so replacePreviousMove can revert + re-apply.
@@ -54,5 +71,5 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     setIsSolved(solved)
   }, [])
 
-  return { facelets, isSolved, isSolvedRef, resetState, handleMove }
+  return { facelets, isSolved, isSolvedRef, resetState, resetCenterPositions, handleMove }
 }

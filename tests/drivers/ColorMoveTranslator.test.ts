@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ColorMoveTranslator } from '../../src/drivers/ColorMoveTranslator'
 import { ColorCubeEventEmitter, type ColorCubeDriver } from '../../src/drivers/CubeDriver'
 import type { ColorMove, PositionMove, FaceletColor } from '../../src/types/cube'
+import { SOLVED_FACELETS } from '../../src/types/cube'
+import { applyMoveToFacelets } from '../../src/utils/applyMove'
 
 class MockColorDriver extends ColorCubeEventEmitter implements ColorCubeDriver {
   async connect() {}
@@ -142,5 +144,68 @@ describe('ColorMoveTranslator', () => {
     translator.on('gyro', (q) => quats.push(q))
     inner.emit('gyro', { x: 0.1, y: 0.2, z: 0.3, w: 0.9 })
     expect(quats).toHaveLength(1)
+  })
+
+  // ── syncFacelets no-op guard ──────────────────────────────────────────────
+  // These tests cover the race where onResetCenters fires between the R and L
+  // events of an M move. The fix: syncFacelets is a no-op when facelets are
+  // unchanged, so _pending / _lastEmitted are never cleared spuriously.
+
+  describe('syncFacelets', () => {
+    let replaced: PositionMove[]
+
+    beforeEach(() => {
+      replaced = []
+      translator.on('replacePreviousMove', (m) => replaced.push(m))
+    })
+
+    it('no-op when facelets unchanged — preserves pending fast-window M detection', () => {
+      // R CW is buffered (pending, within fast window). syncFacelets is called
+      // with the same facelets (reorientToStandard returned an identical string).
+      // O CCW then arrives within the fast window and must be paired → M CW.
+      inner.simulateMove('R', 'CW', 1000, 1)           // pending = R CW; facelets still SOLVED
+      translator.syncFacelets(SOLVED_FACELETS)          // no-op: facelets unchanged
+      inner.simulateMove('O', 'CCW', 1050, 2)           // within 100 ms fast window
+      expect(received).toHaveLength(1)
+      expect(received[0]).toMatchObject({ face: 'M', direction: 'CW' })
+    })
+
+    it('no-op when facelets unchanged — preserves lastEmitted for retro M detection', () => {
+      // R CW flushes past the fast window, becoming _lastEmitted. syncFacelets is
+      // called with the identical post-R facelets. O CCW then arrives within both
+      // the 1500 ms retro wall-time window and the 50 ms cubeTimestamp window,
+      // and must trigger replacePreviousMove M CW.
+      inner.simulateMove('R', 'CW', 1000, 1)
+      vi.advanceTimersByTime(200)                       // fast timeout fires → R CW emitted
+      expect(received).toHaveLength(1)                  // R CW standalone so far
+
+      const afterRCW = applyMoveToFacelets(SOLVED_FACELETS, { face: 'R', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+      translator.syncFacelets(afterRCW)                 // no-op: same facelets already tracked
+
+      inner.simulateMove('O', 'CCW', 1040, 2)           // cubeTimestamp 40 ms after R — within 50 ms slice window
+      vi.advanceTimersByTime(200)
+
+      expect(replaced).toHaveLength(1)
+      expect(replaced[0]).toMatchObject({ face: 'M', direction: 'CW' })
+    })
+
+    it('clears detection state when facelets actually change', () => {
+      // Confirms the guard only skips the clear on a true no-op. When facelets
+      // DO change, _lastEmitted is cleared and O CCW is emitted as a standalone
+      // L CCW (no M detection).
+      inner.simulateMove('R', 'CW', 1000, 1)
+      vi.advanceTimersByTime(200)                       // R CW emitted as standalone move
+      expect(received).toHaveLength(1)
+
+      const different = applyMoveToFacelets(SOLVED_FACELETS, { face: 'U', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+      translator.syncFacelets(different)                // facelets changed → clears _lastEmitted
+
+      inner.simulateMove('O', 'CCW', 1040, 2)           // cubeTimestamp within 50 ms slice window
+      vi.advanceTimersByTime(200)
+
+      expect(replaced).toHaveLength(0)                  // no M detected
+      expect(received).toHaveLength(2)                  // R CW + L CCW as separate moves
+      expect(received[1]).toMatchObject({ face: 'L', direction: 'CCW' })
+    })
   })
 })

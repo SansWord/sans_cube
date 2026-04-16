@@ -158,6 +158,46 @@ export function applyMoveToFacelets(facelets: string, move: PositionMove): strin
   return f.join('')
 }
 
+/**
+ * Apply a whole-cube rotation to return the cube to standard orientation
+ * (white=U, green=F). Does not touch corner or edge scramble state — only
+ * reframes it from the user's new hold position.
+ *
+ * Algorithm:
+ *   Step 1 — tilt (x or z) to bring white center to U face.
+ *   Step 2 — spin (y) to bring green center to F face.
+ *
+ * Whole-cube rotations (x/y/z) are fully supported by applyMoveToFacelets,
+ * so this is just two sequential lookups and at most 3 moves.
+ */
+export function reorientToStandard(facelets: string): string {
+  const CENTERS = [4, 13, 22, 31, 40, 49] as const
+  let f = facelets
+
+  const rot = (face: 'x' | 'y' | 'z', direction: 'CW' | 'CCW'): string =>
+    applyMoveToFacelets(f, { face, direction, cubeTimestamp: 0, serial: 0 })
+
+  // Step 1: bring white to U face (position 4)
+  // x CW: F→U | x CCW: B→U | z CW: L→U | z CCW: R→U | x2: D→U
+  const whiteAt = CENTERS.find(pos => f[pos] === 'W')!
+  if      (whiteAt === 13) { f = rot('z', 'CCW') }           // R→U
+  else if (whiteAt === 22) { f = rot('x', 'CW') }            // F→U
+  else if (whiteAt === 31) { f = rot('x', 'CW'); f = rot('x', 'CW') }  // D→U via x2
+  else if (whiteAt === 40) { f = rot('z', 'CW') }            // L→U
+  else if (whiteAt === 49) { f = rot('x', 'CCW') }           // B→U
+  // whiteAt === 4: already at U
+
+  // Step 2: spin y to bring green to F face (position 22); white stays at U
+  // y CW: R→F | y CCW: L→F | y2: B→F
+  const greenAt = CENTERS.find(pos => f[pos] === 'G')!
+  if      (greenAt === 13) { f = rot('y', 'CW') }            // R→F
+  else if (greenAt === 40) { f = rot('y', 'CCW') }           // L→F
+  else if (greenAt === 49) { f = rot('y', 'CW'); f = rot('y', 'CW') }  // B→F via y2
+  // greenAt === 22: already at F
+
+  return f
+}
+
 // Center sticker positions (one per face, in face order U R F D L B)
 const FACE_CENTERS = [4, 13, 22, 31, 40, 49]
 

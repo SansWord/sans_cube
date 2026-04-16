@@ -53,6 +53,9 @@ export interface CubeDriver extends CubeEventEmitter {
   disconnect(): Promise<void>
   /** Reset internal cube-state tracking to solved. Called when the user resets cube state in the app. */
   resetFacelets?(): void
+  /** Sync the driver's internal facelets to an externally-computed value.
+   *  Called after reorientToStandard so the driver's center-tracking map stays in sync. */
+  syncFacelets?(facelets: string): void
 }
 
 export interface ColorCubeDriver extends ColorCubeEventEmitter {

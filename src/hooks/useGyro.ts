@@ -84,5 +84,5 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     sensorStateRef.current = 0
   }, [])
 
-  return { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig }
+  return { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig, sensorStateRef }
 }

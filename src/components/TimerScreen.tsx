@@ -37,6 +37,7 @@ interface Props {
   onDisconnect: () => void
   onResetGyro: () => void
   onResetState: () => void
+  onResetCenters?: () => string | undefined
   isSolvingRef: MutableRefObject<boolean>
   gestureResetRef: MutableRefObject<() => void>
   driverVersion?: number
@@ -65,6 +66,7 @@ export function TimerScreen({
   quaternion,
   onResetGyro,
   onResetState,
+  onResetCenters,
   isSolvingRef,
   gestureResetRef,
   driverVersion = 0,
@@ -187,7 +189,7 @@ export function TimerScreen({
 
   const { method, setMethod } = useMethod()
 
-  const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer } = useTimer(
+  const { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset: resetTimer, syncFacelets: timerSyncFacelets } = useTimer(
     driver,
     method,
     armed,
@@ -214,6 +216,26 @@ export function TimerScreen({
 
   // Save solve when timer reaches solved
   const prevStatusRef = useRef(status)
+
+  // Reset center tracking when the scramble completes (armed), before the solve starts.
+  // Firing here (not at 'solving') avoids a race: the 'solving' transition is triggered
+  // by the first solve move, so a BLE R+L pair for an M move could be in-flight when
+  // syncFacelets fires. Armed fires when the scramble finishes — well before the user
+  // picks up the cube to solve.
+  // The reoriented facelets are also forwarded to the timer so both the driver and the
+  // timer agree on the geometric frame after any whole-cube reorientation.
+  useEffect(() => {
+    if (armed) {
+      const reoriented = onResetCenters?.()
+      if (reoriented) timerSyncFacelets(reoriented)
+    }
+  }, [armed]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also reset after the solve ends (reorient for the next scramble).
+  useEffect(() => {
+    if (status === 'solved') onResetCenters?.()
+  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (status === 'solved' && prevStatusRef.current !== 'solved') {
     const { id, seq } = nextSolveIds()
     addSolve({
@@ -348,6 +370,7 @@ export function TimerScreen({
             onResetCube={handleResetCube}
             onResetGyro={() => { onResetGyro(); resetOrientationRef.current?.() }}
             onAutoScramble={interactive ? handleAutoScramble : undefined}
+            onLoad={(s) => { loadScramble(s); tracker.reset(); setArmed(false); resetTimer() }}
           />
 
           <TimerDisplay
