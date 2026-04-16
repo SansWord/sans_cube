@@ -5,6 +5,7 @@ import {
 import { db } from './firebase'
 import type { SolveRecord } from '../types/solve'
 import { recalibrateSolveTimes } from '../utils/recalibrate'
+import { migrateSolveV1toV2 } from '../utils/migrateSolveV1toV2'
 
 function solvesRef(uid: string) {
   return collection(db, 'users', uid, 'solves')
@@ -80,4 +81,35 @@ export async function recalibrateSolvesInFirestore(uid: string): Promise<number>
   const changed = recalibrated.filter((s, i) => s.timeMs !== solves[i].timeMs)
   await Promise.all(changed.map((s) => setDoc(solveDocRef(uid, s), sanitize(s))))
   return changed.length
+}
+
+/**
+ * Migrates all Firestore solves with schemaVersion < 2 to v2 (corrected M/E/S face labels).
+ * Solves with M/E/S that pass the phase invariant are written with movesV1 for user review.
+ * Returns { migrated, failed } counts for debug panel feedback.
+ */
+export async function migrateSolvesToV2InFirestore(uid: string): Promise<{ migrated: number; failed: number }> {
+  const solves = await loadSolvesFromFirestore(uid)
+  const pending = solves.filter(s => (s.schemaVersion ?? 1) < 2)
+
+  let migrated = 0
+  let failed = 0
+
+  await Promise.all(pending.map(async (s) => {
+    try {
+      const result = migrateSolveV1toV2(s)
+      if ((result.schemaVersion ?? 1) < 2) {
+        // Migration returned unchanged (correctness check failed)
+        failed++
+        return
+      }
+      await setDoc(solveDocRef(uid, result), sanitize(result))
+      migrated++
+    } catch (e) {
+      console.error(`[migrateSolvesToV2InFirestore] failed for id=${s.id}:`, e)
+      failed++
+    }
+  }))
+
+  return { migrated, failed }
 }

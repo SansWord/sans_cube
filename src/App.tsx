@@ -19,7 +19,7 @@ import type { Move, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
@@ -69,6 +69,8 @@ export default function App() {
   const [recalibratedCount, setRecalibratedCount] = useState(0)
   const [recalibratingCloud, setRecalibratingCloud] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibratedCloudCount, setRecalibratedCloudCount] = useState(0)
+  const [migratingV2, setMigratingV2] = useState<'idle' | 'running' | 'done'>('idle')
+  const [migrateV2Result, setMigrateV2Result] = useState<{ migrated: number; failed: number } | null>(null)
   const [methodMismatches, setMethodMismatches] = useState<MethodMismatch[] | null>(null)
   const [detectingMismatches, setDetectingMismatches] = useState(false)
   const [selectedDebugSolve, setSelectedDebugSolve] = useState<SolveRecord | null>(null)
@@ -286,6 +288,32 @@ export default function App() {
                   style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: recalibratingCloud !== 'idle' ? 'default' : 'pointer', background: '#222', color: recalibratingCloud === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${recalibratingCloud === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
                 >
                   {recalibratingCloud === 'running' ? 'Recalibrating...' : recalibratingCloud === 'done' ? `Done — ${recalibratedCloudCount} solve${recalibratedCloudCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
+                </button>
+                <button
+                  disabled={migratingV2 !== 'idle'}
+                  onClick={async () => {
+                    if (!cloudSync.user) return
+                    const pending = (await loadSolvesFromFirestore(cloudSync.user.uid)).filter(s => (s.schemaVersion ?? 1) < 2).length
+                    if (pending === 0) {
+                      setMigrateV2Result({ migrated: 0, failed: 0 })
+                      setMigratingV2('done')
+                      setTimeout(() => { setMigratingV2('idle'); setMigrateV2Result(null) }, 3000)
+                      return
+                    }
+                    if (!confirm(`Migrate ${pending} solve${pending !== 1 ? 's' : ''} to v2 (correct M/E/S face labels)?`)) return
+                    setMigratingV2('running')
+                    const result = await migrateSolvesToV2InFirestore(cloudSync.user.uid)
+                    setMigrateV2Result(result)
+                    setMigratingV2('done')
+                    setTimeout(() => { setMigratingV2('idle'); setMigrateV2Result(null) }, 5000)
+                  }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: migratingV2 !== 'idle' ? 'default' : 'pointer', background: '#222', color: migratingV2 === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${migratingV2 === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
+                >
+                  {migratingV2 === 'running'
+                    ? 'Migrating...'
+                    : migratingV2 === 'done' && migrateV2Result
+                      ? `Done — ${migrateV2Result.migrated} migrated${migrateV2Result.failed > 0 ? `, ${migrateV2Result.failed} failed` : ''}`
+                      : 'Migrate solves to v2 (fix M/E/S labels)'}
                 </button>
                 <button
                   disabled={detectingMismatches}

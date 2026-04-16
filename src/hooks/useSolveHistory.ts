@@ -4,6 +4,7 @@ import type { SolveRecord, SolveFilter } from '../types/solve'
 import { EXAMPLE_SOLVES } from '../data/exampleSolves'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
+import { migrateSolveV1toV2 } from '../utils/migrateSolveV1toV2'
 import {
   loadSolvesFromFirestore,
   addSolveToFirestore,
@@ -114,7 +115,21 @@ export function useSolveHistory(cloudConfig?: CloudConfig) {
   const uid = cloudConfig?.user?.uid ?? null
 
   // localStorage state (always initialized, used when cloud is off)
-  const [localSolves, setLocalSolves] = useState<SolveRecord[]>(() => loadLocalSolves())
+  const [localSolves, setLocalSolves] = useState<SolveRecord[]>(() => {
+    const raw = loadLocalSolves()
+    const migrated = raw.map(s => {
+      if ((s.schemaVersion ?? 1) < 2) {
+        const result = migrateSolveV1toV2(s)
+        const { movesV1: _, ...toSave } = result  // strip movesV1 — no review for localStorage
+        return toSave
+      }
+      return s
+    })
+    if (migrated.some((s, i) => s !== raw[i])) {
+      saveLocalSolves(migrated)
+    }
+    return migrated
+  })
   const [dismissedExamples, setDismissedExamples] = useState<Set<number>>(() => loadDismissedExamples())
 
   // Cloud state

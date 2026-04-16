@@ -28,6 +28,7 @@ When **signed in**:
 - **Sign out**
 - **Renumber solves (fix seq)** — reassigns sequential `seq` numbers 1..n to all Firestore solves ordered by date. Destructive, requires confirmation. Reloads the page after.
 - **Recalibrate solve times (hw clock)** — fixes `timeMs` inflation in cloud solves caused by BLE delivery delay. Uses `moves[last].cubeTimestamp - moves[0].cubeTimestamp` as the true elapsed time. Only corrects (never inflates). Shows count of updated solves.
+- **Migrate solves to v2 (fix M/E/S labels)** — migrates all Firestore solves with `schemaVersion < 2` to v2. Shows pending count before confirmation. Solves that pass the phase invariant get `movesV1` written for user review via the solve detail modal. Shows migrated/failed counts on completion.
 - **Detect method mismatches** — same as the maintenance toolbar button, but reads from Firestore instead of localStorage.
 
 ### Maintenance buttons (bottom toolbar)

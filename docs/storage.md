@@ -38,7 +38,9 @@ Stores a full `SolveRecord`. Key fields relevant to storage:
 | `date` | `number` | Unix timestamp (`Date.now()`). Used for ordering. |
 | `scramble` | `string` | Scramble sequence. |
 | `timeMs` | `number` | Wall-clock solve duration in ms. |
-| `moves` | `Move[]` | All moves with timestamps, used for replay. |
+| `schemaVersion` | `number?` | `1` = v1 (fixed GAN face map, M/E/S labels may be wrong after center drift). `2` = v2 (center-tracking, correct labels). Absent = v1. |
+| `moves` | `Move[]` | All moves with timestamps, used for replay. In v2, face labels are geometrically correct even after M/E/S center drift. |
+| `movesV1` | `Move[]?` | Original pre-migration moves. Present only on Firestore-migrated records awaiting user review. Absent on localStorage and new records (stripped before save). |
 | `phases` | `PhaseRecord[]` | CFOP/Roux phase breakdown. |
 | `method` | `string?` | `'cfop'` or `'roux'`. Absent on old solves, treated as `'cfop'`. |
 | `driver` | `string?` | `'cube'` or `'mouse'`. |
