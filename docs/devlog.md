@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.18.0](#v1180--colormovtranslator--correct-mes-detection-2026-04-16-0506) | `ColorMoveTranslator` — correct M/E/S detection via center tracking; reorientation desync fix |
 | [v1.17.1](#v1171--fix-mouse-driver-in-debug-mode-2026-04-15) | Fix: mouse driver moves not working in debug mode CubeCanvas |
 | [v1.17.0](#v1170--color-letter-facelets--debug-ux-2026-04-15) | Color-letter facelets rename (W/R/G/Y/O/B), monochromatic solved check, x/y/z rotation moves, #debug URL, debug UX fixes |
 | [v1.16.0](#v1160--mac-address-persistence--internal-user-analytics-filter-2026-04-14) | MAC address persistence — save/reuse BLE MAC on macOS, auto-clear on bad MAC; internal user tagged in Analytics |
@@ -42,6 +43,33 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.18.0 — ColorMoveTranslator + correct M/E/S detection (2026-04-16 05:06)
+
+**Review:** not yet
+
+**Design docs:**
+- Phase 3 M-move migration: [Spec](superpowers/specs/2026-04-15-phase3-m-move-design.md) [Plan](superpowers/plans/2026-04-16-phase3-implementation.md)
+
+**What was built:**
+- **`ColorMoveTranslator`** replaces `SliceMoveDetector`: wraps `GanCubeDriver`, translates GAN color-based face events (face index → color letter) to geometric face labels using center-position tracking. M/E/S detection via fast-window (100 ms) and retroactive (1500 ms) pairing logic, same as the old detector but now correct after M moves drift the centers.
+- **Type-safe driver boundary**: `GanCubeDriver` now emits `ColorMove` (face = `FaceletColor`) via `ColorCubeDriver`; `ColorMoveTranslator` outputs `PositionMove` (face = `Face`) via `CubeDriver`. Downstream hooks are unchanged.
+- **`syncFacelets` no-op guard**: prevents `syncFacelets` from clearing in-progress M detection when the facelets string hasn't actually changed — fixes a race where a React render between the R and L events of an M move would break detection.
+- **`useTimer.replacePreviousMove` guard fix**: facelets now update during idle/scrambling (not just `solving`), so M moves in the scramble are tracked correctly before the solve starts. Timer previously failed to stop when M' was the first or last solving move.
+- **`onResetCenters` moved to `useEffect`**: was called in the render body of `TimerScreen`, causing React's "cannot update while rendering" warning. Now fires in a `useEffect` on `armed` and `solved` state transitions.
+- **Reorientation desync fix** (`useTimer.syncFacelets`): after `resetCenterPositions` reorients the virtual facelets to white-top, `useTimer`'s `faceletsRef` now receives the same reoriented state. Previously, `ColorMoveTranslator` and `useCubeState` got the reoriented frame but `useTimer` stayed in the old frame — physical face turns were mapped to wrong geometric labels and the timer would never stop for M-scramble solves.
+- **`ScrambleTracker` handles `replacePreviousMove`**: scramble step tracking now correctly retracts and re-applies when an M move is detected retroactively.
+- **Custom scramble input**: pencil button in `ScrambleDisplay` lets you type any scramble string directly.
+- **`applyMoveToFacelets` extracted** to `src/utils/applyMove.ts` and shared across hooks/tests; now handles all 9 face moves + M/E/S + x/y/z rotations correctly (M cycles were wrong in the old inline version).
+- **New docs**: `docs/cube-notation.md` — full reference for facelets format, face indices, M/E/S cycle positions, GAN BLE protocol, gyro FSM.
+
+**Key technical learnings:**
+- `[insight]` GAN hardware always reports face index based on color, not position — after an M move, what was face 0 (white/U) is now at D. A fixed `GAN_FACE_MAP` was always wrong; center tracking is the only correct approach.
+- `[gotcha]` `syncFacelets` is called by `resetCenterPositions` on every `armed` transition. If it clears `_pending` unconditionally, it breaks M detection in a narrow race window (React re-render fires between the R and L BLE events of an M move). The no-op guard (`if facelets === _facelets return`) eliminates the race.
+- `[gotcha]` `resetCenterPositions` reorients the virtual facelets to white-top (applying whole-cube rotation transforms). `ColorMoveTranslator` and `useCubeState` both receive the new frame, but `useTimer` maintained its own independent `faceletsRef` and was never told. Result: physical U turns (white top) were emitted as B moves (because blue moved to B in the reoriented frame), and facelets tracking in the timer diverged — timer never stopped on M-scramble solves. Fix: `useTimer` exposes `syncFacelets`, called with the reoriented string right after `resetCenterPositions`.
+- `[insight]` `onResetCenters` must fire at `armed` (scramble complete), not at `solving` (first move). The first solve move may itself be an M — if `syncFacelets` fires between the R and L BLE events of that M, detection breaks even with the no-op guard. At `armed`, no solve moves are in-flight.
 
 ---
 

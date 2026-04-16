@@ -131,7 +131,7 @@ These components are purely presentational — they receive data as props and fi
 | `GanCubeDriver.ts` | BLE connection to real GAN cubes (via `gan-web-bluetooth`) |
 | `MouseDriver.ts` | Simulates cube moves via mouse drag on `CubeCanvas`; exposes `sendMove()` |
 | `ButtonDriver.ts` | Simulates cube moves via button clicks |
-| `SliceMoveDetector.ts` | Converts raw face moves to slice notation (M/E/S) |
+| `ColorMoveTranslator.ts` | Translates GAN color-based move events to geometric face labels; detects M/E/S via center tracking |
 
 ---
 
