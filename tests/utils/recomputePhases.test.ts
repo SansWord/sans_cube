@@ -1,7 +1,7 @@
 // tests/utils/recomputePhases.test.ts
 import { describe, it, expect } from 'vitest'
 import { recomputePhases } from '../../src/utils/recomputePhases'
-import { isSolvedFacelets } from '../../src/hooks/useCubeState'
+import { isSolvedFacelets } from '../../src/utils/applyMove'
 import { CFOP } from '../../src/methods/cfop'
 import { ROUX } from '../../src/methods/roux'
 import { CFOP_SOLVES, ROUX_SOLVES } from '../fixtures/solveFixtures'

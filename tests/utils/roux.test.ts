@@ -11,7 +11,7 @@ import {
   isULURDone,
 } from '../../src/utils/roux'
 import { SOLVED_FACELETS } from '../../src/types/cube'
-import { applyMoveToFacelets } from '../../src/hooks/useCubeState'
+import { applyMoveToFacelets } from '../../src/utils/applyMove'
 import type { Move } from '../../src/types/cube'
 
 function move(face: Move['face'], direction: Move['direction'] = 'CW'): Move {

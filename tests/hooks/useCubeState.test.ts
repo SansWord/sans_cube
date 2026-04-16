@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyMoveToFacelets, isSolvedFacelets } from '../../src/hooks/useCubeState'
+import { applyMoveToFacelets, isSolvedFacelets } from '../../src/utils/applyMove'
 import { SOLVED_FACELETS } from '../../src/types/cube'
 
 describe('useCubeState helpers', () => {

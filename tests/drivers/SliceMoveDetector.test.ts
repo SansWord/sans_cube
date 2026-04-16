@@ -3,7 +3,7 @@ import { SliceMoveDetector } from '../../src/drivers/SliceMoveDetector'
 import { CubeEventEmitter } from '../../src/drivers/CubeDriver'
 import type { CubeDriver } from '../../src/drivers/CubeDriver'
 import type { Move } from '../../src/types/cube'
-import { applyMoveToFacelets } from '../../src/hooks/useCubeState'
+import { applyMoveToFacelets } from '../../src/utils/applyMove'
 import { SOLVED_FACELETS } from '../../src/types/cube'
 
 // Minimal in-process driver for feeding moves to SliceMoveDetector

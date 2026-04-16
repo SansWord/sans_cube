@@ -6,7 +6,7 @@ import {
   isEODone,
   isULURDone,
 } from '../utils/roux'
-import { isSolvedFacelets } from '../hooks/useCubeState'
+import { isSolvedFacelets } from '../utils/applyMove'
 
 export const ROUX: SolveMethod = {
   id: 'roux',

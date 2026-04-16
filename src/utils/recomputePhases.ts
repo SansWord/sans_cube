@@ -1,6 +1,6 @@
 // src/utils/recomputePhases.ts
 import { SOLVED_FACELETS } from '../types/cube'
-import { applyMoveToFacelets, isSolvedFacelets } from '../hooks/useCubeState'
+import { applyMoveToFacelets, isSolvedFacelets } from './applyMove'
 import { parseScramble } from './scramble'
 import type { SolveRecord, PhaseRecord, SolveMethod } from '../types/solve'
 
