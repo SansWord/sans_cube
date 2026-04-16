@@ -442,9 +442,17 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 
 ### 2g. Migration tests
 
-**`migrateSolveV1toV2` unit tests** — each test constructs a minimal `SolveRecord` with v1-encoded moves, runs migration, and asserts the corrected move labels.
+**`migrateSolveV1toV2` unit tests** — each test constructs a minimal `SolveRecord` with v1-encoded moves, runs migration, and asserts the turn-count invariant. The "Corrected (right)" labels in the tables below are documentation for the implementer — the test assertion is always the invariant, not a hardcoded face label.
 
-**Single-slice correction** — after one slice move, subsequent outer-face moves drift. Each row below sets up: initial v1 solve has `[sliceMove, outerMove]`, where `outerMove` was stored using v1's fixed map. Migration must produce the correct geometric label for `outerMove`.
+**Test fixture shape:** each fake v1 `SolveRecord` must include `phases` with `turns` set to what the old `applyMoveToFacelets` (L+R/D+U/F+B approximation) would have produced. Since the old code no longer exists at test time, these `turns` values are hardcoded in the test fixture. The invariant check then verifies the migration recomputes the same split.
+
+**Primary assertion for all tests:**
+```ts
+expect(result.schemaVersion).toBe(2)
+expect(result.phases.map(p => p.turns)).toEqual(original.phases.map(p => p.turns))
+```
+
+**Single-slice correction** — after one slice move, subsequent outer-face moves drift. The "Corrected geometric" column shows what migration must produce (documentation only).
 
 | Slice first (v1) | v1 outer stored | Physical color | Corrected geometric |
 |-----------------|----------------|---------------|-------------------|
@@ -455,7 +463,7 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 | S CW | U CW | White (W) → now at R | R CW |
 | S CCW | U CW | White (W) → now at L | L CW |
 
-**Misclassified slice correction** — v1 stored the wrong slice label because center drift made GAN's color pair land on the wrong geometric pair. Migration must produce the correct slice.
+**Misclassified slice correction** — v1 stored the wrong slice label because center drift made GAN's color pair land on the wrong geometric pair.
 
 | First move | Physical second move | v1 stored (wrong) | Corrected (right) |
 |-----------|---------------------|------------------|------------------|
@@ -466,13 +474,11 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 | S CW | M CW | E CW | M CW |
 | S CW | E CW | M CCW | E CW |
 
-*(Directions in the "v1 stored" column are illustrative; the exact v1 direction depends on which of the two color events arrives first in the fast window. The migration must preserve the original direction from v1.)*
+*(Directions in the "v1 stored" column are illustrative; exact direction depends on which color event arrives first in the fast window. Migration preserves the original direction.)*
 
-**Fast-path: no slice moves** — a CFOP solve with only U/R/F/D/L/B moves must return `{ ...solve, schemaVersion: 2 }` with no move changes. Assert moves array is reference-equal (no reallocation needed, or at minimum byte-identical).
+**Fast-path: no slice moves** — a CFOP solve with only U/R/F/D/L/B moves must return `{ ...solve, schemaVersion: 2 }` with moves unchanged. Assert `result.moves === original.moves` (reference equality — no reallocation).
 
-**Phase-turns invariant** — for any migrated solve that passes the correctness check, assert `migratedSolve.phases.map(p => p.turns)` deep-equals `originalSolve.phases.map(p => p.turns)`. This is the primary correctness assertion: same physical states, same phase split.
-
-**Identity check** — apply `M2 U2 M2 U2 M2 U2 M2 U2` (8 moves) from solved, write as a fake v1 solve, migrate, assert phase turn counts are unchanged across all phases.
+**Identity check** — fake v1 solve with moves `M2 U2 M2 U2 M2 U2 M2 U2`. Migrate and assert the turn-count invariant holds across all phases.
 
 ---
 
