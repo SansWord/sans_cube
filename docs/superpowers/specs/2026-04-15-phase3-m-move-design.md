@@ -364,7 +364,9 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
    Apply the corrected move to `_facelets` after each step.
 
-2. **Correctness check.** Apply all corrected moves (starting from scrambled facelets) and assert `isSolvedFacelets`. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
+2. **Correctness check.** Recompute phases from the corrected moves and assert that `phases.map(p => p.turns)` is identical to the original. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index — so turn counts per phase must be preserved exactly. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
+
+   (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends in a solved state.)
 
 3. **Recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object by importing the method definitions directly. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e. This is data correction, not a method switch — `recomputePhases` is not called here.
 
@@ -465,7 +467,9 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 
 **Fast-path: no slice moves** — a CFOP solve with only U/R/F/D/L/B moves must return `{ ...solve, schemaVersion: 2 }` with no move changes. Assert moves array is reference-equal (no reallocation needed, or at minimum byte-identical).
 
-**Identity check** — apply `M2 U2 M2 U2 M2 U2 M2 U2` (8 moves) from solved, write as a fake v1 solve, migrate, apply corrected moves to facelets, assert `isSolvedFacelets`. Also assert phases are unchanged (all 8 moves produce the same timing).
+**Phase-turns invariant** — for any migrated solve that passes the correctness check, assert `migratedSolve.phases.map(p => p.turns)` deep-equals `originalSolve.phases.map(p => p.turns)`. This is the primary correctness assertion: same physical states, same phase split.
+
+**Identity check** — apply `M2 U2 M2 U2 M2 U2 M2 U2` (8 moves) from solved, write as a fake v1 solve, migrate, assert phase turn counts are unchanged across all phases.
 
 ---
 
