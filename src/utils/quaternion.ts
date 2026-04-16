@@ -1,5 +1,20 @@
 import type { Quaternion } from '../types/cube'
 
+// GAN sensor coords: +X=Red(R), +Y=Blue/back(B), +Z=White/top(U)
+// When a slice move is detected, the gyro sensor (in the M-slice) physically rotates with it.
+// These quaternions represent that sensor rotation — apply to the reference to cancel the drift.
+// M CW = +90° around X (U→F in GAN coords)
+// E CW = +90° around Z (F→R in GAN coords, D direction)
+// S CW = +90° around Y (U→R in GAN coords, F direction)
+export const SLICE_GYRO_ROTATIONS: Partial<Record<string, Quaternion>> = {
+  'M:CW':  { x:  Math.SQRT1_2, y: 0,              z: 0,              w: Math.SQRT1_2 },
+  'M:CCW': { x: -Math.SQRT1_2, y: 0,              z: 0,              w: Math.SQRT1_2 },
+  'E:CW':  { x: 0,              y: 0,              z:  Math.SQRT1_2, w: Math.SQRT1_2 },
+  'E:CCW': { x: 0,              y: 0,              z: -Math.SQRT1_2, w: Math.SQRT1_2 },
+  'S:CW':  { x: 0,              y:  Math.SQRT1_2, z: 0,              w: Math.SQRT1_2 },
+  'S:CCW': { x: 0,              y: -Math.SQRT1_2, z: 0,              w: Math.SQRT1_2 },
+}
+
 export const IDENTITY_QUATERNION: Quaternion = { x: 0, y: 0, z: 0, w: 1 }
 
 export function invertQuaternion(q: Quaternion): Quaternion {
