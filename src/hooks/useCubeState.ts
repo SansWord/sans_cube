@@ -13,11 +13,12 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
   const isSolvedRef = useRef(true)
 
   const resetState = useCallback(() => {
+    driver.current?.resetFacelets?.()
     faceletsRef.current = SOLVED_FACELETS
     isSolvedRef.current = true
     setFacelets(SOLVED_FACELETS)
     setIsSolved(true)
-  }, [])
+  }, [driver])
 
   // Saved before each move so replacePreviousMove can revert + re-apply.
   const prevFaceletsRef = useRef<string | null>(null)

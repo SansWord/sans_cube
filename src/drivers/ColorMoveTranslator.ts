@@ -44,6 +44,14 @@ export class ColorMoveTranslator extends CubeEventEmitter implements CubeDriver 
   async connect(): Promise<void> { return this._inner.connect() }
   async disconnect(): Promise<void> { return this._inner.disconnect() }
 
+  resetFacelets(): void {
+    this._facelets = SOLVED_FACELETS
+    this._prevFacelets = SOLVED_FACELETS
+    this._pending = null
+    this._lastEmitted = null
+    this._clearFastTimeout()
+  }
+
   /** Look up which geometric face currently has this color's center sticker. */
   private _geometricFace(color: FaceletColor): Face {
     const i = ColorMoveTranslator.CENTERS.findIndex(pos => this._facelets[pos] === color)

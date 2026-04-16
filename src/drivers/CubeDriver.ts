@@ -51,6 +51,8 @@ export class ColorCubeEventEmitter extends TypedEventEmitter<ColorEventMap> {}
 export interface CubeDriver extends CubeEventEmitter {
   connect(): Promise<void>
   disconnect(): Promise<void>
+  /** Reset internal cube-state tracking to solved. Called when the user resets cube state in the app. */
+  resetFacelets?(): void
 }
 
 export interface ColorCubeDriver extends ColorCubeEventEmitter {
