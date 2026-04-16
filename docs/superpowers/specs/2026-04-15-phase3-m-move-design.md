@@ -354,9 +354,15 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
 **Full path** — M/E/S present:
 
-1. **Correct face labels.** Simulate cube state from solved. For each move:
-   - M/E/S: pass through unchanged (already correct geometric labels); apply to facelets.
-   - U/R/F/D/L/B: look up the color that was at that face in solved state (`U→W, R→R, F→G, D→Y, L→O, B→B`), find where that color's center is now in facelets, emit the correct geometric face; apply corrected move to facelets.
+1. **Correct face labels.** Simulate cube state from solved. Apply the same color-lookup approach for **all** moves — U/R/F/D/L/B and M/E/S alike.
+
+   **Why M/E/S cannot pass through unchanged:** In v1, `GanCubeDriver` had a fixed map (GAN face 0 → `'U'`, face 2 → `'F'`, etc.). After an E CW move, the physical M slice is bounded by blue and green centers (not orange and red anymore). GAN sends face 5 (blue) + face 2 (green), which v1 maps `'B'` + `'F'` → SliceMoveDetector stores `'S'`. So v1 stored `'S'` for a physical M. M/E/S labels are equally unreliable after center drift.
+
+   **U/R/F/D/L/B:** map stored face label to its original GAN color (`U→W, R→R, F→G, D→Y, L→O, B→B`). Find where that color's center is currently in `_facelets`. Emit the corrected geometric face.
+
+   **M/E/S:** map stored slice to its original GAN color pair (`M→{O,R}`, `E→{Y,W}`, `S→{G,B}`). Find where both colors' centers are currently in `_facelets`. Map the resulting face pair to the correct slice (`L+R→M`, `U+D→E`, `F+B→S`). Keep the original direction unchanged.
+
+   Apply the corrected move to `_facelets` after each step.
 
 2. **Correctness check.** Apply all corrected moves (starting from scrambled facelets) and assert `isSolvedFacelets`. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
 
@@ -426,6 +432,40 @@ Once reviewed, `movesV1` is gone. No separate flag or cleanup step needed.
 When a solve detail modal opens and `schemaVersion < 2` and the solve contains M/E/S moves, show a warning: *"Phase analysis may be inaccurate — migrate this solve to fix it."*
 
 CFOP solves without M/E/S show no warning even if not yet migrated, because their data is already correct.
+
+---
+
+### 2g. Migration tests
+
+**`migrateSolveV1toV2` unit tests** — each test constructs a minimal `SolveRecord` with v1-encoded moves, runs migration, and asserts the corrected move labels.
+
+**Single-slice correction** — after one slice move, subsequent outer-face moves drift. Each row below sets up: initial v1 solve has `[sliceMove, outerMove]`, where `outerMove` was stored using v1's fixed map. Migration must produce the correct geometric label for `outerMove`.
+
+| Slice first (v1) | v1 outer stored | Physical color | Corrected geometric |
+|-----------------|----------------|---------------|-------------------|
+| M CW | U CW | White (W) → now at F | F CW |
+| M CCW | U CW | White (W) → now at B | B CW |
+| E CW | F CW | Green (G) → now at R | R CW |
+| E CCW | F CW | Green (G) → now at L | L CW |
+| S CW | U CW | White (W) → now at R | R CW |
+| S CCW | U CW | White (W) → now at L | L CW |
+
+**Misclassified slice correction** — v1 stored the wrong slice label because center drift made GAN's color pair land on the wrong geometric pair. Migration must produce the correct slice.
+
+| First move | Physical second move | v1 stored (wrong) | Corrected (right) |
+|-----------|---------------------|------------------|------------------|
+| E CW | M CW | S CW | M CW |
+| E CCW | M CW | S CW | M CW |
+| M CW | E CW | S CCW | E CW |
+| M CW | S CW | E CW | S CW |
+| S CW | M CW | E CW | M CW |
+| S CW | E CW | M CCW | E CW |
+
+*(Directions in the "v1 stored" column are illustrative; the exact v1 direction depends on which of the two color events arrives first in the fast window. The migration must preserve the original direction from v1.)*
+
+**Fast-path: no slice moves** — a CFOP solve with only U/R/F/D/L/B moves must return `{ ...solve, schemaVersion: 2 }` with no move changes. Assert moves array is reference-equal (no reallocation needed, or at minimum byte-identical).
+
+**Identity check** — apply `M2 U2 M2 U2 M2 U2 M2 U2` (8 moves) from solved, write as a fake v1 solve, migrate, apply corrected moves to facelets, assert `isSolvedFacelets`. Also assert phases are unchanged (all 8 moves produce the same timing).
 
 ---
 
