@@ -364,13 +364,11 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
    Apply the corrected move to `_facelets` after each step.
 
-2. **Correctness check.** Recompute phases from the corrected moves and assert that `phases.map(p => p.turns)` is identical to the original. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index — so turn counts per phase must be preserved exactly. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
+2. **Correctness check + recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e — this is data correction, not a method switch, so `recomputePhases` is not called here. Assert that `freshPhases.map(p => p.turns)` is identical to `solve.phases.map(p => p.turns)`. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index — so turn counts per phase must be preserved exactly. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
 
-   (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends in a solved state.)
+   (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends solved.)
 
-3. **Recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object by importing the method definitions directly. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e. This is data correction, not a method switch — `recomputePhases` is not called here.
-
-4. **Return** `{ ...solve, moves: correctedMoves, phases: freshPhases, schemaVersion: 2 }`.
+3. **Return** `{ ...solve, moves: correctedMoves, phases: freshPhases, schemaVersion: 2 }`.
 
 **Phase timing guarantee:** `cubeTimestamp` values on each move are unchanged by migration. Phase durations are derived from `cubeTimestamp` differences. The recomputed phases reflect the same physical events at the same timestamps, now correctly attributed to phases because the simulated cube state matches what was actually played.
 
