@@ -239,42 +239,63 @@ Without compensation, `applyReference(q_sensor, ref)` uses the rotated sensor fr
 | y                 | z'            |
 | z                 | y             |
 
-### The fix: track sensor offset, pre-correct before display
+### The fix: 24-state orientation FSM, pre-correct before display
 
-`useGyro` maintains a `sensorOffsetRef` — the accumulated body-frame rotation of the sensor relative to the cube's outer-layer frame. Before computing the display quaternion, the raw sensor value is pre-corrected:
+The sensor's accumulated rotation is always one of the **24 orientations** of the cube's rotation group — M, E, S are all 90° rotations on a finite closed group, so the accumulated state can never "drift" outside this set.
+
+`useGyro` tracks a single integer `sensorState` (0–23). Before computing the display quaternion, the raw sensor value is pre-corrected using the orientation for the current state:
 
 ```
-q_cube = q_sensor * inv(sensorOffset)
+q_cube  = q_sensor * inv(SENSOR_ORIENTATION_FSM.orientations[sensorState])
 display = applyReference(q_cube, ref)
 ```
 
-`sensorOffset` is updated by **left-multiplying** the slice quaternion on each M/E/S move event:
+### The FSM: 24 states, 6 transitions each
+
+`SENSOR_ORIENTATION_FSM` in `src/utils/quaternion.ts` is built once at module load via BFS from identity using `SLICE_GYRO_ROTATIONS`:
 
 ```
-sensorOffset_new = sliceQ * sensorOffset_old   // left-multiply = pre-multiply
+State 0 = identity  (sensor at home, all slices at solved position)
+
+On each M/E/S move event:
+  sensorState = SENSOR_ORIENTATION_FSM.transitions[sensorState]['M:CW']  // table lookup
 ```
 
-**Why left-multiply?** Each `sliceQ` is defined in the cube's outer-layer frame (GAN +X/+Y/+Z of the held cube), not the sensor's current drifted frame. Rotations defined in the same fixed reference frame compose via pre-multiplication (left-multiply).
+Each state has 6 outgoing transitions (M/M', E/E', S/S'). The full table is precomputed — state transitions are O(1) array lookups with no floating-point arithmetic and no drift.
 
-**Why not right-multiply?** Right-multiply would mean composing in the sensor's current (drifted) body frame, which is wrong. For a single slice move from identity, both give the same result — but for combinations the difference matters. After E CW (Rz+90°) then M' (Rx-90°):
-- Left-multiply gives: `Rx(-90°) * Rz(+90°)` — correct
-- Right-multiply gives: `Rz(+90°) * Rx(-90°)` — wrong (different matrix, rotations don't commute)
-
-**Why pre-correcting q_sensor works for subsequent tilts:**
-
-After M CW (sliceQ = Rx(+90°)), a physical Y tilt produces sensor rotation R_{-Z}(θ) in sensor-local coordinates. The conjugation:
-
+**4× the same move always cycles back to state 0:**
 ```
-sliceQ * R_{-Z}(θ) * inv(sliceQ)  =  R_{+Y}(θ)
+M:CW  → state A → state B → state C → state 0  (360° = identity) ✓
+E:CW  → state D → state E → state F → state 0  ✓
 ```
 
-So `q_cube = q_sensor * inv(sensorOffset)` correctly maps the sensor's -Z rotation back to Y in the cube frame.
+### Why left-multiply builds the correct FSM
+
+Each `sliceQ` in `SLICE_GYRO_ROTATIONS` is defined in the cube's **outer-layer frame** (GAN +X/+Y/+Z of the held cube), not the sensor's current drifted frame. BFS uses left-multiply to compose states:
+
+```
+next_orientation = sliceQ * current_orientation   // left-multiply = pre-multiply
+```
+
+Right-multiply would be wrong for combinations. After E CW (Rz+90°) then M' (Rx-90°):
+- Left-multiply:  `Rx(-90°) * Rz(+90°)` — correct
+- Right-multiply: `Rz(+90°) * Rx(-90°)` — wrong (rotations don't commute)
+
+### Why pre-correcting q_sensor works for subsequent tilts
+
+After M CW (sliceQ = Rx(+90°)), a physical Y tilt produces sensor rotation R_{-Z}(θ) in sensor-local coordinates. The conjugation identity:
+
+```
+Rx(+90°) * R_{-Z}(θ) * Rx(-90°)  =  R_{+Y}(θ)
+```
+
+So `q_cube = q_sensor * inv(offset)` correctly maps the sensor's -Z rotation back to Y in the cube frame. The same identity holds for E and S on their respective axes.
 
 ### Reset behavior
 
-`sensorOffset` must be reset to identity when cube state is reset to solved (the M-slice returns to its home position). In `App.tsx`, `resetAll` calls both `resetState()` (facelets) and `resetSensorOffset()` (sensor offset) together.
+`sensorState` must be reset to 0 when cube state resets to solved (the M-slice returns to home position). In `App.tsx`, `resetAll` calls both `resetState()` (facelets) and `resetSensorOffset()` (which sets `sensorStateRef.current = 0`) together.
 
-If you press "Reset Gyro" without also pressing "Reset Cube State", the reference is captured in `q_cube` space (already corrected), so the calibration remains valid regardless of current `sensorOffset`.
+If you press "Reset Gyro" without pressing "Reset Cube State", the reference is captured in `q_cube` space (already corrected), so the calibration remains valid regardless of `sensorState`.
 
 ---
 
