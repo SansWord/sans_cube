@@ -106,8 +106,8 @@ In `src/drivers/CubeDriver.ts`:
 
 ```ts
 // Generic base — all event emitter logic parameterized over TMap
-class TypedEventEmitter<TMap extends Record<string, unknown>> {
-  // identical on/off/emit/removeAllListeners implementation, but typed over TMap
+class TypedEventEmitter<TEventMap extends Record<string, unknown>> {
+  // identical on/off/emit/removeAllListeners implementation, but typed over TEventMap
 }
 
 // Backward-compat alias — all existing code unchanged
