@@ -82,8 +82,18 @@ export function migrateSolveV1toV2(solve: SolveRecord): SolveRecord {
   const method = getMethod(solve.method)
   const freshPhases = computePhases(correctedMoves, solve.scramble, method)
 
-  if (!freshPhases || freshPhases.length !== solve.phases.length) {
-    console.warn(`migrateSolveV1toV2: phase structure mismatch for id=${solve.id}`)
+  if (!freshPhases) {
+    console.warn(`migrateSolveV1toV2: corrected moves did not solve the cube (id=${solve.id}) — returning unchanged`)
+    return solve
+  }
+
+  if (freshPhases.length !== solve.phases.length) {
+    console.warn(
+      `migrateSolveV1toV2: phase count mismatch for id=${solve.id}` +
+      ` — fresh=${freshPhases.length} vs stored=${solve.phases.length}` +
+      ` — fresh labels: [${freshPhases.map(p => p.label).join(', ')}]` +
+      ` — stored labels: [${solve.phases.map(p => p.label).join(', ')}]`
+    )
     return solve
   }
 
@@ -96,7 +106,13 @@ export function migrateSolveV1toV2(solve: SolveRecord): SolveRecord {
       a.recognitionMs !== b.recognitionMs ||
       a.executionMs !== b.executionMs
     ) {
-      console.warn(`migrateSolveV1toV2: phase[${i}] mismatch for id=${solve.id}, label=${a.label} turns: ${a.turns} vs ${b.turns}`)
+      const fields: string[] = []
+      if (a.label !== b.label) fields.push(`label: ${a.label} vs ${b.label}`)
+      if (a.group !== b.group) fields.push(`group: ${a.group} vs ${b.group}`)
+      if (a.turns !== b.turns) fields.push(`turns: ${a.turns} vs ${b.turns}`)
+      if (a.recognitionMs !== b.recognitionMs) fields.push(`recognitionMs: ${a.recognitionMs} vs ${b.recognitionMs}`)
+      if (a.executionMs !== b.executionMs) fields.push(`executionMs: ${a.executionMs} vs ${b.executionMs}`)
+      console.warn(`migrateSolveV1toV2: phase[${i}] mismatch for id=${solve.id} — ${fields.join(', ')} — returning unchanged`)
       return solve
     }
   }
