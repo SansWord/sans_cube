@@ -1,30 +1,30 @@
 import { describe, it, expect } from 'vitest'
 import { GanCubeDriver } from '../../src/drivers/GanCubeDriver'
-import type { Move } from '../../src/types/cube'
+import type { ColorMove } from '../../src/types/cube'
 
 describe('GanCubeDriver event translation', () => {
-  it('translates a GAN MOVE event to a normalized Move', () => {
+  it('translates a GAN MOVE event to a ColorMove (face index 2 → G green)', () => {
     const driver = new GanCubeDriver()
-    const received: Move[] = []
+    const received: ColorMove[] = []
     driver.on('move', (m) => received.push(m))
 
     driver._simulateGanMove({ face: 2, dir: 0, cubeTimestamp: 500, serial: 1 })
 
     expect(received).toHaveLength(1)
-    expect(received[0].face).toBe('F')
+    expect(received[0].face).toBe('G') // GAN_COLOR_MAP[2] = 'G' (green)
     expect(received[0].direction).toBe('CW')
     expect(received[0].cubeTimestamp).toBe(500)
     expect(received[0].serial).toBe(1)
   })
 
-  it('translates CCW direction correctly', () => {
+  it('translates CCW direction correctly (face index 0 → W white)', () => {
     const driver = new GanCubeDriver()
-    const received: Move[] = []
+    const received: ColorMove[] = []
     driver.on('move', (m) => received.push(m))
 
     driver._simulateGanMove({ face: 0, dir: 1, cubeTimestamp: 100, serial: 2 })
 
-    expect(received[0].face).toBe('U')
+    expect(received[0].face).toBe('W') // GAN_COLOR_MAP[0] = 'W' (white)
     expect(received[0].direction).toBe('CCW')
   })
 

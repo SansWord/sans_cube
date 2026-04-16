@@ -470,6 +470,41 @@ The tables in 2b (single-slice correction, misclassified slice) document the rea
 
 ---
 
+## Part 3 — Replay orientation correction (deferred)
+
+### Background
+
+`useTimer` records raw gyro snapshots (`q_sensor`) at 10 Hz during a solve. These snapshots are replayed in `useReplayController` via `findSlerpedQuaternion` and set directly on the renderer — with no `sensorOffset` correction applied.
+
+After the Phase 3 gyro fix, the live display correctly shows `q_cube = q_sensor * inv(sensorOffset)`. But replay still uses raw `q_sensor`, so M/E/S-caused axis confusion is visible in replay even for new solves recorded after the fix.
+
+### Chosen approach: reconstruct FSM state during playback (Option B)
+
+Do **not** change what is stored in `quaternionSnapshots` — storing `q_sensor` is correct because it preserves the raw data and allows the correction to be re-applied or improved later.
+
+Instead, reconstruct the `SENSOR_ORIENTATION_FSM` state at the current replay timestamp:
+
+1. At playback time, walk `solve.moves` from index 0 up to (but not including) the first move whose `cubeTimestamp` exceeds the current `solveElapsedMs`.
+2. For each M/E/S move in that prefix, advance a local FSM state variable using `SENSOR_ORIENTATION_FSM.transitions`.
+3. Apply the correction to the interpolated snapshot quaternion before passing it to the renderer:
+   ```ts
+   const rawQ = findSlerpedQuaternion(snapshots, solveElapsedMs)
+   const offset = SENSOR_ORIENTATION_FSM.orientations[fsmState]
+   const qCube = multiplyQuaternions(rawQ, invertQuaternion(offset))
+   rendererRef.current?.setQuaternion(qCube)
+   ```
+
+### Notes
+
+- FSM state reconstruction is O(moves) per seek, which is negligible for typical solve lengths.
+- Works on all existing stored solve data — no migration needed.
+- The reference quaternion stored in `OrientationConfig` is already in `q_cube` space (set that way by `resetGyro`), so no correction is needed for the reference during replay; just the snapshot quaternion.
+- Implement in `useReplayController` alongside the existing `findSlerpedQuaternion` call.
+
+**For full FSM design details** (24 states, BFS construction, left-multiply rule, conjugation identity, reset behavior): see [`docs/cube-notation.md` — GAN Gyro Sensor and Slice Move Drift](../cube-notation.md#gan-gyro-sensor-and-slice-move-drift).
+
+---
+
 ## What is never affected
 
 - `SolveRecord.timeMs` — wall-clock duration, untouched

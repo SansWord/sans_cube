@@ -29,12 +29,16 @@ import type { SolveRecord } from './types/solve'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
-  const { facelets, isSolved, isSolvedRef, resetState, handleMove } = useCubeState(driver, driverVersion)
-  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
+  const { facelets, isSolved, isSolvedRef, resetState, resetCenterPositions, handleMove } = useCubeState(driver, driverVersion)
+  const { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig, sensorStateRef } = useGyro(driver, driverVersion)
   useSolveRecorder(driver, isSolved, driverVersion)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
-  const gestureResetRef = useRef<() => void>(resetState)
+  // Combined reset: cube facelets + sensor offset (M-slice position tracking).
+  const resetAll = useCallback(() => { resetState(); resetSensorOffset() }, [resetState, resetSensorOffset])
+  // Reorient facelets to white-top/green-front + reset sensor FSM to match the new frame.
+  const resetCenterTracking = useCallback(() => { const next = resetCenterPositions(); resetSensorOffset(); return next }, [resetCenterPositions, resetSensorOffset])
+  const gestureResetRef = useRef<() => void>(resetAll)
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>(() =>
     window.location.hash === '#debug' ? 'debug' : 'timer'
@@ -158,7 +162,8 @@ export default function App() {
           onConnect={connect}
           onDisconnect={disconnect}
           onResetGyro={resetGyro}
-          onResetState={resetState}
+          onResetState={resetAll}
+          onResetCenters={resetCenterTracking}
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
           driverVersion={driverVersion}
@@ -169,7 +174,16 @@ export default function App() {
         />
       ) : (
         <>
-          <ControlBar onResetGyro={resetGyro} onResetState={resetState} disabled={!isConnected} />
+          <ControlBar onResetGyro={resetGyro} onResetState={resetAll} onResetCenters={resetCenterTracking} disabled={!isConnected} />
+          <div style={{ fontFamily: 'monospace', fontSize: 11, padding: '4px 16px', background: '#0a2040', color: '#7ec8e3', display: 'flex', gap: 16, alignItems: 'center' }}>
+            <span>FSM sensor state: <strong>{sensorStateRef.current}</strong> (0 = home)</span>
+            <button
+              onClick={() => { resetSensorOffset(); setMoves(m => [...m]) /* force re-render to refresh display */ }}
+              style={{ padding: '2px 8px', color: '#7ec8e3', border: '1px solid #3a7a8a', background: 'transparent', borderRadius: 3, cursor: 'pointer', fontSize: 11 }}
+            >
+              Reset FSM to 0
+            </button>
+          </div>
           <CubeCanvas
             facelets={facelets}
             quaternion={quaternion}

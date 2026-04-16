@@ -7,7 +7,7 @@ import {
   isCPLLDone,
 } from '../../src/utils/cfop'
 import { SOLVED_FACELETS } from '../../src/types/cube'
-import { applyMoveToFacelets } from '../../src/hooks/useCubeState'
+import { applyMoveToFacelets } from '../../src/utils/applyMove'
 import type { Move } from '../../src/types/cube'
 
 function move(face: Move['face'], direction: Move['direction'] = 'CW'): Move {

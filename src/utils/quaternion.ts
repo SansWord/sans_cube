@@ -1,6 +1,71 @@
 import type { Quaternion } from '../types/cube'
 
+// GAN sensor coords: +X=Red(R), +Y=Blue/back(B), +Z=White/top(U)
+// When a slice move is detected, the gyro sensor (in the M-slice) physically rotates with it.
+// These quaternions represent that sensor rotation — apply to the reference to cancel the drift.
+// M CW = +90° around X (U→F in GAN coords)
+// E CW = +90° around Z (F→R in GAN coords, D direction)
+// S CW = +90° around Y (U→R in GAN coords, F direction)
+export const SLICE_GYRO_ROTATIONS: Partial<Record<string, Quaternion>> = {
+  'M:CW':  { x:  Math.SQRT1_2, y: 0,              z: 0,              w: Math.SQRT1_2 },
+  'M:CCW': { x: -Math.SQRT1_2, y: 0,              z: 0,              w: Math.SQRT1_2 },
+  'E:CW':  { x: 0,              y: 0,              z:  Math.SQRT1_2, w: Math.SQRT1_2 },
+  'E:CCW': { x: 0,              y: 0,              z: -Math.SQRT1_2, w: Math.SQRT1_2 },
+  'S:CW':  { x: 0,              y:  Math.SQRT1_2, z: 0,              w: Math.SQRT1_2 },
+  'S:CCW': { x: 0,              y: -Math.SQRT1_2, z: 0,              w: Math.SQRT1_2 },
+}
+
 export const IDENTITY_QUATERNION: Quaternion = { x: 0, y: 0, z: 0, w: 1 }
+
+/** Quaternions are equal up to sign (q and -q represent the same rotation). */
+function sameOrientation(a: Quaternion, b: Quaternion): boolean {
+  const dot = a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w
+  return Math.abs(Math.abs(dot) - 1) < 1e-6
+}
+
+/**
+ * FSM over the 24 orientations reachable by M/E/S slice moves.
+ *
+ * State 0 = identity (sensor at home position, solved cube).
+ * Built at module load via BFS from identity using SLICE_GYRO_ROTATIONS.
+ *
+ * Usage: on each M/E/S event, look up the next state —
+ *   nextState = SENSOR_ORIENTATION_FSM.transitions[currentState]['M:CW']
+ * Retrieve the orientation quaternion for applyReference correction:
+ *   quaternion = SENSOR_ORIENTATION_FSM.orientations[currentState]
+ */
+export interface SensorOrientationFSM {
+  /** The 24 orientation quaternions, indexed by state id (0 = identity). */
+  readonly orientations: readonly Quaternion[]
+  /** transitions[stateId][op] = nextStateId. Covers all keys in SLICE_GYRO_ROTATIONS. */
+  readonly transitions: readonly Readonly<Record<string, number>>[]
+}
+
+function buildSensorOrientationFSM(): SensorOrientationFSM {
+  const orientations: Quaternion[] = [IDENTITY_QUATERNION]
+  const transitions: Record<string, number>[] = [{}]
+  const ops = Object.entries(SLICE_GYRO_ROTATIONS) as [string, Quaternion][]
+
+  function findOrAdd(q: Quaternion): number {
+    for (let i = 0; i < orientations.length; i++) {
+      if (sameOrientation(orientations[i], q)) return i
+    }
+    orientations.push(q)
+    transitions.push({})
+    return orientations.length - 1
+  }
+
+  // BFS: for each discovered state, apply every op to find next states.
+  for (let i = 0; i < orientations.length; i++) {
+    for (const [key, sliceQ] of ops) {
+      transitions[i][key] = findOrAdd(multiplyQuaternions(sliceQ, orientations[i]))
+    }
+  }
+
+  return { orientations, transitions }
+}
+
+export const SENSOR_ORIENTATION_FSM: SensorOrientationFSM = buildSensorOrientationFSM()
 
 export function invertQuaternion(q: Quaternion): Quaternion {
   return { x: -q.x, y: -q.y, z: -q.z, w: q.w }

@@ -1,19 +1,31 @@
 export type Face = 'U' | 'R' | 'F' | 'D' | 'L' | 'B'
 export type SliceFace = 'M' | 'E' | 'S'
 export type RotationFace = 'x' | 'y' | 'z'
-export type AnyFace = Face | SliceFace | RotationFace
+export type PositionalFace = Face | SliceFace | RotationFace
+// Backward-compat alias — retire in a follow-up session
+export type AnyFace = PositionalFace
+
 export type Direction = 'CW' | 'CCW'
 
-// Single-letter color codes used in the facelets string (future: will replace face letters)
+// Single-letter color codes used in the facelets string
 export type FaceletColor = 'W' | 'R' | 'G' | 'Y' | 'O' | 'B'
 
-export interface Move {
-  face: AnyFace
+// Generic move — single source of truth for all move shapes
+export interface MoveOf<TFace> {
+  face: TFace
   direction: Direction
   cubeTimestamp: number
   serial: number
   quaternion?: Quaternion
 }
+
+// Position-based moves (geometric face labels) — canonical name for new code
+export type PositionMove = MoveOf<PositionalFace>
+// Backward-compat alias — all existing code using Move continues to work
+export type Move = PositionMove
+
+// Color-based move — emitted by GanCubeDriver before translation
+export type ColorMove = MoveOf<FaceletColor>
 
 export interface Quaternion {
   x: number

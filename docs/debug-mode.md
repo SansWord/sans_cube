@@ -10,7 +10,8 @@ Click the **[debug]** / **[timer]** toggle in the top-right of the connection ba
 
 ### Live cube view
 
-- **ControlBar** — Reset gyro, reset cube state (requires hardware connection)
+- **ControlBar** — Reset gyro, reset cube state, reset center tracking (requires hardware connection)
+- **FSM state row** — Shows current `sensorState` (0 = home). Updates on each move. Includes **Reset FSM to 0** button for manual testing. In normal use `resetCenterTracking` resets the FSM automatically — this button is for diagnosing gyro rendering issues.
 - **CubeCanvas** — Live 3D cube rendering driven by the connected driver
 - **OrientationConfig** — Set front/bottom face orientation; saved to localStorage
 - **FaceletDebug** — Raw 54-sticker facelets display (text)

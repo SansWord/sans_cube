@@ -3,8 +3,7 @@ import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Move, Quaternion } from '../types/cube'
 import type { PhaseRecord, QuaternionSnapshot, SolveMethod } from '../types/solve'
-import { isSolvedFacelets } from './useCubeState'
-import { applyMoveToFacelets } from './useCubeState'
+import { isSolvedFacelets, applyMoveToFacelets } from '../utils/applyMove'
 import { SOLVED_FACELETS } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 
@@ -19,6 +18,9 @@ export interface TimerResult {
   recordedMoves: Move[]
   quaternionSnapshots: QuaternionSnapshot[]
   reset: () => void
+  /** Sync facelets tracking to an externally-reoriented state (e.g. after resetCenterPositions).
+   *  Only effective during idle — never disrupts an in-progress solve. */
+  syncFacelets: (facelets: string) => void
 }
 
 function absorbPhaseIntoNext(phases: PhaseRecord[], searchLabel: string, nextLabel: string): PhaseRecord[] {
@@ -201,11 +203,14 @@ export function useTimer(
   }, driverVersion)
 
   useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
-    if (statusRef.current !== 'solving') return
+    if (statusRef.current === 'solved') return
     const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
 
-    // Revert the last move and apply the replacement slice move
+    // Always revert + re-apply, even during idle/scrambling — M/E/S in the scramble must
+    // be tracked correctly so facelets are accurate when the solve starts.
     faceletsRef.current = applyMoveToFacelets(prevFaceletsRef.current, moveWithQ)
+
+    if (statusRef.current !== 'solving') return
 
     // Replace the last recorded move
     if (movesRef.current.length > 0) {
@@ -229,5 +234,11 @@ export function useTimer(
     }
   }, driverVersion)
 
-  return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset }
+  const syncFacelets = useCallback((facelets: string) => {
+    if (statusRef.current !== 'idle') return
+    faceletsRef.current = facelets
+    prevFaceletsRef.current = facelets
+  }, [])
+
+  return { status, elapsedMs, phaseRecords, recordedMoves, quaternionSnapshots, reset, syncFacelets }
 }
