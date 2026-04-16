@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Quaternion, OrientationConfig } from '../types/cube'
-import { IDENTITY_QUATERNION, applyReference, SLICE_GYRO_ROTATIONS, multiplyQuaternions } from '../utils/quaternion'
+import { IDENTITY_QUATERNION, applyReference, SLICE_GYRO_ROTATIONS, multiplyQuaternions, invertQuaternion } from '../utils/quaternion'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
@@ -14,21 +14,43 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
   const [config, setConfig] = useState<OrientationConfig>(() => loadFromStorage(STORAGE_KEYS.ORIENTATION_CONFIG, DEFAULT_CONFIG))
   const latestRawQ = useRef(IDENTITY_QUATERNION)
 
-  // Tracks the effective reference quaternion, updated when the user resets gyro
-  // or when a M/E/S slice move drifts the physical gyro sensor position.
+  // Tracks the effective reference quaternion in "cube-frame" space (q_cube, not
+  // q_sensor). Updated when the user presses Reset Gyro or on initial load.
   const effectiveRefRef = useRef<Quaternion>(config.referenceQuaternion ?? IDENTITY_QUATERNION)
 
+  // Tracks the accumulated body-frame rotation of the GAN gyro sensor relative
+  // to the cube's outer-layer frame. The GAN sensor is in the M-slice, so it
+  // physically rotates with every M (and possibly E/S) move.
+  //
+  //   q_cube = q_sensor * inv(sensorOffset)
+  //
+  // After M CW:  sensorOffset = sensorOffset * sliceQ_M_CW  (right-multiply)
+  // After M CCW: sensorOffset = sensorOffset * sliceQ_M_CCW
+  //
+  // This correctly cancels the axis confusion:
+  //   physical Y rotation → sensor sees it as -Z (after M CW) → corrected back to Y
+  //   (conjugation: sliceQ * R_{-Z}(θ) * inv(sliceQ) = R_Y(θ))
+  const sensorOffsetRef = useRef<Quaternion>(IDENTITY_QUATERNION)
+
   // Keep effectiveRefRef in sync whenever the stored config reference changes
-  // (e.g. user presses "reset gyro" or loads a saved config on mount).
+  // (e.g. on initial load from localStorage).
   useEffect(() => {
     effectiveRefRef.current = config.referenceQuaternion ?? IDENTITY_QUATERNION
   }, [config.referenceQuaternion])
 
+  /** Compute q_cube from the raw sensor quaternion. */
+  function _qCube(qSensor: Quaternion): Quaternion {
+    return multiplyQuaternions(qSensor, invertQuaternion(sensorOffsetRef.current))
+  }
+
   const resetGyro = useCallback(() => {
-    effectiveRefRef.current = latestRawQ.current
-    const newConfig: OrientationConfig = { ...config, referenceQuaternion: latestRawQ.current }
+    // Reference is stored as q_cube so it remains valid across M/E/S moves.
+    const qCube = _qCube(latestRawQ.current)
+    effectiveRefRef.current = qCube
+    const newConfig: OrientationConfig = { ...config, referenceQuaternion: qCube }
     setConfig(newConfig)
     saveToStorage(STORAGE_KEYS.ORIENTATION_CONFIG, newConfig)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config])
 
   const saveOrientationConfig = useCallback((updates: Partial<OrientationConfig>) => {
@@ -37,24 +59,19 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     saveToStorage(STORAGE_KEYS.ORIENTATION_CONFIG, newConfig)
   }, [config])
 
-  // When an M/E/S slice move is detected, the GAN gyro sensor (located in the
-  // M-slice center) physically rotates with it. Update the effective reference
-  // so applyReference continues to cancel that drift correctly.
-  // Formula: new_ref = sliceQ * old_ref  (world-frame left-multiply)
+  // For each M/E/S move: accumulate the sensor's body-frame rotation offset.
   useCubeDriverEvent(driver, 'move', (move) => {
-    const key = `${move.face}:${move.direction}`
-    const sliceQ = SLICE_GYRO_ROTATIONS[key]
+    const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
     if (sliceQ) {
-      effectiveRefRef.current = multiplyQuaternions(sliceQ, effectiveRefRef.current)
+      sensorOffsetRef.current = multiplyQuaternions(sensorOffsetRef.current, sliceQ)
     }
   }, driverVersion)
 
-  // Same update for the retroactive slice path (replacePreviousMove).
+  // Same for the retroactive slice detection path.
   useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
-    const key = `${move.face}:${move.direction}`
-    const sliceQ = SLICE_GYRO_ROTATIONS[key]
+    const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
     if (sliceQ) {
-      effectiveRefRef.current = multiplyQuaternions(sliceQ, effectiveRefRef.current)
+      sensorOffsetRef.current = multiplyQuaternions(sensorOffsetRef.current, sliceQ)
     }
   }, driverVersion)
 
@@ -63,11 +80,18 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     if (!d) return
     const onGyro = (q: Quaternion) => {
       latestRawQ.current = q
-      setQuaternion(applyReference(q, effectiveRefRef.current))
+      setQuaternion(applyReference(_qCube(q), effectiveRefRef.current))
     }
     d.on('gyro', onGyro)
     return () => d.off('gyro', onGyro)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [driver, driverVersion])
 
-  return { quaternion, config, resetGyro, saveOrientationConfig }
+  /** Reset the accumulated sensor offset to identity. Call this when cube state
+   *  is reset to solved — the M-slice (and sensor) returns to its home position. */
+  const resetSensorOffset = useCallback(() => {
+    sensorOffsetRef.current = IDENTITY_QUATERNION
+  }, [])
+
+  return { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig }
 }

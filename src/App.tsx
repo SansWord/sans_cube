@@ -30,11 +30,13 @@ import type { SolveRecord } from './types/solve'
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
   const { facelets, isSolved, isSolvedRef, resetState, handleMove } = useCubeState(driver, driverVersion)
-  const { quaternion, config, resetGyro, saveOrientationConfig } = useGyro(driver, driverVersion)
+  const { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig } = useGyro(driver, driverVersion)
   useSolveRecorder(driver, isSolved, driverVersion)
   const rendererRef = useRef<CubeRenderer | null>(null)
   const isSolvingRef = useRef(false)
-  const gestureResetRef = useRef<() => void>(resetState)
+  // Combined reset: cube facelets + sensor offset (M-slice position tracking).
+  const resetAll = useCallback(() => { resetState(); resetSensorOffset() }, [resetState, resetSensorOffset])
+  const gestureResetRef = useRef<() => void>(resetAll)
   const [moves, setMoves] = useState<Move[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>(() =>
     window.location.hash === '#debug' ? 'debug' : 'timer'
@@ -158,7 +160,7 @@ export default function App() {
           onConnect={connect}
           onDisconnect={disconnect}
           onResetGyro={resetGyro}
-          onResetState={resetState}
+          onResetState={resetAll}
           isSolvingRef={isSolvingRef}
           gestureResetRef={gestureResetRef}
           driverVersion={driverVersion}
@@ -169,7 +171,7 @@ export default function App() {
         />
       ) : (
         <>
-          <ControlBar onResetGyro={resetGyro} onResetState={resetState} disabled={!isConnected} />
+          <ControlBar onResetGyro={resetGyro} onResetState={resetAll} disabled={!isConnected} />
           <CubeCanvas
             facelets={facelets}
             quaternion={quaternion}
