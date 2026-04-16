@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.19.0](#v1190--mes-migration-part-2-2026-04-16-1248) | M/E/S migration — auto-correct stored v1 face labels on load; Firestore migration button + review UX |
 | [v1.18.0](#v1180--colormovtranslator--correct-mes-detection-2026-04-16-0506) | `ColorMoveTranslator` — correct M/E/S detection via center tracking; reorientation desync fix |
 | [v1.17.1](#v1171--fix-mouse-driver-in-debug-mode-2026-04-15) | Fix: mouse driver moves not working in debug mode CubeCanvas |
 | [v1.17.0](#v1170--color-letter-facelets--debug-ux-2026-04-15) | Color-letter facelets rename (W/R/G/Y/O/B), monochromatic solved check, x/y/z rotation moves, #debug URL, debug UX fixes |
@@ -43,6 +44,42 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.19.0 — M/E/S migration part 2 (2026-04-16 12:48)
+
+**Review:** not yet
+
+**Design docs:**
+- M/E/S migration: [Spec](superpowers/specs/2026-04-15-phase3-m-move-design.md) [Plan](superpowers/plans/2026-04-16-m-migration-part-2.md)
+
+**What was built:**
+- **`migrateSolveV1toV2`** (`src/utils/migrateSolveV1toV2.ts`): corrects stored v1 face labels by simulating center positions from solved state. Fast path (no M/E/S moves): just bumps `schemaVersion` to 2. Full path: re-derives every geometric face label using the same center-tracking logic as `ColorMoveTranslator`, then verifies the corrected moves reproduce the stored phases exactly — graceful fallback if they don't.
+- **`movesV1?: Move[]`** added to `SolveRecord`: holds the original pre-correction moves for Firestore-migrated records awaiting user review. Absent on localStorage and new records.
+- **localStorage auto-migration** (`useSolveHistory`): on app load, all v1 solves are migrated silently. `movesV1` is stripped before saving — no review workflow for local solves.
+- **Firestore migration** (`firestoreSolves.ts`): `migrateSolvesToV2InFirestore` migrates all v1 Firestore solves, writing `movesV1` for records that pass the full path so the user can review.
+- **Debug panel button**: "Migrate solves to v2 (fix M/E/S labels)" in the cloud sync section — shows pending count, asks for confirmation, shows migrated/failed counts.
+- **Sidebar review badge**: orange dot next to the solve number for any solve with `movesV1` present.
+- **`SolveDetailModal` migration review section**: when `movesV1` is present, shows a table of only the moves whose face label changed (old in red, new in green) plus a "Mark as reviewed" button that deletes `movesV1` from Firestore.
+- **`SolveDetailModal` unmigrated warning banner**: shown when `schemaVersion < 2` AND the solve has M/E/S moves — warns that phase analysis may be inaccurate and points to the debug panel.
+- **Improved fallback logging**: `migrateSolveV1toV2` now logs exactly which phase field mismatched (and the actual vs expected values), or clearly states "corrected moves did not solve the cube" when `computePhases` returns null.
+
+**Key technical learnings:**
+
+- `[insight]` **The Roux fixture required a two-step fix**: the stored phases in `ROUX_SOLVE_1` were computed under the old M cycle (M ≈ L+R outer-face swaps, incorrect center movement). After correcting the move labels, `computePhases` with the correct M cycle produced different intermediate facelets → different phase boundaries → different `executionMs` timing. So the fixture needed both corrected moves AND freshly recomputed phases — not just corrected moves.
+
+- `[gotcha]` **Fixture file corruption via Python script**: the script to replace `ROUX_SOLVE_1`'s moves array used a regex anchor that matched the wrong location in the file, corrupting `CFOP_SOLVE_1` instead. Fix: find the start/end by line number (searching for the const declaration and the top-level `}` after it), then replace by line range — surgical and unambiguous for large fixture files.
+
+- `[insight]` **`migrateSolveV1toV2` is a one-way v1→v2 transform — not idempotent on v2 data.** The correction maps face labels through the original GAN color map: `FACE_TO_COLOR = { U:'W', F:'G', ... }`. On v1 data, 'F' means "turn whatever geometric face was F at record time" — which after M moves is wrong. On v2 data, 'F' means "turn the geometric F face (correct)". Re-running the correction on v2: it maps 'F' → green → finds green at 'D' (because after M CW, green center moves to D) → corrects to 'D' ≠ 'F'. The corrected moves then don't solve the cube → `computePhases` returns null → graceful fallback. This is correct behavior: the migration should only ever be applied to v1 records.
+
+- `[gotcha]` **Generator test must run on the v1 fixture, not the v2 fixture.** The generator test (`generateRouxFixture.test.ts`) applies the correction and calls `computePhases` to produce the correct fixture. If it accidentally runs on the already-updated v2 fixture, it double-corrects the moves and `computePhases` returns null — the test fails. Always verify what `ROUX_SOLVE_WITH_M` points to before running the generator.
+
+- `[note]` The phase invariant check in `migrateSolveV1toV2` compares `recognitionMs` and `executionMs` in addition to `turns`. This means migration can fail for v1 solves whose phases were computed with the old timing model even if the corrected moves do solve the cube. In practice, this was the failure mode for the original `ROUX_SOLVE_1`: turns matched (14 vs 14 for FB) but timing differed because the old M cycle produced different intermediate states.
+
+**Process learnings:**
+
+- `[insight]` **When a test fixture needs both data and derived values corrected, use a generator test**: write a short test that bypasses the phase invariant, applies the correction, recomputes phases fresh, and prints the result as JSON. This avoids manual phase calculation and is self-documenting.
 
 ---
 
