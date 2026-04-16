@@ -288,6 +288,19 @@ Notation: GAN sends color labels (W=white, R=red, G=green, Y=yellow, O=orange, B
 - E CW = D CCW + U CW; E CCW = D CW + U CCW
 - S CW = F CCW + B CW; S CCW = F CW + B CCW
 
+**`applyMoveToFacelets` correctness tests** — combining a slice with its two outer faces in the same direction equals a whole-cube rotation. These tests would pass with identity (solved) under the old L+R/D+U/F+B approximation, so they catch the old bug directly.
+
+| Sequence | Must equal |
+|----------|-----------|
+| L CW + M CW + R CCW | x CCW |
+| L CCW + M CCW + R CW | x CW |
+| D CW + E CW + U CCW | y CCW |
+| D CCW + E CCW + U CW | y CW |
+| F CW + S CW + B CCW | z CW |
+| F CCW + S CCW + B CW | z CCW |
+
+Assert by applying both sequences from solved state and checking facelets are identical.
+
 ---
 
 ## Part 2 — Data Migration (separate phase)
