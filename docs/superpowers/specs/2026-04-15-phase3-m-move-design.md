@@ -14,7 +14,7 @@
 
 1. `applyMoveToFacelets` currently approximates M as L+R, E as D+U, S as F+B. This rotates the outer face stickers but does not move U/F/D/B center stickers along the middle layer — leaving `FaceletDebug` wrong after any slice move.
 
-2. `GanCubeDriver` maps GAN face indices using a fixed map (`face 0 → U` always). GAN events are color-based — face 0 means "the face whose center is white", not "the geometric U face". After M, white center moves from U to F; GAN still sends face 0, but the correct geometric face is now F. The driver's fixed map produces wrong face labels for all moves after any M/E/S.
+2. `GanCubeDriver` maps GAN face indices using a fixed map (`face 0 (white center) → geometric 'U'`, always). GAN events are color-based — face 0 means "the face whose center is white". After M, white center moves from U to F; GAN still sends face 0, but the fixed map still emits geometric 'U' — wrong. The driver's fixed map produces wrong face labels for all moves after any M/E/S.
 
 ---
 
