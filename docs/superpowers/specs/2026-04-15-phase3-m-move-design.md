@@ -303,10 +303,11 @@ Assert by applying both sequences from solved state and checking facelets are id
 
 **Slice composition identities** — these test that M, S, E interact correctly with each other. Both return to solved state.
 
-| Sequence | Expected |
-|----------|----------|
-| M2 S2 E2 M2 S2 E2 | solved |
-| (M S E) × 4 | solved |
+| Sequence | Expected | What it tests |
+|----------|----------|---------------|
+| M2 S2 E2 M2 S2 E2 | solved | slice moves compose correctly with each other |
+| (M S E) × 4 | solved | slice moves compose correctly with each other |
+| (M2 U2) × 4 | solved | slice move interacts correctly with outer face move |
 
 Assert `isSolvedFacelets` after each sequence applied from solved state.
 
