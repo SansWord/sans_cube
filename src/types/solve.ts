@@ -26,6 +26,8 @@ export interface SolveRecord {
   scramble: string
   timeMs: number        // wall-clock solve duration
   moves: Move[]         // all moves with cubeTimestamp for replay
+  movesV1?: Move[]      // original pre-migration moves; present only on Firestore-migrated
+                        // records awaiting user review. Absent on localStorage and new records.
   phases: PhaseRecord[]
   date: number          // Unix timestamp (Date.now())
   quaternionSnapshots?: QuaternionSnapshot[]
