@@ -324,6 +324,23 @@ Assert `isSolvedFacelets` after each sequence applied from solved state.
 
 Implemented and tested after Part 1 is stable. No migration code ships with the implementation changes.
 
+### Skipped tests to re-enable at the start of Part 2
+
+The following tests were skipped during Part 1 implementation because the Roux fixtures in `tests/fixtures/solveFixtures.ts` were captured under the old (wrong) M behavior (M approximated as paired outer-face moves). The new direct middle-layer M cycle produces different sticker positions, so these fixtures no longer replay correctly.
+
+**All three are in `tests/utils/recomputePhases.test.ts`:**
+
+| Test | What it checks |
+|------|----------------|
+| `it.skip.each(ROUX_SOLVES)` — "total turns across phases equals move count" | Roux phase recomputation produces correct turn counts |
+| `it.skip.each(ROUX_ROUND_TRIP_CASES)` — "round-trip turns" | Roux→CFOP→Roux round-trip preserves turn counts |
+| `it.skip.each(ROUX_ROUND_TRIP_CASES)` — "round-trip timing" | Roux→CFOP→Roux round-trip preserves timing |
+
+**To re-enable at the start of Part 2:**
+1. Update `ROUX_SOLVES` in `tests/fixtures/solveFixtures.ts` with fixtures captured after the Part 1 fix (M moves recorded correctly via `ColorMoveTranslator`).
+2. Change `it.skip.each` → `it.each` for the three Roux test groups above.
+3. Verify all three groups pass before writing any migration code — they establish the baseline that migration must preserve.
+
 ---
 
 ### 2a. Schema additions to `SolveRecord`

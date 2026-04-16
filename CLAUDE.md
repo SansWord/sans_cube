@@ -47,6 +47,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - [`trends-zoom.md`](docs/trends-zoom.md) — drag-to-zoom behavior in TrendsModal: zoom stack, data filtering, x-axis domain, day reference lines
 - [`analytics.md`](docs/analytics.md) — Firebase Analytics setup, event reference, consent banner, local dev notes
 - [`url-routes.md`](docs/url-routes.md) — all supported hash-based routes (`#debug`, `#solve-{id}`, `#shared-{id}`, `#trends?...`); update when routes change
+- [`cube-notation.md`](docs/cube-notation.md) — cube move notation, facelets string format, face index reference, M/E/S cycle indices, GAN BLE protocol semantics
 
 ## Persistence
 
