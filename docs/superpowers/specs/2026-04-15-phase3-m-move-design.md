@@ -501,6 +501,8 @@ Instead, reconstruct the `SENSOR_ORIENTATION_FSM` state at the current replay ti
 - The reference quaternion stored in `OrientationConfig` is already in `q_cube` space (set that way by `resetGyro`), so no correction is needed for the reference during replay; just the snapshot quaternion.
 - Implement in `useReplayController` alongside the existing `findSlerpedQuaternion` call.
 
+**For full FSM design details** (24 states, BFS construction, left-multiply rule, conjugation identity, reset behavior): see [`docs/cube-notation.md` — GAN Gyro Sensor and Slice Move Drift](../cube-notation.md#gan-gyro-sensor-and-slice-move-drift).
+
 ---
 
 ## What is never affected
