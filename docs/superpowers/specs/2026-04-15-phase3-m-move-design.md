@@ -377,7 +377,9 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
    (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends solved.)
 
-3. **Return** `{ ...solve, moves: correctedMoves, phases: freshPhases, schemaVersion: 2 }`.
+3. **Return** `{ ...solve, moves: correctedMoves, movesV1: solve.moves, phases: freshPhases, schemaVersion: 2 }`.
+
+   `movesV1` is always included so callers can decide what to do with it: localStorage migration strips it before saving (no review workflow); Firestore migration keeps it for the review UX.
 
 ---
 
@@ -387,15 +389,19 @@ Triggered automatically on app load, before the UI renders.
 
 In `useSolveHistory.ts`, after loading local solves:
 ```ts
-const migrated = localSolves.map(s =>
-  (s.schemaVersion ?? 1) < 2 ? migrateSolveV1toV2(s) : s
-)
+const migrated = localSolves.map(s => {
+  if ((s.schemaVersion ?? 1) < 2) {
+    const { movesV1: _, ...toSave } = migrateSolveV1toV2(s)  // strip movesV1
+    return toSave
+  }
+  return s
+})
 if (migrated.some((s, i) => s !== localSolves[i])) {
   saveLocalSolves(migrated)
 }
 ```
 
-Silent, instant, no `movesV1` kept (no review workflow for local storage).
+Silent, instant. No review workflow for local storage.
 
 ---
 
