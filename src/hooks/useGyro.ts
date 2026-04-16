@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
 import type { Quaternion, OrientationConfig } from '../types/cube'
-import { IDENTITY_QUATERNION, applyReference, SLICE_GYRO_ROTATIONS, multiplyQuaternions, invertQuaternion } from '../utils/quaternion'
+import { IDENTITY_QUATERNION, applyReference, SENSOR_ORIENTATION_FSM, multiplyQuaternions, invertQuaternion } from '../utils/quaternion'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
@@ -18,19 +18,11 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
   // q_sensor). Updated when the user presses Reset Gyro or on initial load.
   const effectiveRefRef = useRef<Quaternion>(config.referenceQuaternion ?? IDENTITY_QUATERNION)
 
-  // Tracks the accumulated body-frame rotation of the GAN gyro sensor relative
-  // to the cube's outer-layer frame. The GAN sensor is in the M-slice, so it
-  // physically rotates with every M (and possibly E/S) move.
-  //
-  //   q_cube = q_sensor * inv(sensorOffset)
-  //
-  // After M CW:  sensorOffset = sensorOffset * sliceQ_M_CW  (right-multiply)
-  // After M CCW: sensorOffset = sensorOffset * sliceQ_M_CCW
-  //
-  // This correctly cancels the axis confusion:
-  //   physical Y rotation → sensor sees it as -Z (after M CW) → corrected back to Y
-  //   (conjugation: sliceQ * R_{-Z}(θ) * inv(sliceQ) = R_Y(θ))
-  const sensorOffsetRef = useRef<Quaternion>(IDENTITY_QUATERNION)
+  // FSM state index (0–23) tracking the sensor's accumulated orientation offset.
+  // State 0 = identity (sensor at home, all slices at solved position).
+  // Transitions are pure table lookups — no float multiplication, no drift.
+  // q_cube = q_sensor * inv(SENSOR_ORIENTATION_FSM.orientations[sensorState])
+  const sensorStateRef = useRef(0)
 
   // Keep effectiveRefRef in sync whenever the stored config reference changes
   // (e.g. on initial load from localStorage).
@@ -38,9 +30,10 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     effectiveRefRef.current = config.referenceQuaternion ?? IDENTITY_QUATERNION
   }, [config.referenceQuaternion])
 
-  /** Compute q_cube from the raw sensor quaternion. */
+  /** Compute q_cube from the raw sensor quaternion using the current FSM state. */
   function _qCube(qSensor: Quaternion): Quaternion {
-    return multiplyQuaternions(qSensor, invertQuaternion(sensorOffsetRef.current))
+    const offset = SENSOR_ORIENTATION_FSM.orientations[sensorStateRef.current]
+    return multiplyQuaternions(qSensor, invertQuaternion(offset))
   }
 
   const resetGyro = useCallback(() => {
@@ -59,28 +52,18 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
     saveToStorage(STORAGE_KEYS.ORIENTATION_CONFIG, newConfig)
   }, [config])
 
-  // For each M/E/S move: accumulate the sensor's rotation offset.
-  //
-  // Each sliceQ is defined in the cube's outer-layer frame (GAN +X/+Y/+Z axes),
-  // so the update is a LEFT-multiply (pre-multiplication):
-  //   sensorOffset_new = sliceQ * sensorOffset_old
-  //
-  // RIGHT-multiply would be wrong for combinations: after E CW (Rz+90°) then M'
-  // (Rx-90°), right-multiply gives Rz(90°)*Rx(-90°) but the correct accumulated
-  // offset is Rx(-90°)*Rz(90°) — they differ because rotations don't commute.
+  // On each M/E/S move: advance the FSM state via table lookup — O(1), no float ops.
   useCubeDriverEvent(driver, 'move', (move) => {
-    const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
-    if (sliceQ) {
-      sensorOffsetRef.current = multiplyQuaternions(sliceQ, sensorOffsetRef.current)
-    }
+    const key = `${move.face}:${move.direction}`
+    const next = SENSOR_ORIENTATION_FSM.transitions[sensorStateRef.current][key]
+    if (next !== undefined) sensorStateRef.current = next
   }, driverVersion)
 
   // Same for the retroactive slice detection path.
   useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
-    const sliceQ = SLICE_GYRO_ROTATIONS[`${move.face}:${move.direction}`]
-    if (sliceQ) {
-      sensorOffsetRef.current = multiplyQuaternions(sliceQ, sensorOffsetRef.current)
-    }
+    const key = `${move.face}:${move.direction}`
+    const next = SENSOR_ORIENTATION_FSM.transitions[sensorStateRef.current][key]
+    if (next !== undefined) sensorStateRef.current = next
   }, driverVersion)
 
   useEffect(() => {
@@ -95,10 +78,10 @@ export function useGyro(driver: MutableRefObject<CubeDriver | null>, driverVersi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [driver, driverVersion])
 
-  /** Reset the accumulated sensor offset to identity. Call this when cube state
-   *  is reset to solved — the M-slice (and sensor) returns to its home position. */
+  /** Reset FSM to state 0. Call when cube state resets to solved — the sensor
+   *  returns to its home position (all slices at 0). */
   const resetSensorOffset = useCallback(() => {
-    sensorOffsetRef.current = IDENTITY_QUATERNION
+    sensorStateRef.current = 0
   }, [])
 
   return { quaternion, config, resetGyro, resetSensorOffset, saveOrientationConfig }
