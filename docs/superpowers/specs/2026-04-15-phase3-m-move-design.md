@@ -301,6 +301,15 @@ Notation: GAN sends color labels (W=white, R=red, G=green, Y=yellow, O=orange, B
 
 Assert by applying both sequences from solved state and checking facelets are identical.
 
+**Slice composition identities** — these test that M, S, E interact correctly with each other. Both return to solved state.
+
+| Sequence | Expected |
+|----------|----------|
+| M2 S2 E2 M2 S2 E2 | solved |
+| (M S E) × 4 | solved |
+
+Assert `isSolvedFacelets` after each sequence applied from solved state.
+
 ---
 
 ## Part 2 — Data Migration (separate phase)
