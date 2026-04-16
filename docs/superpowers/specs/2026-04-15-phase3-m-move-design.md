@@ -136,8 +136,11 @@ export interface MoveOf<TFace> {
   quaternion?: Quaternion
 }
 
+// Rename AnyFace → PositionalFace (only 2 files affected: cube.ts, CubeRenderer.ts)
+export type PositionalFace = Face | SliceFace | RotationFace
+
 // New canonical name for position-based moves — used in all new code
-export type PositionMove = MoveOf<AnyFace>
+export type PositionMove = MoveOf<PositionalFace>
 
 // Backward-compat alias — all existing code keeps working unchanged
 export type Move = PositionMove
