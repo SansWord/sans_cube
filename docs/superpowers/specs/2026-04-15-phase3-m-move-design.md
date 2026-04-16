@@ -366,6 +366,8 @@ if (!solve.moves.some(m => m.face === 'M' || m.face === 'E' || m.face === 'S')) 
 
 2. **Correctness check + recompute phases.** Resolve `solve.method` (defaulting to `'cfop'` when absent) to a `SolveMethod` object. Call `computePhases(correctedMoves, solve.scramble, resolvedMethod)` using the internal helper from 1e — this is data correction, not a method switch, so `recomputePhases` is not called here. Assert that `freshPhases.map(p => p.turns)` is identical to `solve.phases.map(p => p.turns)`. Because the physical cube state after each move is the same regardless of how the face label is encoded, every `isComplete` check must fire at the same move index — so turn counts per phase must be preserved exactly. If the check fails, the record is malformed — return the original solve unchanged and log a warning. No silent data corruption.
 
+   Identical turn counts also guarantee identical phase timing (`recognitionMs`, `executionMs`): same phase boundaries → same moves in each phase → same `cubeTimestamp` differences.
+
    (The final `isSolvedFacelets` check is subsumed by this: if all phase turn counts match, the full-solve facelets path is identical and the cube ends solved.)
 
 3. **Return** `{ ...solve, moves: correctedMoves, phases: freshPhases, schemaVersion: 2 }`.
