@@ -442,7 +442,11 @@ CFOP solves without M/E/S show no warning even if not yet migrated, because thei
 
 ### 2g. Migration tests
 
-**`migrateSolveV1toV2` unit tests** use the existing example solves in `src/data/exampleSolves.ts` as v1 input. These are real recorded solves with `schemaVersion` absent (v1) and real `phases` data computed by the old code — no fake record construction needed. The Roux example solve contains M moves and is the primary fixture for slice migration tests.
+**`migrateSolveV1toV2` unit tests** use solve fixtures from `tests/fixtures/solveFixtures.ts`. The existing pattern (see file header) is to copy solve data there rather than importing from `src/data/exampleSolves.ts` — tests must be stable and independent of production data changes.
+
+Add two new fixtures to `solveFixtures.ts`:
+- `ROUX_SOLVE_WITH_M` — copy the Roux example solve from `exampleSolves.ts` (it contains M moves and has real `phases` computed by the old code; `schemaVersion` absent = v1)
+- `CFOP_SOLVE_NO_SLICE` — any existing CFOP fixture already works for the fast-path test; no new fixture needed
 
 **Primary assertion for all tests:**
 ```ts
