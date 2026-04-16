@@ -26,10 +26,13 @@ describe('migrateSolveV1toV2 — fast path (no M/E/S)', () => {
   })
 })
 
-describe('migrateSolveV1toV2 — full path (has M/E/S)', () => {
-  // ROUX_SOLVE_WITH_M has M moves with phases computed under the old (wrong) M cycle.
-  // The phase invariant check detects this mismatch and returns the solve unchanged (graceful fallback).
-  // These tests verify the fallback behavior: no data corruption, all original fields preserved.
+describe('migrateSolveV1toV2 — full path (has M/E/S), graceful fallback', () => {
+  // ROUX_SOLVE_WITH_M is a v2 fixture (corrected moves + correct phases).
+  // Migration is a one-way v1→v2 transform: it re-derives faces using the ORIGINAL GAN color map
+  // (FACE_TO_COLOR: U→W, F→G, etc.), which is NOT idempotent on v2 moves.
+  // After the first M move, center-tracked v2 labels no longer match color-map lookups,
+  // so computePhases on the re-derived moves returns null → graceful fallback.
+  // These tests verify the fallback produces no data corruption.
 
   it('does not corrupt data: total move count is unchanged', () => {
     const result = migrateSolveV1toV2(ROUX_SOLVE_WITH_M)
@@ -52,8 +55,4 @@ describe('migrateSolveV1toV2 — full path (has M/E/S)', () => {
       expect(result.phases[i].turns).toBe(ROUX_SOLVE_WITH_M.phases[i].turns)
     }
   })
-
-  // Note: after ROUX_SOLVE_1 fixture is updated in Task 4, these tests can be revisited.
-  // Once the fixture has correct phases (computed with new M cycle), migration should succeed
-  // and produce schemaVersion=2 + movesV1 + corrected moves.
 })

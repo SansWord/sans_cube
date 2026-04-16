@@ -91,9 +91,7 @@ describe('recomputePhases', () => {
     }
   )
 
-  // TODO(Part 2): Roux solve fixtures contain M moves recorded under the old wrong facelets
-  // behavior (M was approximated as L+R outer-face moves). Re-enable after fixture migration.
-  it.skip.each(ROUX_SOLVES.map((s, i) => ({ label: `Roux solve ${i + 1}`, solve: s })))(
+  it.each(ROUX_SOLVES.map((s, i) => ({ label: `Roux solve ${i + 1}`, solve: s })))(
     'total turns across phases equals move count ($label)',
     ({ solve }) => {
       const phases = recomputePhases(solve, ROUX)
@@ -135,7 +133,6 @@ describe('recomputePhases', () => {
   const CFOP_ROUND_TRIP_CASES: RoundTripCase[] = [
     ...CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}: CFOP→Roux→CFOP`, solve: s, startMethod: CFOP, midMethod: ROUX })),
   ]
-  // TODO(Part 2): Roux round-trips skipped — fixtures contain M moves recorded under old wrong behavior.
   const ROUX_ROUND_TRIP_CASES: RoundTripCase[] = [
     ...ROUX_SOLVES.map((s, i) => ({ label: `Roux solve ${i + 1}: Roux→CFOP→Roux`, solve: s, startMethod: ROUX, midMethod: CFOP })),
   ]
@@ -155,7 +152,7 @@ describe('recomputePhases', () => {
     expect(roundTrip!.map((p) => p.turns)).toEqual(original!.map((p) => p.turns))
   })
 
-  it.skip.each(ROUX_ROUND_TRIP_CASES)('round-trip turns: $label', ({ solve, startMethod, midMethod }) => {
+  it.each(ROUX_ROUND_TRIP_CASES)('round-trip turns: $label', ({ solve, startMethod, midMethod }) => {
     const original = recomputePhases(solve, startMethod)
     expect(original).not.toBeNull()
     const mid = recomputePhases(solve, midMethod)
@@ -184,7 +181,7 @@ describe('recomputePhases', () => {
     }
   })
 
-  it.skip.each(ROUX_ROUND_TRIP_CASES)('round-trip timing: $label', ({ solve, startMethod, midMethod }) => {
+  it.each(ROUX_ROUND_TRIP_CASES)('round-trip timing: $label', ({ solve, startMethod, midMethod }) => {
     const original = recomputePhases(solve, startMethod)
     expect(original).not.toBeNull()
     const mid = recomputePhases(solve, midMethod)
