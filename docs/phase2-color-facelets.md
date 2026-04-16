@@ -33,6 +33,7 @@ Changes that add new capabilities without touching existing behavior or saved re
 - Fixed `isSolvedFacelets` to monochromatic center-match check (each face's stickers match its center) — replaces fixed-string comparison; M2 L2 R2 from solved now correctly returns true
 - Added x/y/z cases to `applyMoveToFacelets` — whole-cube rotation helpers; not yet emitted by any driver
 - Added x/y/z to `CubeRenderer` Record maps to satisfy TypeScript
+- Added x/y/z buttons in debug mode UI — lets you rotate the cube without a driver, intended as a Phase 3 testing aid: make moves with mouse driver, then use x/y/z to visually verify center tracking
 
 ---
 
