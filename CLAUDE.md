@@ -48,6 +48,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - [`analytics.md`](docs/analytics.md) — Firebase Analytics setup, event reference, consent banner, local dev notes
 - [`url-routes.md`](docs/url-routes.md) — all supported hash-based routes (`#debug`, `#solve-{id}`, `#shared-{id}`, `#trends?...`); update when routes change
 - [`cube-notation.md`](docs/cube-notation.md) — cube move notation, facelets string format, face index reference, M/E/S cycle indices, GAN BLE protocol semantics
+- [`data-backup.md`](docs/data-backup.md) — how to back up and restore localStorage and Firestore solve data before risky operations
 
 ## Persistence
 
