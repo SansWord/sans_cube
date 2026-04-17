@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { PositionMove } from '../types/cube'
+import type { Face, PositionMove } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 import type { ScrambleStep } from '../types/solve'
 
@@ -20,6 +20,14 @@ export interface TrackerState {
   currentStepIndex: number
   warningNetTurns: number        // net CW(+1)/CCW(-1) count while in warning state
   wrongFromWarning: boolean      // whether wrong state was entered from warning
+}
+
+export function commutes(face1: Face, face2: Face): boolean {
+  return (
+    (face1 === 'R' && face2 === 'L') || (face1 === 'L' && face2 === 'R') ||
+    (face1 === 'U' && face2 === 'D') || (face1 === 'D' && face2 === 'U') ||
+    (face1 === 'F' && face2 === 'B') || (face1 === 'B' && face2 === 'F')
+  )
 }
 
 export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {

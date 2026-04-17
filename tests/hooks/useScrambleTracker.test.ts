@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyTrackerMove, makeInitialTrackerState } from '../../src/hooks/useScrambleTracker'
+import { applyTrackerMove, makeInitialTrackerState, commutes } from '../../src/hooks/useScrambleTracker'
 import type { ScrambleStep } from '../../src/types/solve'
 import type { PositionMove } from '../../src/types/cube'
 
@@ -334,5 +334,27 @@ describe('applyTrackerMove — double-step undo', () => {
     expect(state.trackingState).toBe('warning')
     expect(state.currentStepIndex).toBe(1)
     expect(state.warningNetTurns).toBe(3)  // preserved
+  })
+})
+
+describe('commutes()', () => {
+  it('opposite face pairs commute', () => {
+    expect(commutes('R', 'L')).toBe(true)
+    expect(commutes('L', 'R')).toBe(true)
+    expect(commutes('U', 'D')).toBe(true)
+    expect(commutes('D', 'U')).toBe(true)
+    expect(commutes('F', 'B')).toBe(true)
+    expect(commutes('B', 'F')).toBe(true)
+  })
+
+  it('same face does not commute', () => {
+    expect(commutes('R', 'R')).toBe(false)
+    expect(commutes('U', 'U')).toBe(false)
+  })
+
+  it('adjacent faces do not commute', () => {
+    expect(commutes('R', 'U')).toBe(false)
+    expect(commutes('F', 'R')).toBe(false)
+    expect(commutes('U', 'B')).toBe(false)
   })
 })
