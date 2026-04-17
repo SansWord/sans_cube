@@ -27,6 +27,7 @@ import { MouseDriver } from '../drivers/MouseDriver'
 import { shareSolve, unshareSolve, isSharedSolveOwner } from '../services/firestoreSharing'
 import { logSolveRecorded } from '../services/analytics'
 import { useSharedSolve } from '../hooks/useSharedSolve'
+import type { Route, TrendsHashParams } from '../hooks/useHashRouter'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -45,20 +46,9 @@ interface Props {
   interactive?: boolean
   onCubeMove?: (face: Face, direction: 'CW' | 'CCW') => void
   cloudConfig?: CloudConfig
+  currentRoute: Route
 }
 
-function parseTrendsFilterFromHash(hash: string): Partial<SolveFilter> | null {
-  if (!hash.startsWith('#trends')) return null
-  const search = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
-  const params = new URLSearchParams(search)
-  const method = params.get('method')
-  const driver = params.get('driver')
-  if (!method && !driver) return null
-  const result: Partial<SolveFilter> = {}
-  if (method && ['all', 'cfop', 'roux'].includes(method)) result.method = method as MethodFilter
-  if (driver && ['all', 'cube', 'mouse'].includes(driver)) result.driver = driver as DriverFilter
-  return result
-}
 
 export function TimerScreen({
   driver,
@@ -74,6 +64,7 @@ export function TimerScreen({
   interactive,
   onCubeMove,
   cloudConfig,
+  currentRoute,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
@@ -107,64 +98,99 @@ export function TimerScreen({
   }
 
   const [showTrends, setShowTrends] = useState(false)
-  const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve()
+  const defaultTrendsParams: TrendsHashParams = {
+    tab: 'total', windowSize: null, grouped: true,
+    totalToggle: { exec: false, recog: false, total: true },
+    phaseToggle: { exec: false, recog: false, total: true },
+    method: null, driver: null,
+  }
+  const trendParams = currentRoute.type === 'trends' ? currentRoute.params : defaultTrendsParams
+  const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve(currentRoute)
   const [sharedSolveIsOwned, setSharedSolveIsOwned] = useState(false)
   const urlResolvedRef = useRef(false)
-  const initialHashRef = useRef(window.location.hash)
+  const prevSelectedSolveRef = useRef<SolveRecord | null>(null)
+  const prevSharedSolveRef = useRef<SolveRecord | null>(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth))
   }, [sidebarWidth])
 
-  // Resolve URL hash once cloud data is ready (fixes cloud timing bug)
+  // Resolve URL route once cloud data is ready
   useEffect(() => {
     if (cloudLoading || urlResolvedRef.current) return
     urlResolvedRef.current = true
-    const hash = window.location.hash
-    if (hash.startsWith('#trends')) {
+    if (currentRoute.type === 'trends') {
       setShowTrends(true)
-      const override = parseTrendsFilterFromHash(hash)
-      if (override) updateSolveFilter(f => ({ ...f, ...override }))
-    } else if (hash.startsWith('#solve-')) {
-      const id = parseInt(hash.replace('#solve-', ''), 10)
-      const solve = solves.find(s => s.id === id)
+      const { method, driver } = currentRoute.params
+      if (method || driver) {
+        updateSolveFilter(f => ({
+          ...f,
+          ...(method ? { method } : {}),
+          ...(driver ? { driver } : {}),
+        }))
+      }
+    } else if (currentRoute.type === 'solve') {
+      const solve = solves.find(s => s.id === currentRoute.id)
       if (solve) setSelectedSolve(solve)
     }
-  }, [cloudLoading, solves])
+    // #shared handled by useSharedSolve independently (no cloudLoading dependency)
+  }, [cloudLoading, solves, currentRoute])
 
-  // Write URL hash for selectedSolve (only when TrendsModal is not open).
-  // Uses replaceState (not window.location.hash=) to avoid firing a hashchange event.
+  // React to currentRoute changes after boot
   useEffect(() => {
-    if (!urlResolvedRef.current) return  // don't clear hash before initial URL is resolved
+    if (!urlResolvedRef.current) return
+    if (currentRoute.type === 'trends') {
+      setSelectedSolve(null)
+      setShowTrends(true)
+      const { method, driver } = currentRoute.params
+      if (method || driver) {
+        updateSolveFilter(f => ({
+          ...f,
+          ...(method ? { method } : {}),
+          ...(driver ? { driver } : {}),
+        }))
+      }
+    } else if (currentRoute.type === 'solve') {
+      const solve = solves.find(s => s.id === currentRoute.id)
+      if (solve) { setShowTrends(false); setSelectedSolve(solve) }
+    } else if (currentRoute.type === 'none') {
+      setSelectedSolve(null)
+      setShowTrends(false)
+    }
+    // 'debug' and 'shared' handled by App.tsx and useSharedSolve respectively
+  }, [currentRoute, solves])
+
+  // Write URL for selectedSolve
+  useEffect(() => {
+    if (!urlResolvedRef.current) return
     if (showTrends || !!sharedSolve || sharedSolveLoading) return
+    const prev = prevSelectedSolveRef.current
+    prevSelectedSolveRef.current = selectedSolve
     if (selectedSolve) {
-      history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
+      if (!prev) {
+        history.pushState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
+      } else {
+        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
+      }
     } else {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }, [selectedSolve, showTrends, sharedSolve, sharedSolveLoading])
 
-  // Respond to user-initiated hash changes (e.g. typing a URL in the address bar)
+  // Write URL for sharedSolve
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash
-      if (hash.startsWith('#trends')) {
-        setSelectedSolve(null)
-        setShowTrends(true)
-        const override = parseTrendsFilterFromHash(hash)
-        if (override) updateSolveFilter(f => ({ ...f, ...override }))
-      } else if (hash.startsWith('#solve-')) {
-        const id = parseInt(hash.replace('#solve-', ''), 10)
-        const solve = solves.find(s => s.id === id)
-        if (solve) { setShowTrends(false); setSelectedSolve(solve) }
-      } else {
-        setSelectedSolve(null)
-        setShowTrends(false)
+    if (!urlResolvedRef.current) return
+    if (showTrends) return
+    const prev = prevSharedSolveRef.current
+    prevSharedSolveRef.current = sharedSolve
+    if (sharedSolve) {
+      if (!prev) {
+        history.pushState(null, '', `${window.location.pathname}${window.location.search}#shared-${sharedSolve.shareId!}`)
       }
+    } else if (!sharedSolveLoading) {
+      history.replaceState(null, '', window.location.pathname + window.location.search)
     }
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [solves])
+  }, [sharedSolve, sharedSolveLoading, showTrends])
 
   // Close other modals when a shared solve is loaded via hashchange
   useEffect(() => {
@@ -432,8 +458,10 @@ export function TimerScreen({
           onClose={() => {
             setShowTrends(false)
             setSelectedSolve(null)
+            history.replaceState(null, '', window.location.pathname + window.location.search)
           }}
-          detailOpen={!!selectedSolve}
+          detailOpen={!!selectedSolve || !!sharedSolve || sharedSolveLoading}
+          initialParams={trendParams}
         />
       )}
 
@@ -504,10 +532,9 @@ export function TimerScreen({
       )}
 
       {cloudLoading && !sharedSolveLoading && (() => {
-        const h = initialHashRef.current
-        const label = h.startsWith('#trends') ? 'Syncing trends from cloud…'
-          : h.startsWith('#solve-') ? 'Syncing solve from cloud…'
-          : h.startsWith('#shared-') ? 'Loading shared solve…'
+        const label = currentRoute.type === 'trends' ? 'Syncing trends from cloud…'
+          : currentRoute.type === 'solve' ? 'Syncing solve from cloud…'
+          : currentRoute.type === 'shared' ? 'Loading shared solve…'
           : null
         if (!label) return null
         return (
