@@ -220,6 +220,7 @@ describe('applyTrackerMove — single-step undo', () => {
     expect(state.stepStates[0]).toBe('current')
     expect(state.stepStates[1]).toBe('pending')
     expect(state.stepStates[2]).toBe('pending')
+    expect(state.trackingState).toBe('scrambling')
   })
 
   it('undo then redo — proceeds forward normally', () => {
