@@ -14,8 +14,9 @@ const cfopMouse = makeSolve({ id: 2, method: 'cfop', driver: 'mouse' })
 const rouxCube  = makeSolve({ id: 3, method: 'roux', driver: 'cube' })
 const example   = makeSolve({ id: 4, method: 'cfop', driver: 'mouse', isExample: true })
 const legacy    = makeSolve({ id: 5 }) // no method, no driver
+const freeformSolve = makeSolve({ id: 6, method: 'freeform', driver: 'cube' })
 
-const ALL: SolveRecord[] = [cfopCube, cfopMouse, rouxCube, example, legacy]
+const ALL: SolveRecord[] = [cfopCube, cfopMouse, rouxCube, example, legacy, freeformSolve]
 
 describe('filterSolves', () => {
   it('all+all returns every solve', () => {
@@ -38,7 +39,7 @@ describe('filterSolves', () => {
   it('all+cube returns cube solves and examples', () => {
     const f: SolveFilter = { method: 'all', driver: 'cube' }
     const result = filterSolves(ALL, f)
-    expect(result.map(s => s.id)).toEqual([1, 3, 4, 5]) // legacy defaults to cube, example bypasses
+    expect(result.map(s => s.id)).toEqual([1, 3, 4, 5, 6]) // legacy defaults to cube, example bypasses, freeform is cube
   })
 
   it('all+mouse returns mouse solves and examples', () => {
@@ -73,5 +74,25 @@ describe('filterSolves', () => {
   it('legacy solve (no driver) excluded by mouse filter', () => {
     const f: SolveFilter = { method: 'all', driver: 'mouse' }
     expect(filterSolves([legacy], f)).toEqual([])
+  })
+})
+
+describe('filterSolves — freeform', () => {
+  it('freeform filter returns only freeform solves and examples', () => {
+    const f: SolveFilter = { method: 'freeform', driver: 'all' }
+    const result = filterSolves(ALL, f)
+    expect(result.map(s => s.id)).toEqual([4, 6]) // example always passes through
+  })
+
+  it('cfop filter excludes freeform solves', () => {
+    const f: SolveFilter = { method: 'cfop', driver: 'all' }
+    const result = filterSolves(ALL, f)
+    expect(result.map(s => s.id)).not.toContain(6)
+  })
+
+  it('all filter includes freeform solves', () => {
+    const f: SolveFilter = { method: 'all', driver: 'all' }
+    const result = filterSolves(ALL, f)
+    expect(result.map(s => s.id)).toContain(6)
   })
 })
