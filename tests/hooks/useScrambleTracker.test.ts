@@ -554,6 +554,52 @@ describe('applyTrackerMove — Branch 2 sub-case: ahead warning transfers to cur
   })
 })
 
+describe('applyTrackerMove — ahead edge cases', () => {
+  it('same-face sequence [R, R]: second R does not trigger ahead, advances current', () => {
+    const sameSteps: ScrambleStep[] = [step('R', 'CW'), step('R', 'CW'), step('U', 'CW')]
+    let state = makeInitialTrackerState(sameSteps)
+    // R is current, next R does NOT commute with R (same face) — should process as current
+    state = applyTrackerMove(state, sameSteps, move('R', 'CW'))
+    expect(state.currentStepIndex).toBe(1)          // advanced to second R
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.aheadState).toBe('none')           // no ahead triggered
+  })
+
+  it('last step is current: non-current face → wrong mode (no ahead eligible)', () => {
+    const lastSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW')]
+    let state = makeInitialTrackerState(lastSteps)
+    state = applyTrackerMove(state, lastSteps, move('L', 'CW'))  // advance to R (last step)
+    expect(state.currentStepIndex).toBe(1)
+    // R is the last step, no ahead eligible
+    state = applyTrackerMove(state, lastSteps, move('L', 'CW'))  // L after R — wrong, not ahead
+    expect(state.trackingState).toBe('wrong')
+  })
+
+  it('slice-adjacent sequence: move on slice face → wrong mode (no ahead routing)', () => {
+    // ScrambleStep uses Face only, not slices; but PositionMove can carry slice faces.
+    // A move on a slice face with L current → wrong mode.
+    const sliceAdjSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW')]
+    let state = makeInitialTrackerState(sliceAdjSteps)
+    // commutes('L', 'R') = true, but move face M ≠ steps[1].face R → no ahead routing
+    state = applyTrackerMove(state, sliceAdjSteps, { face: 'M', direction: 'CW', cubeTimestamp: 0, serial: 0 })
+    expect(state.trackingState).toBe('wrong')
+    expect(state.aheadState).toBe('none')
+  })
+
+  it('wrong mode preserves aheadState; cancelling wrong returns aheadState intact', () => {
+    const aheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW'), step('D', 'CCW')]
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))   // R done ahead
+    state = applyTrackerMove(state, aheadSteps, move('D', 'CW'))   // D → wrong mode
+    expect(state.trackingState).toBe('wrong')
+    expect(state.aheadState).toBe('done')            // preserved through wrong mode
+    state = applyTrackerMove(state, aheadSteps, move('D', 'CCW'))  // cancel D → back to scrambling
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.aheadState).toBe('done')            // still intact
+    expect(state.stepStates[1]).toBe('done')         // R still green
+  })
+})
+
 describe('commutes()', () => {
   it('opposite face pairs commute', () => {
     expect(commutes('R', 'L')).toBe(true)
