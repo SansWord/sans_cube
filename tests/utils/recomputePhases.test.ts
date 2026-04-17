@@ -4,7 +4,8 @@ import { recomputePhases } from '../../src/utils/recomputePhases'
 import { isSolvedFacelets } from '../../src/utils/applyMove'
 import { CFOP } from '../../src/methods/cfop'
 import { ROUX } from '../../src/methods/roux'
-import { CFOP_SOLVES, ROUX_SOLVES } from '../fixtures/solveFixtures'
+import { FREEFORM } from '../../src/methods/freeform'
+import { CFOP_SOLVES, ROUX_SOLVES, CFOP_SOLVE_1 } from '../fixtures/solveFixtures'
 import type { SolveRecord, SolveMethod } from '../../src/types/solve'
 import type { PositionMove } from '../../src/types/cube'
 
@@ -213,4 +214,28 @@ describe('recomputePhases', () => {
       }
     }
   )
+})
+
+describe('FREEFORM method', () => {
+  it('produces exactly one phase labeled "Solved"', () => {
+    const phases = recomputePhases(CFOP_SOLVE_1, FREEFORM)
+    expect(phases).not.toBeNull()
+    expect(phases).toHaveLength(1)
+    expect(phases![0].label).toBe('Solved')
+  })
+
+  it('phase turns equals total move count', () => {
+    const phases = recomputePhases(CFOP_SOLVE_1, FREEFORM)!
+    expect(phases[0].turns).toBe(CFOP_SOLVE_1.moves.length)
+  })
+
+  it('returns null when cube is not solved', () => {
+    // One U move on a U-scramble leaves cube unsolved
+    const incompleteSolve = {
+      ...CFOP_SOLVE_1,
+      moves: [{ face: 'U' as const, direction: 'CW' as const, cubeTimestamp: 1000, serial: 0 }],
+      scramble: 'U',
+    }
+    expect(recomputePhases(incompleteSolve, FREEFORM)).toBeNull()
+  })
 })
