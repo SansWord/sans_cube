@@ -48,6 +48,7 @@ export function detectMethodMismatches(solves: SolveRecord[]): MethodMismatch[] 
 
   for (const solve of solves) {
     if (solve.isExample) continue
+    if (solve.method === 'freeform') continue
     if (solve.moves.length === 0) continue
 
     const cfopPhases = recomputePhases(solve, CFOP)
