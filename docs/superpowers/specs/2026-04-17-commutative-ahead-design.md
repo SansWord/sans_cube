@@ -67,7 +67,7 @@ Both reset to `'none'` / `0` whenever `currentStepIndex` advances.
 
 ### `buildStepStates` changes
 
-Receives one new parameter: `aheadState: 'none' | 'done' | 'warning'`. The ahead index is always `currentStepIndex + 1` and is derived internally. When `aheadState` is not `'none'`, that step is rendered as `'done'` (green) or `'warning'` (orange) — overriding the default `'pending'`.
+Receives one new parameter: `aheadState: 'none' | 'done' | 'warning'`. The ahead index is always `currentStepIndex + 1` and is derived internally. When `aheadState` is not `'none'` **and** `currentStepIndex + 1 < steps.length` (bounds guard inside `buildStepStates`), that step is rendered as `'done'` (green) or `'warning'` (orange) — overriding the default `'pending'`.
 
 ---
 
