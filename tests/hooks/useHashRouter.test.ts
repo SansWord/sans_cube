@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseHash } from '../../src/hooks/useHashRouter'
+import { parseHash, decideSelectedSolveUrlAction, decideSharedSolveUrlAction } from '../../src/hooks/useHashRouter'
 
 describe('parseHash', () => {
   it('parses #debug', () => {
@@ -77,5 +77,73 @@ describe('parseHash', () => {
 
   it('returns none for unknown hash', () => {
     expect(parseHash('#unknown')).toEqual({ type: 'none' })
+  })
+})
+
+describe('decideSelectedSolveUrlAction', () => {
+  // Regression: booting with `#solve-{id}` and cloud sync disabled previously
+  // wiped the hash and bounced the modal in an infinite loop.
+  it('returns noop when no previous and no current solve (initial mount)', () => {
+    expect(decideSelectedSolveUrlAction(null, null, '', false)).toEqual({ kind: 'noop' })
+  })
+
+  it('opens with pushState when a solve is newly selected (no prev)', () => {
+    expect(decideSelectedSolveUrlAction(null, -3, '', false)).toEqual({
+      kind: 'open-push', id: -3, saveTrendsHash: false,
+    })
+  })
+
+  it('saves trends hash when opening a solve on top of an open trends modal', () => {
+    expect(decideSelectedSolveUrlAction(null, -3, '', true)).toEqual({
+      kind: 'open-push', id: -3, saveTrendsHash: true,
+    })
+  })
+
+  it('opens with replaceState when switching between solves', () => {
+    expect(decideSelectedSolveUrlAction(7, -3, '', false)).toEqual({
+      kind: 'open-replace', id: -3,
+    })
+  })
+
+  it('restores the saved trends hash when closing a solve that was opened over trends', () => {
+    expect(decideSelectedSolveUrlAction(7, null, '#trends?tab=phases', false)).toEqual({
+      kind: 'restore-trends', hash: '#trends?tab=phases',
+    })
+  })
+
+  it('clears the URL when closing a solve with no saved trends hash', () => {
+    expect(decideSelectedSolveUrlAction(7, null, '', false)).toEqual({ kind: 'clear' })
+  })
+})
+
+describe('decideSharedSolveUrlAction', () => {
+  it('returns noop when no previous and no current shared solve', () => {
+    expect(decideSharedSolveUrlAction(null, null, '', false)).toEqual({ kind: 'noop' })
+  })
+
+  // Regression: arriving via `#shared-abc` then loading the solve used to pushState
+  // the same URL, creating a duplicate history entry that required an extra back press.
+  it('uses replace when opening a shared solve and the URL already matches', () => {
+    expect(decideSharedSolveUrlAction(null, 'abc', '#shared-abc', false)).toEqual({
+      kind: 'open-replace', shareId: 'abc',
+    })
+  })
+
+  it('uses push when opening a shared solve and the URL does not match', () => {
+    expect(decideSharedSolveUrlAction(null, 'abc', '', false)).toEqual({
+      kind: 'open-push', shareId: 'abc',
+    })
+  })
+
+  it('returns noop when the same shared solve stays loaded', () => {
+    expect(decideSharedSolveUrlAction('abc', 'abc', '#shared-abc', false)).toEqual({ kind: 'noop' })
+  })
+
+  it('returns clear when a previously loaded shared solve is closed', () => {
+    expect(decideSharedSolveUrlAction('abc', null, '', false)).toEqual({ kind: 'clear' })
+  })
+
+  it('returns noop when sharedSolve is null but still loading (no prior solve)', () => {
+    expect(decideSharedSolveUrlAction(null, null, '#shared-abc', true)).toEqual({ kind: 'noop' })
   })
 })

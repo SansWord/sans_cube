@@ -28,7 +28,7 @@ import { shareSolve, unshareSolve, isSharedSolveOwner } from '../services/firest
 import { logSolveRecorded } from '../services/analytics'
 import { useSharedSolve } from '../hooks/useSharedSolve'
 import type { Route, TrendsHashParams } from '../hooks/useHashRouter'
-import { parseHash } from '../hooks/useHashRouter'
+import { parseHash, decideSelectedSolveUrlAction, decideSharedSolveUrlAction } from '../hooks/useHashRouter'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -180,26 +180,28 @@ export function TimerScreen({
     if (!!sharedSolve || sharedSolveLoading) return
     const prev = prevSelectedSolveRef.current
     prevSelectedSolveRef.current = selectedSolve
-    if (selectedSolve) {
-      if (!prev && showTrendsRef.current) {
-        savedTrendsHashRef.current = window.location.hash
-      }
-      if (!prev) {
-        history.pushState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
-      } else {
-        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
-      }
-      navigate({ type: 'solve', id: selectedSolve.id })
+    const action = decideSelectedSolveUrlAction(
+      prev ? prev.id : null,
+      selectedSolve ? selectedSolve.id : null,
+      savedTrendsHashRef.current,
+      showTrendsRef.current,
+    )
+    const base = window.location.pathname + window.location.search
+    if (action.kind === 'noop') return
+    if (action.kind === 'open-push') {
+      if (action.saveTrendsHash) savedTrendsHashRef.current = window.location.hash
+      history.pushState(null, '', `${base}#solve-${action.id}`)
+      navigate({ type: 'solve', id: action.id })
+    } else if (action.kind === 'open-replace') {
+      history.replaceState(null, '', `${base}#solve-${action.id}`)
+      navigate({ type: 'solve', id: action.id })
+    } else if (action.kind === 'restore-trends') {
+      savedTrendsHashRef.current = ''
+      history.replaceState(null, '', base + action.hash)
+      navigate(parseHash(action.hash))
     } else {
-      if (savedTrendsHashRef.current) {
-        const hash = savedTrendsHashRef.current
-        savedTrendsHashRef.current = ''
-        history.replaceState(null, '', window.location.pathname + window.location.search + hash)
-        navigate(parseHash(hash))
-      } else {
-        history.replaceState(null, '', window.location.pathname + window.location.search)
-        navigate({ type: 'none' })
-      }
+      history.replaceState(null, '', base)
+      navigate({ type: 'none' })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSolve, sharedSolve, sharedSolveLoading, navigate])
@@ -211,15 +213,29 @@ export function TimerScreen({
     if (showTrends) return
     const prev = prevSharedSolveRef.current
     prevSharedSolveRef.current = sharedSolve
-    if (sharedSolve) {
-      if (!prev && urlResolvedRef.current) {
-        history.pushState(null, '', `${window.location.pathname}${window.location.search}#shared-${sharedSolve.shareId!}`)
-        navigate({ type: 'shared', shareId: sharedSolve.shareId! })
-      }
-    } else if (prev && !sharedSolveLoading) {
-      history.replaceState(null, '', window.location.pathname + window.location.search)
+    const action = decideSharedSolveUrlAction(
+      prev?.shareId ?? null,
+      sharedSolve?.shareId ?? null,
+      window.location.hash,
+      sharedSolveLoading,
+    )
+    if (action.kind === 'noop') return
+    const base = window.location.pathname + window.location.search
+    if (action.kind === 'clear') {
+      history.replaceState(null, '', base)
       navigate({ type: 'none' })
+      return
     }
+    // open-push / open-replace — defer until the boot flow has resolved so we
+    // don't race the route resolver.
+    if (!urlResolvedRef.current) return
+    const url = `${base}#shared-${action.shareId}`
+    if (action.kind === 'open-push') {
+      history.pushState(null, '', url)
+    } else {
+      history.replaceState(null, '', url)
+    }
+    navigate({ type: 'shared', shareId: action.shareId })
   }, [sharedSolve, sharedSolveLoading, showTrends, navigate])
 
   // Close other modals when a shared solve is loaded via hashchange

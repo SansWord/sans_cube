@@ -64,6 +64,59 @@ export function parseHash(hash: string): Route {
   return { type: 'none' }
 }
 
+export type SelectedSolveUrlAction =
+  | { kind: 'noop' }
+  | { kind: 'open-push'; id: number; saveTrendsHash: boolean }
+  | { kind: 'open-replace'; id: number }
+  | { kind: 'restore-trends'; hash: string }
+  | { kind: 'clear' }
+
+// The prev=null && current=null branch returns 'noop' to avoid a boot-time
+// URL wipe when `#solve-{id}` opens on first render with cloud sync disabled.
+// Without the guard the Write-URL effect fires in the same render as the boot
+// resolve effect, sees selectedSolve still null, and ping-pongs the modal.
+export function decideSelectedSolveUrlAction(
+  prevSelectedId: number | null,
+  currentSelectedId: number | null,
+  savedTrendsHash: string,
+  showTrends: boolean,
+): SelectedSolveUrlAction {
+  if (currentSelectedId !== null) {
+    if (prevSelectedId === null) {
+      return { kind: 'open-push', id: currentSelectedId, saveTrendsHash: showTrends }
+    }
+    return { kind: 'open-replace', id: currentSelectedId }
+  }
+  if (prevSelectedId === null) return { kind: 'noop' }
+  if (savedTrendsHash) return { kind: 'restore-trends', hash: savedTrendsHash }
+  return { kind: 'clear' }
+}
+
+export type SharedSolveUrlAction =
+  | { kind: 'noop' }
+  | { kind: 'open-push'; shareId: string }
+  | { kind: 'open-replace'; shareId: string }
+  | { kind: 'clear' }
+
+// `open-replace` when the current hash already matches the target avoids the
+// duplicate history entry that the previous unconditional pushState produced
+// when the user arrived directly at `#shared-{id}`.
+export function decideSharedSolveUrlAction(
+  prevShareId: string | null,
+  currentShareId: string | null,
+  currentHash: string,
+  isLoading: boolean,
+): SharedSolveUrlAction {
+  if (currentShareId !== null) {
+    if (prevShareId !== null) return { kind: 'noop' }
+    return currentHash === `#shared-${currentShareId}`
+      ? { kind: 'open-replace', shareId: currentShareId }
+      : { kind: 'open-push', shareId: currentShareId }
+  }
+  if (prevShareId !== null && !isLoading) return { kind: 'clear' }
+  return { kind: 'noop' }
+}
+
 function routesEqual(a: Route, b: Route): boolean {
   if (a.type !== b.type) return false
   if (a.type === 'solve' && b.type === 'solve') return a.id === b.id

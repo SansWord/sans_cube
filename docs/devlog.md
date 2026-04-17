@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.22.1](#v1221--url-write-effect-mount-time-guards-2026-04-17-1647) | Fix: `#solve-{id}` modal infinite-blink on boot with cloud sync disabled; `#shared-{id}` duplicate history entry — extracted decisions to pure helpers |
 | [v1.22.0](#v1220--freeform-method-2026-04-17-1202) | Freeform method — single "Solved" phase; wired into filters, method selector, Trends color map, hash router; `detectMethod` skips Freeform |
 | [v1.21.1](#v1211--commutative-ahead-execution-2026-04-17-1015) | Execute the next scramble step before the current one when the two steps commute (opposite faces); live green/orange feedback on the scramble display |
 | [v1.21.0](#v1210--scramble-undo-2026-04-17-0247) | Undo completed scramble steps by doing the inverse move; double steps (U2) use warning state seeded at `net=2` for two-move undo/re-complete |
@@ -53,6 +54,22 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.22.1 — URL write effect mount-time guards (2026-04-17 16:47)
+
+**Review:** not yet
+
+**What was built:**
+- Fixed: visiting `#solve-{id}` directly with cloud sync disabled caused the detail modal to blink on/off every frame. The "Write URL for selectedSolve" effect in `TimerScreen.tsx` ran in the same render as the boot-resolve effect, saw `selectedSolve` still `null` (React batches state updates — siblings don't see each other's `setState`), and entered the `else` branch that unconditionally wiped the hash + called `navigate({type:'none'})`. The next render's react-to-route effect then reopened the solve from the restored URL, and the cycle repeated indefinitely.
+- Fixed: direct `#shared-{id}` links required two back presses to leave. After Firestore returned, the effect always called `pushState(#shared-{id})` — even when the URL already matched — creating a duplicate history entry.
+- Extracted both URL-write decisions to pure helpers in `useHashRouter.ts`: `decideSelectedSolveUrlAction` and `decideSharedSolveUrlAction`. Each returns a tagged `noop` / `open-push` / `open-replace` / `clear` / `restore-trends` action; `TimerScreen.tsx` now dispatches on the tag. 12 new test cases cover every branch.
+
+**Key technical learnings:**
+- `[gotcha]` State updates from one `useEffect` are **not** visible to sibling effects in the same commit — they all read the render's snapshot. A write-URL effect running alongside a "set state from URL" effect will see the stale (unset) state and can erroneously clear the URL. Guard the mount case with `prev === null && current === null → noop`, not by relying on a ref that a sibling effect may not have written yet.
+- `[insight]` `pushState` to a hash that already matches the target is still a real history entry. Boot-time "open modal from URL" flows should `replaceState` when the current hash matches the target and `pushState` only when it differs. The sibling `sharedSolve` effect's `prev &&` guard prevented clear-on-mount but never considered the hash-already-matches case, so direct shared-link loads quietly accumulated duplicate entries.
+- `[note]` Extracting branch logic to `decide{X}UrlAction` pure functions mirrors the existing `parseHash` pattern — DOM side effects stay in the effect, the decision is unit-testable in isolation. Made the symmetry between the two effects visible: same shape of action type, same mount-time noop guard.
 
 ---
 
