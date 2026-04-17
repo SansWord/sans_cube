@@ -34,7 +34,7 @@ export interface SolveRecord {
   quaternionSnapshots?: QuaternionSnapshot[]
   driver?: 'cube' | 'mouse'
   isExample?: boolean
-  method?: string       // 'cfop' | 'roux'; absent on old solves, treated as 'cfop'
+  method?: string       // 'cfop' | 'roux' | 'freeform'; absent on old solves, treated as 'cfop'
   shareId?: string      // Firestore doc ID in public_solves; absent = not shared
 }
 
@@ -51,7 +51,7 @@ export interface SolveMethod {
   phases: Phase[]
 }
 
-export type MethodFilter = 'all' | 'cfop' | 'roux'
+export type MethodFilter = 'all' | 'cfop' | 'roux' | 'freeform'
 
 export type DriverFilter = 'all' | 'cube' | 'mouse'
 
