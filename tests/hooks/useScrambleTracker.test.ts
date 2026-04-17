@@ -261,3 +261,77 @@ describe('applyTrackerMove — single-step undo', () => {
     expect(state.currentStepIndex).toBe(1)
   })
 })
+
+describe('applyTrackerMove — double-step undo', () => {
+  const doubleUndoSteps: ScrambleStep[] = [step('L', 'CW'), step('U', 'CW', true), step('D', 'CW')]
+
+  function advancePastDouble(): ReturnType<typeof makeInitialTrackerState> {
+    let state = makeInitialTrackerState(doubleUndoSteps)
+    state = applyTrackerMove(state, doubleUndoSteps, move('L', 'CW'))   // L done
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))   // U2 first turn → warning
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))   // U2 second turn → done
+    expect(state.currentStepIndex).toBe(2)
+    return state
+  }
+
+  it('first undo turn → previous double step turns to warning (orange)', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))  // trigger undo-warning
+    expect(state.trackingState).toBe('warning')
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.warningNetTurns).toBe(2)
+    expect(state.stepStates[0]).toBe('done')    // L still green
+    expect(state.stepStates[1]).toBe('warning') // U2 now orange
+    expect(state.stepStates[2]).toBe('pending') // D now gray
+  })
+
+  it('CW + CW → undo confirmed (white)', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))  // undo-warning, net=3
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))  // net=4 → net4=0 → cancel → undo
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.stepStates[1]).toBe('current') // U2 now white
+    expect(state.stepStates[2]).toBe('pending') // D gray
+  })
+
+  it('CW + CCW → re-complete (green)', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))   // undo-warning, net=3
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CCW'))  // net=2 → net4=2 → advance → re-complete
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(2)
+    expect(state.stepStates[1]).toBe('done')    // U2 back to green
+    expect(state.stepStates[2]).toBe('current') // D back to white
+  })
+
+  it('CCW + CCW → undo confirmed (white)', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CCW'))  // undo-warning, net=1
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CCW'))  // net=0 → net4=0 → undo
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.stepStates[1]).toBe('current')
+  })
+
+  it('CCW + CW → re-complete (green)', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CCW'))  // undo-warning, net=1
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))   // net=2 → re-complete
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(2)
+    expect(state.stepStates[1]).toBe('done')
+  })
+
+  it('undo double then wrong face → wrong state; cancel → back to undo-warning', () => {
+    let state = advancePastDouble()
+    state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))   // undo-warning, net=3
+    state = applyTrackerMove(state, doubleUndoSteps, move('F', 'CW'))   // wrong face → wrong
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongFromWarning).toBe(true)
+    state = applyTrackerMove(state, doubleUndoSteps, move('F', 'CCW'))  // cancel wrong → back to warning
+    expect(state.trackingState).toBe('warning')
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.warningNetTurns).toBe(3)  // preserved
+  })
+})
