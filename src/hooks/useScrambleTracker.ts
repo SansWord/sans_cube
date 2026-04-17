@@ -84,6 +84,39 @@ function exitWrongMode(state: TrackerState, steps: ScrambleStep[]): TrackerState
   }
 }
 
+function applyAheadMove(state: TrackerState, steps: ScrambleStep[], move: PositionMove): TrackerState {
+  const ahead = steps[state.currentStepIndex + 1]
+  const delta = move.direction === 'CW' ? 1 : -1
+  const newNet = state.aheadNetTurns + delta
+  const net4 = ((newNet % 4) + 4) % 4
+  const fulfilledNet4 = ahead.double ? 2 : (ahead.direction === 'CW' ? 1 : 3)
+  // Preserve warning color for current step if trackingState is 'warning'
+  const warningIndex = state.trackingState === 'warning' ? state.currentStepIndex : null
+
+  if (net4 === fulfilledNet4) {
+    return {
+      ...state,
+      aheadState: 'done',
+      aheadNetTurns: newNet,
+      stepStates: buildStepStates(steps, state.currentStepIndex, state.currentStepIndex, warningIndex, 'done'),
+    }
+  }
+  if (net4 === 0) {
+    return {
+      ...state,
+      aheadState: 'none',
+      aheadNetTurns: 0,
+      stepStates: buildStepStates(steps, state.currentStepIndex, state.currentStepIndex, warningIndex, 'none'),
+    }
+  }
+  return {
+    ...state,
+    aheadState: 'warning',
+    aheadNetTurns: newNet,
+    stepStates: buildStepStates(steps, state.currentStepIndex, state.currentStepIndex, warningIndex, 'warning'),
+  }
+}
+
 export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: PositionMove): TrackerState {
   const { trackingState, currentStepIndex, wrongSegments } = state
 
@@ -185,6 +218,14 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
         }
       }
     }
+    // Ahead step check: only when face differs from current step (current has priority)
+    const aheadEligible =
+      currentStepIndex + 1 < steps.length &&
+      commutes(expected.face, steps[currentStepIndex + 1].face)
+    if (aheadEligible && move.face === steps[currentStepIndex + 1].face) {
+      return applyAheadMove(state, steps, move)
+    }
+
     const delta = move.direction === 'CW' ? 1 : -1
     return {
       ...state,
