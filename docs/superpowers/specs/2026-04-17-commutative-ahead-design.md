@@ -63,7 +63,7 @@ aheadNetTurns: number  // net turns on ahead face; only meaningful when aheadSta
 
 Both are initialized to `'none'` / `0` in `makeInitialTrackerState`.
 
-Both reset to `'none'` / `0` whenever `currentStepIndex` advances.
+Both reset to `'none'` / `0` whenever `currentStepIndex` advances (after any transfer, e.g. `aheadNetTurns` → `warningNetTurns` in Branch 2's sub-case).
 
 ### `buildStepStates` changes
 
