@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.21.1](#v1211--commutative-ahead-execution-2026-04-17-1015) | Execute the next scramble step before the current one when the two steps commute (opposite faces); live green/orange feedback on the scramble display |
 | [v1.21.0](#v1210--scramble-undo-2026-04-17-0247) | Undo completed scramble steps by doing the inverse move; double steps (U2) use warning state seeded at `net=2` for two-move undo/re-complete |
 | [v1.20.1](#v1201--url-routing-bug-fixes-2026-04-16-2354) | Fix: `#trends` direct URL / ESC-from-solve blinking; fix `#solve` from trends restoring to trends on ESC; modal overlay opacity reduced |
 | [v1.20.0](#v1200--hash-router-consolidation-2026-04-16-2104) | Single `useHashRouter` hook replaces 3 scattered `hashchange` listeners; typed `Route` union; `pushState` on modal open, `replaceState` on param updates |
@@ -51,6 +52,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.21.1 — Commutative ahead execution (2026-04-17 10:15)
+
+**Review:** not yet
+
+**Design docs:**
+- Commutative Ahead: [Spec](superpowers/specs/2026-04-17-commutative-ahead-design.md) [Plan](superpowers/plans/2026-04-17-commutative-ahead.md)
+
+**What was built:**
+- When two adjacent scramble steps are on opposite faces (R↔L, U↔D, F↔B), the user can execute the next step before the current one
+- Ahead step turns green (`aheadState: 'done'`) when done correctly, orange (`aheadState: 'warning'`) when done in the wrong direction
+- Completing the current step while ahead is done skips the already-done step (advances by 2)
+- Completing the current step while ahead is in warning transfers the warning state to the new current step seamlessly
+- Look-ahead limited to one step ahead only; slice moves (M/E/S) are never eligible; no changes to `ScrambleDisplay` or `solve.ts`
+
+**Key technical learnings:**
+- `[insight]` Two orthogonal state axes — `trackingState` for the current step and `aheadState` for the ahead step — allow both to progress and warn independently without entangling each other. The ahead face routes to `applyAheadMove`; any third face enters wrong mode as normal.
+- `[insight]` When the current step fulfills while `aheadState === 'warning'`, the net turns transfer directly: `warningNetTurns = aheadNetTurns`. The orange ahead step seamlessly becomes an orange current step with no visible reset.
+- `[gotcha]` The bounds guard (`currentStepIndex + 1 < steps.length`) must be checked before calling `commutes()` — not after — to avoid an out-of-bounds array access on `steps[currentStepIndex + 1]`.
+- `[note]` Same-face sequences (e.g. `R R`) are never eligible for ahead execution because `commutes('R', 'R')` returns false. Current step always has priority — the ahead branch only fires when `move.face !== steps[currentStepIndex].face`.
 
 ---
 
