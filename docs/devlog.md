@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.19.4](#v1194--replay-gyro-orientation-correction-2026-04-16-1822) | FSM orientation correction applied during replay — cube no longer drifts after M/E/S moves in playback |
 | [v1.19.3](#v1193--per-solve-migrate-button--shared-solve-owner-detection-2026-04-16) | Per-solve "Migrate to v2" button; shared solve owner detection via registry doc; unified review flow |
 | [v1.19.2](#v1192--migration-debug-ux--relaxed-invariant--solve-list-color-coding-2026-04-16) | Migration debug button, relaxed invariant (cube-solved only), migrationNote persisted, solve list color coding |
 | [v1.19.1](#v1191--eo-detection-fix--migration-invariant--test-coverage-2026-04-16) | EO detection fix (UD+FB split), relaxed migration invariant, v1 fixture + genuine migration test |
@@ -47,6 +48,21 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.19.4 — replay gyro orientation correction (2026-04-16 18:22)
+
+**Review:** not yet
+
+**What was built:**
+- **FSM correction in replay** (`useReplayController`): added `computeReplayFsmState` (walks `solve.moves[0..currentIndex)`, advances FSM state on each M/E/S) and `applyFsmCorrection` (`rawQ * inv(fsmOffset)`). Applied at all three gyro update paths: normal RAF update, post-animation settle, and `seekTo`.
+- **`docs/animation-system.md` updated**: Gyro Animation section now documents the FSM correction step, index-based walk rationale, and render-time-only policy.
+
+**Key technical learnings:**
+- `[insight]` FSM state reconstruction for replay should be **index-based**, not time-based — FSM transitions only fire on M/E/S moves, and `currentIndexRef.current` (for the RAF loop) and `clamped` (for `seekTo`) give the exact move count directly, avoiding a timestamp binary search.
+- `[note]` Raw `quaternionSnapshots` store `q_sensor` — correction is applied at render time only, so stored data never needs migration for this fix.
+- `[note]` Implemented in a git worktree (`.worktrees/replay-gyro-fix`) to allow side-by-side comparison of main vs. feature branch during review.
 
 ---
 

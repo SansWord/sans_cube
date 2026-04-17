@@ -70,7 +70,10 @@ During replay, `useReplayController` runs a `requestAnimationFrame` loop that:
 
 1. Computes `solveElapsed` (solve time at current playback position).
 2. Calls `findSlerpedQuaternion(snapshots, solveElapsed)` — binary-searches the 10 Hz snapshot array and SLERPs between the two nearest samples.
-3. Calls `renderer.setQuaternion(q)` — converts from GAN sensor space to Three.js space and sets `pivotGroup.quaternion` directly. `orbitGroup.quaternion` (user orbit offset) is unaffected.
+3. Applies FSM orientation correction: walks `solve.moves[0..currentIndex)`, advancing `SENSOR_ORIENTATION_FSM` state on each M/E/S move, then computes `q_cube = rawQ * inv(fsmOffset)`. This corrects for sensor axis drift caused by slice moves — the same correction applied during live solving.
+4. Calls `renderer.setQuaternion(q_cube)` — converts from GAN sensor space to Three.js space and sets `pivotGroup.quaternion` directly. `orbitGroup.quaternion` (user orbit offset) is unaffected.
+
+The FSM walk is O(moves) per frame; for typical solve lengths this is negligible. The same correction is applied in `seekTo` (scrubbing/stepping) using the target move index. Raw `q_sensor` values in `quaternionSnapshots` are never modified — correction is applied at render time only.
 
 Quaternion snapshots are recorded at **10 Hz** during a live solve (`useTimer`, 100 ms cap). The 60 Hz replay loop interpolates between them, so orientation appears smooth.
 
