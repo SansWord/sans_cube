@@ -4,6 +4,7 @@ import { recomputePhases } from '../../src/utils/recomputePhases'
 import { isSolvedFacelets } from '../../src/utils/applyMove'
 import { CFOP } from '../../src/methods/cfop'
 import { ROUX } from '../../src/methods/roux'
+import { FREEFORM } from '../../src/methods/freeform'
 import { CFOP_SOLVES, ROUX_SOLVES } from '../fixtures/solveFixtures'
 import type { SolveRecord, SolveMethod } from '../../src/types/solve'
 import type { PositionMove } from '../../src/types/cube'
@@ -211,6 +212,22 @@ describe('recomputePhases', () => {
         expect(epll.recognitionMs).toBeGreaterThanOrEqual(0)
         expect(epll.executionMs).toBeGreaterThanOrEqual(0)
       }
+    }
+  )
+
+  // ── Freeform method ────────────────────────────────────────────────────────
+  it.each(CFOP_SOLVES.map((s, i) => ({ label: `CFOP solve ${i + 1}`, solve: s })))(
+    'FREEFORM yields a single Solved phase with turns = moves.length ($label)',
+    ({ solve }) => {
+      const phases = recomputePhases(solve, FREEFORM)
+      expect(phases).not.toBeNull()
+      expect(phases).toHaveLength(1)
+      expect(phases![0].label).toBe('Solved')
+      expect(phases![0].turns).toBe(solve.moves.length)
+      expect(phases![0].recognitionMs).toBe(0)
+      const firstTs = solve.moves[0].cubeTimestamp as number
+      const lastTs = solve.moves[solve.moves.length - 1].cubeTimestamp as number
+      expect(phases![0].executionMs).toBe(lastTs - firstTs)
     }
   )
 })
