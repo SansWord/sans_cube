@@ -151,6 +151,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
       if (move.direction !== prevStep.direction) {
         return {
           ...state,
+          trackingState: 'scrambling',
           currentStepIndex: newIndex,
           stepStates: buildStepStates(steps, newIndex, newIndex, null),
         }

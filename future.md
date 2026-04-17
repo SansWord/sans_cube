@@ -9,7 +9,11 @@
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
 - ~~[trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection~~ — fixed in v1.13
 
+## adjustable session
+- a session separations - create, rename sessions, put solves into a seesion, session stats, trends.
+
 ## Solving Methods
+- add a "freeform" method that only has one cube-is-solved phase. we can use this for future preparation. method filter should support this for record list and stats
 - ZZ method support
 - ~~allow to update and changes methods of a SolveRecord and calculate its correct phase during update~~
 - Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
