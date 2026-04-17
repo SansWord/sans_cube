@@ -5,7 +5,7 @@ import { PhaseBar } from './PhaseBar'
 import { CubeCanvas } from './CubeCanvas'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
 import { SOLVED_FACELETS } from '../types/cube'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 import { applyMoveToFacelets } from '../utils/applyMove'
 import { parseScramble } from '../utils/scramble'
 import { formatTime } from '../utils/formatting'
@@ -142,7 +142,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   })
 
   function copySteps() {
-    const moveStr = (m: Move) => m.face + (m.direction === 'CCW' ? "'" : '')
+    const moveStr = (m: PositionMove) => m.face + (m.direction === 'CCW' ? "'" : '')
     const lines = [`Scramble: ${localSolve.scramble}`, '']
     for (const row of tableRows) {
       const moves = row.moves.length > 0 ? row.moves.map(moveStr).join(' ') : '—'

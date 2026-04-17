@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 
 interface Props {
-  moves: Move[]
+  moves: PositionMove[]
 }
 
-function moveLabel(move: Move): string {
+function moveLabel(move: PositionMove): string {
   return `${move.face}${move.direction === 'CCW' ? "'" : ''}`
 }
 

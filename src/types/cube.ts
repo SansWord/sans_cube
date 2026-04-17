@@ -19,10 +19,8 @@ export interface MoveOf<TFace> {
   quaternion?: Quaternion
 }
 
-// Position-based moves (geometric face labels) — canonical name for new code
+// Position-based moves (geometric face labels)
 export type PositionMove = MoveOf<PositionalFace>
-// Backward-compat alias — all existing code using Move continues to work
-export type Move = PositionMove
 
 // Color-based move — emitted by GanCubeDriver before translation
 export type ColorMove = MoveOf<FaceletColor>
@@ -36,7 +34,7 @@ export interface Quaternion {
 
 export interface SolveSession {
   // cubeTimestamp mirrors move.cubeTimestamp for convenient access during replay scheduling
-  moves: Array<{ move: Move; cubeTimestamp: number }>
+  moves: Array<{ move: PositionMove; cubeTimestamp: number }>
   startTimestamp: number
   endTimestamp: number
 }

@@ -6,13 +6,13 @@ import { CFOP } from '../../src/methods/cfop'
 import { ROUX } from '../../src/methods/roux'
 import { CFOP_SOLVES, ROUX_SOLVES } from '../fixtures/solveFixtures'
 import type { SolveRecord, SolveMethod } from '../../src/types/solve'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
-function makeMove(face: Move['face'], dir: Move['direction'], ts: number): Move {
+function makeMove(face: PositionMove['face'], dir: PositionMove['direction'], ts: number): PositionMove {
   return { face, direction: dir, cubeTimestamp: ts, serial: 0 }
 }
 
-function makeSolve(scramble: string, moves: Move[]): SolveRecord {
+function makeSolve(scramble: string, moves: PositionMove[]): SolveRecord {
   return { id: 1, seq: 1, scramble, timeMs: 0, moves, phases: [], date: 0 }
 }
 

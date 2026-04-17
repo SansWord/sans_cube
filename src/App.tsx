@@ -15,7 +15,7 @@ import { FaceletDebug } from './components/FaceletDebug'
 import { TimerScreen } from './components/TimerScreen'
 import { AnalyticsBanner } from './components/AnalyticsBanner'
 import type { CubeRenderer } from './rendering/CubeRenderer'
-import type { Move, Face, RotationFace, Direction } from './types/cube'
+import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
@@ -39,7 +39,7 @@ export default function App() {
   // Reorient facelets to white-top/green-front + reset sensor FSM to match the new frame.
   const resetCenterTracking = useCallback(() => { const next = resetCenterPositions(); resetSensorOffset(); return next }, [resetCenterPositions, resetSensorOffset])
   const gestureResetRef = useRef<() => void>(resetAll)
-  const [moves, setMoves] = useState<Move[]>([])
+  const [moves, setMoves] = useState<PositionMove[]>([])
   const [mode, setMode] = useState<'debug' | 'timer'>(() =>
     window.location.hash === '#debug' ? 'debug' : 'timer'
   )
@@ -207,7 +207,7 @@ export default function App() {
                 (['CW', 'CCW'] as Direction[]).map((dir) => {
                   const label = `${face}${dir === 'CCW' ? "'" : ''}`
                   const emitMove = () => {
-                    const move: Move = { face, direction: dir, cubeTimestamp: Date.now(), serial: 0 }
+                    const move: PositionMove = { face, direction: dir, cubeTimestamp: Date.now(), serial: 0 }
                     handleMove(move)
                     setMoves((prev) => [...prev.slice(-100), move])
                   }

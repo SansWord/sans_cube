@@ -250,6 +250,7 @@ export function TimerScreen({
     addSolve({
       id,
       seq,
+      schemaVersion: 2,
       scramble: scramble ?? '',
       timeMs: elapsedMs,
       moves: recordedMoves,

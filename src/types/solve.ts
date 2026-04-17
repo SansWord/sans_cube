@@ -1,4 +1,4 @@
-import type { Face, Direction, Move, Quaternion } from './cube'
+import type { Face, Direction, PositionMove, Quaternion } from './cube'
 
 export interface QuaternionSnapshot {
   quaternion: Quaternion
@@ -25,8 +25,8 @@ export interface SolveRecord {
   schemaVersion?: number // 1 = pre-fix (GAN face events stored as fixed color map), 2 = post-fix (center-tracking). Absent = v1.
   scramble: string
   timeMs: number        // wall-clock solve duration
-  moves: Move[]         // all moves with cubeTimestamp for replay
-  movesV1?: Move[]      // original pre-migration moves; present only on Firestore-migrated
+  moves: PositionMove[]         // all moves with cubeTimestamp for replay
+  movesV1?: PositionMove[]      // original pre-migration moves; present only on Firestore-migrated
                         // records awaiting user review. Absent on localStorage and new records.
   migrationNote?: string // diff summary from v1→v2 migration when phases changed; cleared on review
   phases: PhaseRecord[]

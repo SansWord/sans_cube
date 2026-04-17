@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move, Quaternion } from '../types/cube'
+import type { PositionMove, Quaternion } from '../types/cube'
 import type { PhaseRecord, QuaternionSnapshot, SolveMethod } from '../types/solve'
 import { isSolvedFacelets, applyMoveToFacelets } from '../utils/applyMove'
 import { SOLVED_FACELETS } from '../types/cube'
@@ -15,7 +15,7 @@ export interface TimerResult {
   status: TimerStatus
   elapsedMs: number
   phaseRecords: PhaseRecord[]
-  recordedMoves: Move[]
+  recordedMoves: PositionMove[]
   quaternionSnapshots: QuaternionSnapshot[]
   reset: () => void
   /** Sync facelets tracking to an externally-reoriented state (e.g. after resetCenterPositions).
@@ -45,7 +45,7 @@ export function useTimer(
   const [status, setStatus] = useState<TimerStatus>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
   const [phaseRecords, setPhaseRecords] = useState<PhaseRecord[]>([])
-  const [recordedMoves, setRecordedMoves] = useState<Move[]>([])
+  const [recordedMoves, setRecordedMoves] = useState<PositionMove[]>([])
   const [quaternionSnapshots, setQuaternionSnapshots] = useState<QuaternionSnapshot[]>([])
 
   // Internal refs — avoid stale closures
@@ -57,7 +57,7 @@ export function useTimer(
   const phaseIndexRef = useRef(0)
   const phaseMoveCountRef = useRef(0)
   const completedPhasesRef = useRef<PhaseRecord[]>([])
-  const movesRef = useRef<Move[]>([])
+  const movesRef = useRef<PositionMove[]>([])
   const quaternionSnapshotsRef = useRef<QuaternionSnapshot[]>([])
   const lastGyroMsRef = useRef(-Infinity)
   const faceletsRef = useRef(SOLVED_FACELETS)
@@ -137,7 +137,7 @@ export function useTimer(
   }, driverVersion)
 
   useCubeDriverEvent(driver, 'move', (move) => {
-      const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
+      const moveWithQ: PositionMove = { ...move, quaternion: latestQuaternionRef.current }
 
       if (statusRef.current === 'solved') return
 
@@ -204,7 +204,7 @@ export function useTimer(
 
   useCubeDriverEvent(driver, 'replacePreviousMove', (move) => {
     if (statusRef.current === 'solved') return
-    const moveWithQ: Move = { ...move, quaternion: latestQuaternionRef.current }
+    const moveWithQ: PositionMove = { ...move, quaternion: latestQuaternionRef.current }
 
     // Always revert + re-apply, even during idle/scrambling — M/E/S in the scramble must
     // be tracked correctly so facelets are accurate when the solve starts.

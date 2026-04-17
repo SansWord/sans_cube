@@ -3,7 +3,7 @@ import { applyMoveToFacelets } from './applyMove'
 import { computePhases } from './recomputePhases'
 import { getMethod } from '../methods/index'
 import type { SolveRecord } from '../types/solve'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 
 // Center sticker positions in the 54-char facelets string (U R F D L B order)
 const CENTERS = [4, 13, 22, 31, 40, 49] as const
@@ -42,7 +42,7 @@ function geoFaceForColor(facelets: string, color: string): string {
 }
 
 /** Re-derive geometric face labels for all moves in a v1 solve via center tracking. */
-export function correctMovesV1toV2(solve: SolveRecord): Move[] {
+export function correctMovesV1toV2(solve: SolveRecord): PositionMove[] {
   let facelets = SOLVED_FACELETS
   return solve.moves.map(move => {
     let correctedFace: string
@@ -63,7 +63,7 @@ export function correctMovesV1toV2(solve: SolveRecord): Move[] {
     } else {
       correctedFace = geoFaceForColor(facelets, FACE_TO_COLOR[move.face])
     }
-    const corrected: Move = { ...move, face: correctedFace as Move['face'], direction: correctedDir }
+    const corrected: PositionMove = { ...move, face: correctedFace as PositionMove['face'], direction: correctedDir }
     facelets = applyMoveToFacelets(facelets, corrected)
     return corrected
   })

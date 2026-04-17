@@ -3,7 +3,7 @@ import { SOLVED_FACELETS } from '../types/cube'
 import { applyMoveToFacelets, isSolvedFacelets } from './applyMove'
 import { parseScramble } from './scramble'
 import type { SolveRecord, PhaseRecord, SolveMethod } from '../types/solve'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 
 function computeScrambledFacelets(scramble: string): string {
   let f = SOLVED_FACELETS
@@ -17,7 +17,7 @@ function computeScrambledFacelets(scramble: string): string {
 
 // Exported for use by migrateSolveV1toV2 (Part 2). Not for general use.
 export function computePhases(
-  moves: Move[],
+  moves: PositionMove[],
   scramble: string,
   method: SolveMethod
 ): PhaseRecord[] | null {

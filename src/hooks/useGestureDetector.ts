@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move, GesturePattern } from '../types/cube'
+import type { PositionMove, GesturePattern } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 
-export function matchGesture(recentMoves: Move[], pattern: GesturePattern): boolean {
+export function matchGesture(recentMoves: PositionMove[], pattern: GesturePattern): boolean {
   if (recentMoves.length < pattern.count) return false
   const last = recentMoves.slice(-pattern.count)
   const allMatch = last.every(m => m.face === pattern.face && (pattern.direction == null || m.direction === pattern.direction))
@@ -34,7 +34,7 @@ export function useGestureDetector(
 ) {
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
-  const historyRef = useRef<Move[]>([])
+  const historyRef = useRef<PositionMove[]>([])
 
   // Reset gesture history on driver reconnect
   useEffect(() => { historyRef.current = [] }, [driverVersion])

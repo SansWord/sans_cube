@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { migrateSolveV1toV2, correctMovesV1toV2 } from '../../src/utils/migrateSolveV1toV2'
 import { CFOP_SOLVE_1, ROUX_SOLVE_WITH_M } from '../fixtures/solveFixtures'
 import type { SolveRecord } from '../../src/types/solve'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
 // Minimal SolveRecord stub for correctMovesV1toV2 unit tests
-function stubSolve(moves: Pick<Move, 'face' | 'direction'>[]): SolveRecord {
+function stubSolve(moves: Pick<PositionMove, 'face' | 'direction'>[]): SolveRecord {
   return {
     id: 0, scramble: '', timeMs: 0, date: 0,
     phases: [], method: 'roux',

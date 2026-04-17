@@ -12,13 +12,13 @@ import {
 } from '../../src/utils/roux'
 import { SOLVED_FACELETS } from '../../src/types/cube'
 import { applyMoveToFacelets } from '../../src/utils/applyMove'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
-function move(face: Move['face'], direction: Move['direction'] = 'CW'): Move {
+function move(face: PositionMove['face'], direction: PositionMove['direction'] = 'CW'): PositionMove {
   return { face, direction, cubeTimestamp: 0, serial: 0 }
 }
 
-function applyMoves(facelets: string, moves: Move[]): string {
+function applyMoves(facelets: string, moves: PositionMove[]): string {
   return moves.reduce(applyMoveToFacelets, facelets)
 }
 

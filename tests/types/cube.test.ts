@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import type { Move, SolveSession, GesturePattern } from '../../src/types/cube'
+import type { PositionMove, SolveSession, GesturePattern } from '../../src/types/cube'
 
 describe('cube types', () => {
-  it('Move has required fields', () => {
-    const move: Move = {
+  it('PositionMove has required fields', () => {
+    const move: PositionMove = {
       face: 'U',
       direction: 'CW',
       cubeTimestamp: 1000,

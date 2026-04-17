@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { buildSolveSession } from '../../src/hooks/useSolveRecorder'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
-function makeMove(face: Move['face'], ts: number): { move: Move; cubeTimestamp: number } {
+function makeMove(face: PositionMove['face'], ts: number): { move: PositionMove; cubeTimestamp: number } {
   return { move: { face, direction: 'CW', cubeTimestamp: ts, serial: 0 }, cubeTimestamp: ts }
 }
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move, SolveSession } from '../types/cube'
+import type { PositionMove, SolveSession } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 
-type Entry = { move: Move; cubeTimestamp: number }
+type Entry = { move: PositionMove; cubeTimestamp: number }
 
 export function buildSolveSession(entries: Entry[]): SolveSession | null {
   if (entries.length === 0) return null

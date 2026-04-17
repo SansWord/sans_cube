@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { matchGesture } from '../../src/hooks/useGestureDetector'
-import type { Move, GesturePattern } from '../../src/types/cube'
+import type { PositionMove, GesturePattern } from '../../src/types/cube'
 
-function makeMove(face: Move['face'], dir: Move['direction'], ts: number): Move {
+function makeMove(face: PositionMove['face'], dir: PositionMove['direction'], ts: number): PositionMove {
   return { face, direction: dir, cubeTimestamp: ts, serial: 0 }
 }
 

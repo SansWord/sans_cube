@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 import type { ScrambleStep } from '../types/solve'
 
@@ -9,7 +9,7 @@ export type StepState = 'done' | 'current' | 'pending' | 'warning'
 export type TrackingState = 'scrambling' | 'warning' | 'wrong' | 'armed'
 
 export interface WrongSegment {
-  face: Move['face']
+  face: PositionMove['face']
   netTurns: number  // positive = net CW, negative = net CCW; mod-4 encodes cancellation
 }
 
@@ -62,7 +62,7 @@ function exitWrongMode(state: TrackerState, steps: ScrambleStep[]): TrackerState
   }
 }
 
-export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: Move): TrackerState {
+export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], move: PositionMove): TrackerState {
   const { trackingState, currentStepIndex, wrongSegments } = state
 
   // Armed: scramble done, ignore further moves

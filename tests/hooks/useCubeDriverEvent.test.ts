@@ -3,14 +3,14 @@ import { vi, describe, it, expect } from 'vitest'
 import { useCubeDriverEvent } from '../../src/hooks/useCubeDriverEvent'
 import { CubeEventEmitter } from '../../src/drivers/CubeDriver'
 import type { CubeDriver } from '../../src/drivers/CubeDriver'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
 class FakeDriver extends CubeEventEmitter implements CubeDriver {
   async connect() {}
   async disconnect() {}
 }
 
-const MOVE: Move = { face: 'U', direction: 'CW', cubeTimestamp: 0, serial: 0 }
+const MOVE: PositionMove = { face: 'U', direction: 'CW', cubeTimestamp: 0, serial: 0 }
 
 describe('useCubeDriverEvent', () => {
   it('calls the handler when the event fires', () => {
@@ -70,7 +70,7 @@ describe('useCubeDriverEvent', () => {
     const handlerB = vi.fn()
 
     const { rerender } = renderHook(
-      ({ h }: { h: (m: Move) => void }) => useCubeDriverEvent(driverRef, 'move', h),
+      ({ h }: { h: (m: PositionMove) => void }) => useCubeDriverEvent(driverRef, 'move', h),
       { initialProps: { h: handlerA } },
     )
 

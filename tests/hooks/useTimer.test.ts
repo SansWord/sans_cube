@@ -3,7 +3,7 @@ import { vi, describe, it, expect, afterEach } from 'vitest'
 import { useTimer } from '../../src/hooks/useTimer'
 import { CubeEventEmitter } from '../../src/drivers/CubeDriver'
 import type { CubeDriver } from '../../src/drivers/CubeDriver'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 import type { SolveMethod } from '../../src/types/solve'
 
 // Minimal method with no phases — simplest possible solve detection
@@ -14,7 +14,7 @@ class FakeDriver extends CubeEventEmitter implements CubeDriver {
   async disconnect() {}
 }
 
-function makeMove(face: Move['face'], dir: Move['direction'], ts: number): Move {
+function makeMove(face: PositionMove['face'], dir: PositionMove['direction'], ts: number): PositionMove {
   return { face, direction: dir, cubeTimestamp: ts, serial: 0 }
 }
 

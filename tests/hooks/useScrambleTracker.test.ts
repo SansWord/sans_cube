@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { applyTrackerMove, makeInitialTrackerState } from '../../src/hooks/useScrambleTracker'
 import type { ScrambleStep } from '../../src/types/solve'
-import type { Move } from '../../src/types/cube'
+import type { PositionMove } from '../../src/types/cube'
 
-function step(face: Move['face'], direction: Move['direction'], double = false): ScrambleStep {
+function step(face: PositionMove['face'], direction: PositionMove['direction'], double = false): ScrambleStep {
   return { face, direction, double }
 }
 
-function move(face: Move['face'], direction: Move['direction'] = 'CW'): Move {
+function move(face: PositionMove['face'], direction: PositionMove['direction'] = 'CW'): PositionMove {
   return { face, direction, cubeTimestamp: 0, serial: 0 }
 }
 

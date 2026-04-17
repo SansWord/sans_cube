@@ -1,5 +1,5 @@
 import { CubeEventEmitter, type CubeDriver } from './CubeDriver'
-import type { Move, Face, Direction } from '../types/cube'
+import type { PositionMove, Face, Direction } from '../types/cube'
 
 let serialCounter = 0
 
@@ -13,7 +13,7 @@ export class ButtonDriver extends CubeEventEmitter implements CubeDriver {
   }
 
   sendMove(face: Face, direction: Direction, double = false): void {
-    const move: Move = {
+    const move: PositionMove = {
       face,
       direction,
       cubeTimestamp: Date.now(),

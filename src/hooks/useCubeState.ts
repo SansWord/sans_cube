@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import type { CubeDriver } from '../drivers/CubeDriver'
-import type { Move } from '../types/cube'
+import type { PositionMove } from '../types/cube'
 import { useCubeDriverEvent } from './useCubeDriverEvent'
 import { SOLVED_FACELETS } from '../types/cube'
 import { applyMoveToFacelets, isSolvedFacelets, reorientToStandard } from '../utils/applyMove'
@@ -61,7 +61,7 @@ export function useCubeState(driver: MutableRefObject<CubeDriver | null>, driver
     setIsSolved(solved)
   }, driverVersion)
 
-  const handleMove = useCallback((move: Move) => {
+  const handleMove = useCallback((move: PositionMove) => {
     prevFaceletsRef.current = faceletsRef.current
     const next = applyMoveToFacelets(faceletsRef.current, move)
     const solved = isSolvedFacelets(next)
