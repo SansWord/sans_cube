@@ -102,10 +102,11 @@ On mount, `currentRoute` is initialized from the current hash immediately. Howev
 The boot resolution effect in `TimerScreen` fires once when `cloudLoading` becomes `false`, then acts on `currentRoute`:
 
 - `type: 'solve'` → find solve in loaded list, open modal
-- `type: 'shared'` → trigger `useSharedSolve` load
 - `type: 'trends'` → open trends modal with parsed params
 - `type: 'debug'` → already handled by `App.tsx` immediately
 - `type: 'none'` → no-op
+
+`#shared` is excluded from boot resolution — it fetches a single public Firestore document and does not depend on the user's solve list or auth state. `useSharedSolve` fires immediately when `currentRoute.type === 'shared'`, regardless of `cloudLoading`.
 
 ---
 
