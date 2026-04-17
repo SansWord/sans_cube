@@ -2,9 +2,31 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { RefObject } from 'react'
 import type { SolveRecord } from '../types/solve'
 import type { CubeRenderer } from '../rendering/CubeRenderer'
-import { IDENTITY_QUATERNION, findSlerpedQuaternion } from '../utils/quaternion'
+import {
+  IDENTITY_QUATERNION,
+  findSlerpedQuaternion,
+  SENSOR_ORIENTATION_FSM,
+  invertQuaternion,
+  multiplyQuaternions,
+} from '../utils/quaternion'
 
 export const SPEED_OPTIONS = [0.5, 1, 2, 3, 5]
+
+// Walk moves[0..upToIndex) and advance FSM state on each M/E/S move.
+function computeReplayFsmState(moves: SolveRecord['moves'], upToIndex: number): number {
+  let state = 0
+  for (let i = 0; i < upToIndex; i++) {
+    const key = `${moves[i].face}:${moves[i].direction}`
+    const next = SENSOR_ORIENTATION_FSM.transitions[state][key]
+    if (next !== undefined) state = next
+  }
+  return state
+}
+
+function applyFsmCorrection(rawQ: ReturnType<typeof findSlerpedQuaternion>, fsmState: number) {
+  if (!rawQ) return rawQ
+  return multiplyQuaternions(rawQ, invertQuaternion(SENSOR_ORIENTATION_FSM.orientations[fsmState]))
+}
 
 // Null cubeTimestamps (retroactively-detected M-pair moves) must not reach
 // replay scheduling — NaN propagates through cumulativeDelay and stalls playback.
@@ -101,14 +123,16 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
         const now = performance.now()
         if (wasAnimatingRef.current && !isAnim) {
           // Animation just finished — smoothly settle to correct orientation
-          const q = findSlerpedQuaternion(snapshots, solveElapsed)
+          const rawQ = findSlerpedQuaternion(snapshots, solveElapsed)
+          const q = applyFsmCorrection(rawQ, computeReplayFsmState(moves, currentIndexRef.current))
           if (q) {
             rendererRef.current?.animateQuaternionTo(q, 120)
             settleUntilRef.current = now + 120
           }
         } else if (!isAnim && now >= settleUntilRef.current) {
           // Normal gyro update
-          const q = findSlerpedQuaternion(snapshots, solveElapsed)
+          const rawQ = findSlerpedQuaternion(snapshots, solveElapsed)
+          const q = applyFsmCorrection(rawQ, computeReplayFsmState(moves, currentIndexRef.current))
           if (q) rendererRef.current?.setQuaternion(q)
         }
         wasAnimatingRef.current = isAnim
@@ -144,7 +168,8 @@ export function useReplayController(solve: SolveRecord, rendererRef: RefObject<C
     setIndicatorMs(ms)
     const snapshots = solve.quaternionSnapshots ?? []
     if (gyroEnabledRef.current && snapshots.length >= 2) {
-      const q = findSlerpedQuaternion(snapshots, ms)
+      const rawQ = findSlerpedQuaternion(snapshots, ms)
+      const q = applyFsmCorrection(rawQ, computeReplayFsmState(solve.moves, clamped))
       if (q) {
         if (quatAnimMs > 0) rendererRef.current?.animateQuaternionTo(q, quatAnimMs)
         else rendererRef.current?.setQuaternion(q)
