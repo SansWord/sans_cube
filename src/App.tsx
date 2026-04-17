@@ -41,7 +41,7 @@ export default function App() {
   const resetCenterTracking = useCallback(() => { const next = resetCenterPositions(); resetSensorOffset(); return next }, [resetCenterPositions, resetSensorOffset])
   const gestureResetRef = useRef<() => void>(resetAll)
   const [moves, setMoves] = useState<PositionMove[]>([])
-  const { currentRoute } = useHashRouter()
+  const { currentRoute, navigate } = useHashRouter()
   const [mode, setMode] = useState<'debug' | 'timer'>(
     () => window.location.hash === '#debug' ? 'debug' : 'timer'
   )
@@ -173,6 +173,7 @@ export default function App() {
           onCubeMove={handleCubeMove}
           cloudConfig={cloudConfig}
           currentRoute={currentRoute}
+          navigate={navigate}
         />
       ) : (
         <>

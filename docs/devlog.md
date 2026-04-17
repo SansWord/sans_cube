@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.20.1](#v1201--url-routing-bug-fixes-2026-04-16-2354) | Fix: `#trends` direct URL / ESC-from-solve blinking; fix `#solve` from trends restoring to trends on ESC; modal overlay opacity reduced |
 | [v1.20.0](#v1200--hash-router-consolidation-2026-04-16-2104) | Single `useHashRouter` hook replaces 3 scattered `hashchange` listeners; typed `Route` union; `pushState` on modal open, `replaceState` on param updates |
 | [v1.19.4](#v1194--replay-gyro-orientation-correction-2026-04-16-1822) | FSM orientation correction applied during replay — cube no longer drifts after M/E/S moves in playback |
 | [v1.19.3](#v1193--per-solve-migrate-button--shared-solve-owner-detection-2026-04-16) | Per-solve "Migrate to v2" button; shared solve owner detection via registry doc; unified review flow |
@@ -49,6 +50,27 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.20.1 — URL routing bug fixes (2026-04-16 23:54)
+
+**Review:** not yet
+
+**What was built:**
+- Fixed: visiting `#solve-{id}` directly left modal stuck (ESC and close button did nothing) — `history.replaceState` doesn't fire `popstate`/`hashchange`, so `currentRoute` was never updated after the URL write. Fix: call `navigate()` after every `pushState`/`replaceState` in `TimerScreen`'s URL write effects.
+- Fixed: rapid blink (modal open/close loop) when pressing ESC on a directly-visited `#solve-{id}` — Firestore periodically re-emits new `solves` array references without data changes; having `solves` in the reactive effect's deps caused the modal to re-open after close. Fix: `solvesRef` pattern (ref synced on every render, not in deps).
+- Fixed: `#shared-{id}` URL not clearing when ESC pressed before cloud load finished — `urlResolvedRef` guard was blocking the clear path. Fix: replaced with `prev !== null` guard so close always clears.
+- Fixed: clicking a solve inside TrendsModal didn't update URL to `#solve-{id}` — early return `if (showTrends) return` blocked the write. Fix: save trends hash to `savedTrendsHashRef` on open, restore on close; use ref so trends hash survives `setShowTrends(false)` from the reactive effect.
+- Fixed: `#trends` URL blinks open then immediately closes — `showTrends` was in the selectedSolve URL write effect deps; when trends opened (`setShowTrends(true)`), the effect re-fired, saw `selectedSolve=null` + empty `savedTrendsHashRef`, and called `navigate({type:'none'})`. Fix: read `showTrends` via `showTrendsRef` and remove it from deps.
+- `TrendsModal` onClose now calls `navigate({type:'none'})` to keep `currentRoute` in sync with the cleared URL.
+- Modal overlay opacity reduced from 0.85 to 0.55.
+
+**Key technical learnings:**
+- `[gotcha]` `history.pushState`/`replaceState` do **not** fire `hashchange` or `popstate`. After any manual URL write you must also call `navigate()` to sync React router state — otherwise `currentRoute` is stale and close/back handlers can't work.
+- `[gotcha]` Firestore listeners periodically re-emit new array references with identical data. Any effect with the array in deps will re-fire on these no-op updates. Use the ref pattern (`arrayRef.current = array`, read ref inside effect, omit array from deps) for effects that must not re-run on Firestore noise.
+- `[insight]` **Trigger vs. reader rule for effect deps**: deps are triggers — values whose changes should re-run the effect. Values the effect only reads as guards (`if (x) return`) belong in refs, not deps. The heuristic: if the first thing the effect does with a dep is an early return, that dep is a reader, not a trigger.
+- `[gotcha]` A reactive effect that calls `setShowTrends(false)` when `currentRoute` becomes `solve` means `showTrends` is already `false` by the time the user presses ESC. Don't use `showTrends` as a signal for "currently in trends context" — use a dedicated ref (`savedTrendsHashRef`) set at the moment of navigation.
 
 ---
 

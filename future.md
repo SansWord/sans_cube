@@ -50,6 +50,13 @@
 - ~~**hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.~~ — done in v1.20.0 (`useHashRouter` consolidates all listeners; typed `Route` union; `pushState`/`replaceState` write-back strategy)
 
 ## Code Quality (Refactor Backlog)
+
+**Effect deps: move guards to refs in URL write effects** — The "trigger vs. reader" principle: effect deps should only contain values whose changes should re-run the effect. Values used only as guards (`if (x) return`) belong in refs, not deps. Two guards are still in deps:
+- `sharedSolve` and `sharedSolveLoading` in the selectedSolve URL write effect
+- `showTrends` in the sharedSolve URL write effect (already using `showTrendsRef` in the selectedSolve effect — apply same pattern here)
+No active bugs, but same failure mode as the v1.20.1 `showTrends` bug: if a guard value changes while the trigger hasn't, the effect misfires.
+
+
 ~~**Promote `PositionMove` and retire the `Move` alias**~~ — done; `Move` alias deleted, all 24 files updated to `PositionMove`. New solves also now stamped `schemaVersion: 2` at creation.
 
 

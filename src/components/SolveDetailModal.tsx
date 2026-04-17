@@ -276,7 +276,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,0.85)',
+      background: 'rgba(0,0,0,0.55)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 300,
     }}>

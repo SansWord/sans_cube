@@ -28,6 +28,7 @@ import { shareSolve, unshareSolve, isSharedSolveOwner } from '../services/firest
 import { logSolveRecorded } from '../services/analytics'
 import { useSharedSolve } from '../hooks/useSharedSolve'
 import type { Route, TrendsHashParams } from '../hooks/useHashRouter'
+import { parseHash } from '../hooks/useHashRouter'
 
 interface Props {
   driver: MutableRefObject<CubeDriver | null>
@@ -47,6 +48,7 @@ interface Props {
   onCubeMove?: (face: Face, direction: 'CW' | 'CCW') => void
   cloudConfig?: CloudConfig
   currentRoute: Route
+  navigate: (route: Route) => void
 }
 
 
@@ -65,6 +67,7 @@ export function TimerScreen({
   onCubeMove,
   cloudConfig,
   currentRoute,
+  navigate,
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
@@ -75,6 +78,8 @@ export function TimerScreen({
   const { scramble, steps, regenerate, load: loadScramble } = useScramble()
   const [armed, setArmed] = useState(false)
   const [selectedSolve, setSelectedSolve] = useState<SolveRecord | null>(null)
+  const solvesRef = useRef(solves)
+  solvesRef.current = solves
   const [regeneratePending, setRegeneratePending] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)
@@ -110,6 +115,9 @@ export function TimerScreen({
   const urlResolvedRef = useRef(false)
   const prevSelectedSolveRef = useRef<SolveRecord | null>(null)
   const prevSharedSolveRef = useRef<SolveRecord | null>(null)
+  const savedTrendsHashRef = useRef('')
+  const showTrendsRef = useRef(showTrends)
+  showTrendsRef.current = showTrends
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth))
@@ -136,7 +144,9 @@ export function TimerScreen({
     // #shared handled by useSharedSolve independently (no cloudLoading dependency)
   }, [cloudLoading, solves, currentRoute])
 
-  // React to currentRoute changes after boot
+  // React to currentRoute changes after boot.
+  // solvesRef (not solves) is intentional: re-running on every solves update would
+  // re-open the modal after the user closes it whenever Firestore syncs.
   useEffect(() => {
     if (!urlResolvedRef.current) return
     if (currentRoute.type === 'trends') {
@@ -151,46 +161,66 @@ export function TimerScreen({
         }))
       }
     } else if (currentRoute.type === 'solve') {
-      const solve = solves.find(s => s.id === currentRoute.id)
+      const solve = solvesRef.current.find(s => s.id === currentRoute.id)
       if (solve) { setShowTrends(false); setSelectedSolve(solve) }
     } else if (currentRoute.type === 'none') {
       setSelectedSolve(null)
       setShowTrends(false)
     }
     // 'debug' and 'shared' handled by App.tsx and useSharedSolve respectively
-  }, [currentRoute, solves])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoute])
 
-  // Write URL for selectedSolve
+  // Write URL for selectedSolve.
+  // showTrends is intentionally read via ref so this effect doesn't re-fire when
+  // trends opens/closes — that would incorrectly call navigate({type:'none'}) while
+  // selectedSolve is null, blinking the trends modal shut.
   useEffect(() => {
     if (!urlResolvedRef.current) return
-    if (showTrends || !!sharedSolve || sharedSolveLoading) return
+    if (!!sharedSolve || sharedSolveLoading) return
     const prev = prevSelectedSolveRef.current
     prevSelectedSolveRef.current = selectedSolve
     if (selectedSolve) {
+      if (!prev && showTrendsRef.current) {
+        savedTrendsHashRef.current = window.location.hash
+      }
       if (!prev) {
         history.pushState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
       } else {
         history.replaceState(null, '', `${window.location.pathname}${window.location.search}#solve-${selectedSolve.id}`)
       }
+      navigate({ type: 'solve', id: selectedSolve.id })
     } else {
-      history.replaceState(null, '', window.location.pathname + window.location.search)
+      if (savedTrendsHashRef.current) {
+        const hash = savedTrendsHashRef.current
+        savedTrendsHashRef.current = ''
+        history.replaceState(null, '', window.location.pathname + window.location.search + hash)
+        navigate(parseHash(hash))
+      } else {
+        history.replaceState(null, '', window.location.pathname + window.location.search)
+        navigate({ type: 'none' })
+      }
     }
-  }, [selectedSolve, showTrends, sharedSolve, sharedSolveLoading])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSolve, sharedSolve, sharedSolveLoading, navigate])
 
-  // Write URL for sharedSolve
+  // Write URL for sharedSolve.
+  // No urlResolvedRef guard here: clearing the URL on close must work even if cloud
+  // loading hasn't finished. The `prev` check prevents clearing on initial mount.
   useEffect(() => {
-    if (!urlResolvedRef.current) return
     if (showTrends) return
     const prev = prevSharedSolveRef.current
     prevSharedSolveRef.current = sharedSolve
     if (sharedSolve) {
-      if (!prev) {
+      if (!prev && urlResolvedRef.current) {
         history.pushState(null, '', `${window.location.pathname}${window.location.search}#shared-${sharedSolve.shareId!}`)
+        navigate({ type: 'shared', shareId: sharedSolve.shareId! })
       }
-    } else if (!sharedSolveLoading) {
+    } else if (prev && !sharedSolveLoading) {
       history.replaceState(null, '', window.location.pathname + window.location.search)
+      navigate({ type: 'none' })
     }
-  }, [sharedSolve, sharedSolveLoading, showTrends])
+  }, [sharedSolve, sharedSolveLoading, showTrends, navigate])
 
   // Close other modals when a shared solve is loaded via hashchange
   useEffect(() => {
@@ -459,6 +489,7 @@ export function TimerScreen({
             setShowTrends(false)
             setSelectedSolve(null)
             history.replaceState(null, '', window.location.pathname + window.location.search)
+            navigate({ type: 'none' })
           }}
           detailOpen={!!selectedSolve || !!sharedSolve || sharedSolveLoading}
           initialParams={trendParams}

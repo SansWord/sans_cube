@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export interface TrendsHashParams {
   tab: 'total' | 'phases'
@@ -64,13 +64,24 @@ export function parseHash(hash: string): Route {
   return { type: 'none' }
 }
 
-export function useHashRouter(): { currentRoute: Route } {
+function routesEqual(a: Route, b: Route): boolean {
+  if (a.type !== b.type) return false
+  if (a.type === 'solve' && b.type === 'solve') return a.id === b.id
+  if (a.type === 'shared' && b.type === 'shared') return a.shareId === b.shareId
+  if (a.type === 'trends' && b.type === 'trends') return JSON.stringify(a.params) === JSON.stringify(b.params)
+  return true
+}
+
+export function useHashRouter(): { currentRoute: Route; navigate: (route: Route) => void } {
   const [currentRoute, setCurrentRoute] = useState<Route>(
     () => parseHash(window.location.hash)
   )
 
   useEffect(() => {
-    const handler = () => setCurrentRoute(parseHash(window.location.hash))
+    const handler = () => {
+      const next = parseHash(window.location.hash)
+      setCurrentRoute(prev => routesEqual(prev, next) ? prev : next)
+    }
     window.addEventListener('hashchange', handler)
     window.addEventListener('popstate', handler)
     return () => {
@@ -79,5 +90,9 @@ export function useHashRouter(): { currentRoute: Route } {
     }
   }, [])
 
-  return { currentRoute }
+  const navigate = useCallback((route: Route) => {
+    setCurrentRoute(prev => routesEqual(prev, route) ? prev : route)
+  }, [])
+
+  return { currentRoute, navigate }
 }
