@@ -303,7 +303,6 @@ describe('applyTrackerMove — double-step undo', () => {
     expect(state.currentStepIndex).toBe(2)
     expect(state.stepStates[1]).toBe('done')    // U2 back to green
     expect(state.stepStates[2]).toBe('current') // D back to white
-    expect(state.stepStates[2]).toBe('current')
   })
 
   it('CCW + CCW → undo confirmed (white)', () => {
