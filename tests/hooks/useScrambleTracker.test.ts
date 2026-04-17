@@ -364,6 +364,7 @@ describe('applyTrackerMove — ahead step (scrambling state)', () => {
     let state = makeInitialTrackerState(aheadSteps)
     state = applyTrackerMove(state, aheadSteps, move('R', 'CCW'))
     expect(state.aheadState).toBe('warning')
+    expect(state.aheadNetTurns).toBe(-1)
     expect(state.trackingState).toBe('scrambling')
     expect(state.currentStepIndex).toBe(0)
     expect(state.stepStates[0]).toBe('current')
