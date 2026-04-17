@@ -20,6 +20,8 @@ export interface TrackerState {
   currentStepIndex: number
   warningNetTurns: number        // net CW(+1)/CCW(-1) count while in warning state
   wrongFromWarning: boolean      // whether wrong state was entered from warning
+  aheadState: 'none' | 'done' | 'warning'   // tracks the step at currentStepIndex + 1
+  aheadNetTurns: number                       // net turns on ahead face; meaningful when aheadState === 'warning'
 }
 
 export function commutes(face1: Face, face2: Face): boolean {
@@ -38,14 +40,26 @@ export function makeInitialTrackerState(steps: ScrambleStep[]): TrackerState {
     currentStepIndex: 0,
     warningNetTurns: 0,
     wrongFromWarning: false,
+    aheadState: 'none',
+    aheadNetTurns: 0,
   }
 }
 
-function buildStepStates(steps: ScrambleStep[], doneCount: number, currentIndex: number, warningIndex: number | null): StepState[] {
+function buildStepStates(
+  steps: ScrambleStep[],
+  doneCount: number,
+  currentIndex: number,
+  warningIndex: number | null,
+  aheadState: 'none' | 'done' | 'warning' = 'none',
+): StepState[] {
+  const aheadIndex = currentIndex + 1 < steps.length ? currentIndex + 1 : null
   return steps.map((_, i) => {
     if (i < doneCount) return 'done'
     if (warningIndex !== null && i === warningIndex) return 'warning'
     if (i === currentIndex) return 'current'
+    if (aheadState !== 'none' && aheadIndex !== null && i === aheadIndex) {
+      return aheadState === 'done' ? 'done' : 'warning'
+    }
     return 'pending'
   })
 }
@@ -58,7 +72,7 @@ function exitWrongMode(state: TrackerState, steps: ScrambleStep[]): TrackerState
       trackingState: 'warning',
       wrongSegments: [],
       wrongFromWarning: false,
-      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex, state.aheadState),
     }
   }
   return {
@@ -66,7 +80,7 @@ function exitWrongMode(state: TrackerState, steps: ScrambleStep[]): TrackerState
     trackingState: 'scrambling',
     wrongSegments: [],
     wrongFromWarning: false,
-    stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
+    stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null, state.aheadState),
   }
 }
 
@@ -124,17 +138,19 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
       return {
         ...state,
         trackingState: isArmed ? 'armed' : 'scrambling',
-        stepStates: buildStepStates(steps, nextIndex, nextIndex, null),
+        stepStates: buildStepStates(steps, nextIndex, nextIndex, null, 'none'),
         currentStepIndex: nextIndex,
         wrongSegments: [],
         warningNetTurns: 0,
+        aheadState: 'none',
+        aheadNetTurns: 0,
       }
     }
     if (net4 === 0) {
       return {
         ...state,
         trackingState: 'scrambling',
-        stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
+        stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null, state.aheadState),
         warningNetTurns: 0,
       }
     }
@@ -153,7 +169,9 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
           trackingState: 'warning',
           currentStepIndex: newIndex,
           warningNetTurns: 2 + delta,
-          stepStates: buildStepStates(steps, newIndex, newIndex, newIndex),
+          stepStates: buildStepStates(steps, newIndex, newIndex, newIndex, 'none'),
+          aheadState: 'none',
+          aheadNetTurns: 0,
         }
       }
       if (move.direction !== prevStep.direction) {
@@ -161,7 +179,9 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
           ...state,
           trackingState: 'scrambling',
           currentStepIndex: newIndex,
-          stepStates: buildStepStates(steps, newIndex, newIndex, null),
+          stepStates: buildStepStates(steps, newIndex, newIndex, null, 'none'),
+          aheadState: 'none',
+          aheadNetTurns: 0,
         }
       }
     }
@@ -170,7 +190,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
       ...state,
       trackingState: 'wrong',
       wrongSegments: [{ face: move.face, netTurns: delta }],
-      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null),
+      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, null, state.aheadState),
     }
   }
 
@@ -179,7 +199,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
       ...state,
       trackingState: 'warning',
       warningNetTurns: move.direction === 'CW' ? 1 : -1,
-      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+      stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex, state.aheadState),
     }
   }
 
@@ -190,8 +210,10 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
     return {
       ...state,
       trackingState: isArmed ? 'armed' : 'scrambling',
-      stepStates: buildStepStates(steps, nextIndex, nextIndex, null),
+      stepStates: buildStepStates(steps, nextIndex, nextIndex, null, 'none'),
       currentStepIndex: nextIndex,
+      aheadState: 'none',
+      aheadNetTurns: 0,
     }
   }
 
@@ -200,7 +222,7 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
     ...state,
     trackingState: 'warning',
     warningNetTurns: move.direction === 'CW' ? 1 : -1,
-    stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex),
+    stepStates: buildStepStates(steps, currentStepIndex, currentStepIndex, currentStepIndex, state.aheadState),
   }
 }
 

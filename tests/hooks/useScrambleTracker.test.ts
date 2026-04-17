@@ -337,6 +337,14 @@ describe('applyTrackerMove — double-step undo', () => {
   })
 })
 
+describe('makeInitialTrackerState — aheadState fields', () => {
+  it('initializes aheadState to none and aheadNetTurns to 0', () => {
+    const state = makeInitialTrackerState(steps)
+    expect(state.aheadState).toBe('none')
+    expect(state.aheadNetTurns).toBe(0)
+  })
+})
+
 describe('commutes()', () => {
   it('opposite face pairs commute', () => {
     expect(commutes('R', 'L')).toBe(true)
