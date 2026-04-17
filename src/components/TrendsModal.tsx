@@ -18,6 +18,7 @@ import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
 import { filterSolves } from '../hooks/useSolveHistory'
+import type { TrendsHashParams } from '../hooks/useHashRouter'
 
 type Tab = 'total' | 'phases'
 type WindowSize = 25 | 50 | 100 | 'all'
@@ -45,6 +46,7 @@ interface Props {
   onSelectSolve: (solve: SolveRecord) => void
   onClose: () => void
   detailOpen?: boolean
+  initialParams: TrendsHashParams
 }
 
 // ─── color helpers ────────────────────────────────────────────────────────────
@@ -91,38 +93,6 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-function parseToggle(raw: string | null): TimeToggle {
-  const set = new Set((raw ?? '').split(','))
-  const t: TimeToggle = { exec: set.has('exec'), recog: set.has('recog'), total: set.has('total') }
-  if (!t.exec && !t.recog && !t.total) { t.total = true }
-  return t
-}
-
-function parseHashParams(): {
-  tab: Tab
-  windowSize: WindowSize | null
-  grouped: boolean
-  totalToggle: TimeToggle
-  phaseToggle: TimeToggle
-} {
-  const hash = window.location.hash
-  if (!hash.startsWith('#trends')) {
-    return { tab: 'total', windowSize: null, grouped: true, totalToggle: { exec: false, recog: false, total: true }, phaseToggle: { exec: false, recog: false, total: true } }
-  }
-  const search = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
-  const params = new URLSearchParams(search)
-  const tab: Tab = params.get('tab') === 'phases' ? 'phases' : 'total'
-  const w = params.get('window')
-  const windowSize: WindowSize | null = w === 'all' ? 'all' : w === '50' ? 50 : w === '100' ? 100 : w === '25' ? 25 : null
-  const grouped: boolean = params.get('group') !== 'split'
-  const totalToggle = parseToggle(params.get('ttotal'))
-  const ptRaw = params.get('tphase') ?? 'total'
-  const ptSet = new Set(ptRaw.split(','))
-  const phaseToggle: TimeToggle = { exec: ptSet.has('exec'), recog: ptSet.has('recog'), total: ptSet.has('total') }
-  if (!phaseToggle.exec && !phaseToggle.recog && !phaseToggle.total) phaseToggle.total = true
-  return { tab, windowSize, grouped, totalToggle, phaseToggle }
-}
 
 function buildColorMapForMethod(method: ReturnType<typeof getMethod>, grouped: boolean): Record<string, string> {
   if (grouped) {
@@ -339,7 +309,7 @@ function PhaseTooltip({
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSolve, onClose, detailOpen }: Props) {
+export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSolve, onClose, detailOpen, initialParams }: Props) {
   const [isMobile] = useState(() => window.innerWidth < 640)
 
   useEffect(() => {
@@ -347,12 +317,12 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, detailOpen])
-  const parsed = parseHashParams()
-  const [tab, setTab] = useState<Tab>(parsed.tab)
-  const [windowSize, setWindowSize] = useState<WindowSize>(parsed.windowSize ?? (isMobile ? 25 : 'all'))
-  const [grouped, setGrouped] = useState(parsed.grouped)
+  const isFirstMountRef = useRef(true)
+  const [tab, setTab] = useState<Tab>(initialParams.tab)
+  const [windowSize, setWindowSize] = useState<WindowSize>(initialParams.windowSize ?? (isMobile ? 25 : 'all'))
+  const [grouped, setGrouped] = useState(initialParams.grouped)
   const [totalToggle, setTotalToggle] = useState<TimeToggle>({ exec: false, recog: false, total: true })
-  const [phaseToggle, setPhaseToggle] = useState<TimeToggle>(parsed.phaseToggle)
+  const [phaseToggle, setPhaseToggle] = useState<TimeToggle>(initialParams.phaseToggle)
   const [hiddenPhases, setHiddenPhases] = useState<Set<string>>(new Set())
   const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
   const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
@@ -402,6 +372,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
 
   // Sync URL hash
   useEffect(() => {
+    if (detailOpen) return  // don't overwrite #solve or #shared URL while a detail modal is open
     const activeTotalTypes = (Object.keys(totalToggle) as TimeKey[]).filter(k => totalToggle[k]).join(',') || 'exec,recog,total'
     const activePhaseTypes = (Object.keys(phaseToggle) as TimeKey[]).filter(k => phaseToggle[k]).join(',') || 'total'
     const params = new URLSearchParams({
@@ -413,8 +384,14 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
       ttotal: activeTotalTypes,
       tphase: activePhaseTypes,
     })
-    window.location.hash = `trends?${params.toString()}`
-  }, [solveFilter.method, solveFilter.driver, tab, windowSize, grouped, totalToggle, phaseToggle])
+    const url = `${window.location.pathname}${window.location.search}#trends?${params.toString()}`
+    if (isFirstMountRef.current) {
+      history.pushState(null, '', url)
+      isFirstMountRef.current = false
+    } else {
+      history.replaceState(null, '', url)
+    }
+  }, [solveFilter.method, solveFilter.driver, tab, windowSize, grouped, totalToggle, phaseToggle, detailOpen])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
