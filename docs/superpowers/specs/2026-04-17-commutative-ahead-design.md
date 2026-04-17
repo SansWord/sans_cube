@@ -39,7 +39,13 @@ Only opposite face pairs commute. Slice moves (M, E, S) are never commutative.
 Encoded as a pure helper:
 
 ```ts
-function commutes(face1: Face, face2: Face): boolean
+function commutes(face1: Face, face2: Face): boolean {
+  return (
+    (face1 === 'R' && face2 === 'L') || (face1 === 'L' && face2 === 'R') ||
+    (face1 === 'U' && face2 === 'D') || (face1 === 'D' && face2 === 'U') ||
+    (face1 === 'F' && face2 === 'B') || (face1 === 'B' && face2 === 'F')
+  )
+}
 ```
 
 The ahead step is eligible only when `currentStepIndex + 1 < steps.length` (bounds guard — checked first to avoid out-of-bounds access) **and** `commutes(steps[currentStepIndex].face, steps[currentStepIndex + 1].face)` is true.
