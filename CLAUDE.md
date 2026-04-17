@@ -96,6 +96,8 @@ This project uses three-part semver: `vX.Y.0` for main releases, `vX.Y.1` / `vX.
 
 Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format). When writing a new entry, also update the **TL;DR table** at the top of `docs/devlog.md` with a one-line summary of the new version.
 
+After writing the devlog entry, also read `future.md` and cross out any items that were completed in this session (strikethrough + version tag), matching the style of existing done items.
+
 ## GitHub Upload Safety
 
 Before committing or pushing any file to GitHub, check for:

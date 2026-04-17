@@ -41,14 +41,14 @@
 - ~~for phases - allow to hide/show each phases~~ — done in v1.5 (click legend label to hide/show)
 - ~~range selection: choose a range and show only that range, with a reset-button~~ — done in v1.5 (drag-to-zoom with multi-level stack, ← Back, Reset zoom)
 - ao5, ao12 for phases?
-- filter by driver
+- ~~filter by driver~~ — done in v1.15.0 (driver filter in sidebar + Trends, persisted and URL-honoring)
 - TrendsModal.tsx refactor (786 lines) — god component: chart data transform + color math + tooltips + controls + all state. Consider when actively working on trends features.
 
 
 ## Miscs
 - localization
 - case detection - OLL, PLL, EO, LR+LU, EP
-- scramble optimization: for example, if we have UD pattern, it should be able to turn D and then U.
+- ~~scramble optimization: for example, if we have UD pattern, it should be able to turn D and then U.~~ - v1.21.1
 
 ## URL / Routing
 - ~~**hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.~~ — done in v1.20.0 (`useHashRouter` consolidates all listeners; typed `Route` union; `pushState`/`replaceState` write-back strategy)
