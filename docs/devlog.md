@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.22.0](#v1220--freeform-method-2026-04-17-1202) | Freeform method — single "Solved" phase; wired into filters, method selector, Trends color map, hash router; `detectMethod` skips Freeform |
 | [v1.21.1](#v1211--commutative-ahead-execution-2026-04-17-1015) | Execute the next scramble step before the current one when the two steps commute (opposite faces); live green/orange feedback on the scramble display |
 | [v1.21.0](#v1210--scramble-undo-2026-04-17-0247) | Undo completed scramble steps by doing the inverse move; double steps (U2) use warning state seeded at `net=2` for two-move undo/re-complete |
 | [v1.20.1](#v1201--url-routing-bug-fixes-2026-04-16-2354) | Fix: `#trends` direct URL / ESC-from-solve blinking; fix `#solve` from trends restoring to trends on ESC; modal overlay opacity reduced |
@@ -52,6 +53,27 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.22.0 — Freeform method (2026-04-17 12:02)
+
+**Review:** not yet
+
+**Design docs:**
+- Freeform Method: [Spec](superpowers/specs/2026-04-17-freeform-method-design.md) [Plan](superpowers/plans/2026-04-17-freeform-method.md)
+
+**What was built:**
+- New `FREEFORM` solving method (`src/methods/freeform.ts`) with a single `Solved` phase that completes when the cube reaches the solved state.
+- Wired into `MethodSelector` (Detail modal), `SolveHistorySidebar` filter, `TrendsModal` filter + color map, and `useHashRouter` URL whitelist (`#trends?method=freeform`).
+- `recomputePhases` handles Freeform via the existing generic algorithm — no changes to the recompute core needed.
+- `detectMethodMismatches` skips Freeform solves so they are not flagged in the maintenance panel.
+
+**Key technical learnings:**
+- `[note]` A method with a single phase whose `isComplete` is `isSolvedFacelets` round-trips cleanly through `recomputePhases`: `turns === moves.length`, `recognitionMs === 0`, `executionMs === lastTs - firstTs`.
+- `[insight]` Adding a new method is a union-widening + registry operation across ~6 files, not a schema change. The `method` field on `SolveRecord` is already a free-form `string`; widening `MethodFilter` is the type-level work, and each consumer (`MethodSelector`, filter dropdowns, hash router) is a local edit.
+- `[gotcha]` `TrendsModal.buildColorMap('all')` spreads method color maps in order — if two methods share a label, last-wins. Freeform's `Solved` label does not collide with CFOP or Roux, so order is safe. Future methods adding a label like `EPLL` would collide with CFOP.
+- `[gotcha]` `detectMethodMismatches` reads `solve.isExample` and skips them — so tests written against `CFOP_SOLVE_1` (which is an example fixture) pass vacuously unless you override `isExample: false`. The skip-guard test would silently pass without exercising the actual code path.
 
 ---
 
