@@ -57,12 +57,12 @@ describe('SolveHistorySidebar', () => {
     expect(methodSelect).toHaveValue('all')
   })
 
-  it('filter combobox has All, CFOP, and Roux options', () => {
+  it('filter combobox has All, CFOP, Roux, and Freeform options', () => {
     render(<SidebarWrapper {...baseProps} />)
     const selects = screen.getAllByRole('combobox')
     const methodSelect = selects[0]
     const options = within(methodSelect).getAllByRole('option')
-    expect(options.map((o) => o.textContent)).toEqual(['All', 'CFOP', 'Roux'])
+    expect(options.map((o) => o.textContent)).toEqual(['All', 'CFOP', 'Roux', 'Freeform'])
   })
 
   it('shows all real solves when filter is All', () => {
