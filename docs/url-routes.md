@@ -2,6 +2,40 @@
 
 All routing in sans_cube is hash-based. There are no path-based routes — the app is a single-page app served from one URL. The hash encodes which view to open and any associated state.
 
+## Routing architecture
+
+All hash routing is managed by `useHashRouter` (`src/hooks/useHashRouter.ts`), called once in `App.tsx`. It owns a single `hashchange` + `popstate` listener and parses the current hash into a typed `Route`:
+
+```ts
+type Route =
+  | { type: 'debug' }
+  | { type: 'solve'; id: number }
+  | { type: 'shared'; shareId: string }
+  | { type: 'trends'; params: TrendsHashParams }
+  | { type: 'none' }
+```
+
+`currentRoute` is passed as a prop to `TimerScreen`, which distributes it further. Components react to `currentRoute` via `useEffect` — no component reads `window.location.hash` directly.
+
+## URL write strategy
+
+The router is read-only. Components write to the URL directly:
+
+| Route | Method | Reason |
+|---|---|---|
+| `#solve-{id}` — opens | `pushState` | back button closes modal |
+| `#shared-{shareId}` — opens | `pushState` | back button closes modal |
+| `#trends` — opens | `pushState` | back button closes modal |
+| `#trends?…` — param update | `replaceState` | state sync, not navigation |
+| `#debug` toggle | `replaceState` | mode toggle, not navigation |
+| any modal closes | `replaceState` | collapses history entry |
+
+Both `hashchange` (typing a URL) and `popstate` (back/forward button) trigger the router.
+
+## Boot resolution
+
+On mount, `currentRoute` is initialized from the current hash immediately. `#solve` and `#trends` wait for `cloudLoading: false` before acting (data may be in Firestore). `#shared` and `#debug` do not wait.
+
 ## Supported hashes
 
 ### `#debug`
@@ -10,7 +44,7 @@ Opens the app directly in debug mode (replaces the timer screen with diagnostic 
 
 - Toggling the `[debug]` / `[timer]` button in the connection bar updates the hash to match.
 - Toggling back to timer clears the hash.
-- **Handled in:** `App.tsx`
+- **Handled in:** `App.tsx` (reads `currentRoute` from `useHashRouter`)
 
 ---
 
@@ -18,10 +52,10 @@ Opens the app directly in debug mode (replaces the timer screen with diagnostic 
 
 Opens the solve detail modal for the solve with the given numeric `id`.
 
-- Written via `history.replaceState` (no hashchange event) when a solve is selected.
-- Cleared when the modal is closed.
+- Written via `history.pushState` when a solve is selected (supports back button to close).
+- Cleared via `history.replaceState` when the modal is closed.
 - On boot, resolved after cloud data finishes loading to handle the case where the solve lives in Firestore.
-- **Handled in:** `TimerScreen.tsx`
+- **Handled in:** `TimerScreen.tsx` (reads `currentRoute` prop)
 
 **Example:** `#solve-42`
 
@@ -34,8 +68,8 @@ Loads a publicly shared solve from Firestore and opens it in the solve detail mo
 - `shareId` is the Firestore document ID in the `public_solves` collection.
 - Valid format enforced by `SHARE_ID_RE` in `firestoreSharing.ts`.
 - Shows a loading state while fetching; shows a "not found" message (3 s) if the fetch fails or times out.
-- Cleared from the URL when the modal is closed.
-- **Handled in:** `useSharedSolve.ts`
+- Does not wait for `cloudLoading` — fetches a public document, no user auth needed.
+- **Handled in:** `useSharedSolve.ts` (reads `currentRoute` param)
 
 **Example:** `#shared-abc123xyz`
 
@@ -55,20 +89,13 @@ Opens the TrendsModal with the given view state. All params are optional; missin
 | `ttotal` | comma-separated: `exec`, `recog`, `total` | Time types shown on total tab |
 | `tphase` | comma-separated: `exec`, `recog`, `total` | Time types shown on phases tab |
 
-- Hash is written via `window.location.hash =` (fires hashchange) whenever any TrendsModal state changes.
-- Cleared when TrendsModal closes.
-- **Handled in:** `TrendsModal.tsx` (`parseHashParams`, sync effect)
+- `pushState` on first open; `replaceState` for subsequent param updates (no history accumulation on filter changes).
+- `detailOpen` guard prevents TrendsModal from overwriting `#solve` or `#shared` URL while a detail modal is open.
+- **Handled in:** `TimerScreen.tsx` + `TrendsModal.tsx` (TimerScreen reads `currentRoute`; TrendsModal manages params state and URL sync)
 
 **Example:** `#trends?method=cfop&driver=cube&tab=total&window=50&group=grouped&ttotal=total&tphase=total`
 
 ---
-
-## Hash priority and conflict rules
-
-- Hashes are checked in mount order: `useSharedSolve` (boot only) → `TimerScreen` initial resolution → `hashchange` listeners.
-- `#debug` is handled before any `TimerScreen` code runs (in `App.tsx`), so it never reaches `TimerScreen`'s resolver.
-- Unknown hashes fall through to `TimerScreen`'s `else` branch, which closes any open modal — benign.
-- `TimerScreen` uses `history.replaceState` (not `window.location.hash =`) when writing `#solve-{id}` to avoid triggering its own `hashchange` listener.
 
 ## When to update this document
 
