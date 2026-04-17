@@ -174,3 +174,81 @@ describe('applyTrackerMove — all done → armed', () => {
     expect(state.trackingState).toBe('armed')
   })
 })
+
+describe('applyTrackerMove — single-step undo', () => {
+  const undoSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW'), step('D', 'CCW')]
+
+  function advanceTo(index: number): ReturnType<typeof makeInitialTrackerState> {
+    let state = makeInitialTrackerState(undoSteps)
+    if (index >= 1) state = applyTrackerMove(state, undoSteps, move('L', 'CW'))
+    if (index >= 2) state = applyTrackerMove(state, undoSteps, move('R', 'CW'))
+    return state
+  }
+
+  it('inverse of last CW step → undo: step back to white, next step to gray', () => {
+    let state = advanceTo(2)  // L done, R done, D is current
+    expect(state.currentStepIndex).toBe(2)
+    state = applyTrackerMove(state, undoSteps, move('R', 'CCW'))  // R' undoes R
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.stepStates[0]).toBe('done')    // L still green
+    expect(state.stepStates[1]).toBe('current') // R now white
+    expect(state.stepStates[2]).toBe('pending') // D now gray
+  })
+
+  it('inverse of last CCW step → undo', () => {
+    let state = advanceTo(2)  // L done, R done, D is current (CCW)
+    state = applyTrackerMove(state, undoSteps, move('R', 'CCW'))  // undo R
+    state = applyTrackerMove(state, undoSteps, move('L', 'CCW'))  // L' undoes L
+    expect(state.currentStepIndex).toBe(0)
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.stepStates[0]).toBe('current') // L now white
+    expect(state.stepStates[1]).toBe('pending') // R now gray
+  })
+
+  it('chained undo — multiple steps in sequence', () => {
+    let state = advanceTo(2)  // L done, R done
+    state = applyTrackerMove(state, undoSteps, move('R', 'CCW'))  // undo R → index=1
+    state = applyTrackerMove(state, undoSteps, move('L', 'CCW'))  // undo L → index=0
+    expect(state.currentStepIndex).toBe(0)
+    expect(state.stepStates[0]).toBe('current')
+    expect(state.stepStates[1]).toBe('pending')
+    expect(state.stepStates[2]).toBe('pending')
+  })
+
+  it('undo then redo — proceeds forward normally', () => {
+    let state = advanceTo(2)  // L done, R done
+    state = applyTrackerMove(state, undoSteps, move('R', 'CCW'))  // undo R → index=1
+    state = applyTrackerMove(state, undoSteps, move('R', 'CW'))   // redo R → index=2
+    expect(state.currentStepIndex).toBe(2)
+    expect(state.stepStates[0]).toBe('done')
+    expect(state.stepStates[1]).toBe('done')
+    expect(state.stepStates[2]).toBe('current')
+  })
+
+  it('nothing to undo at index 0 → warning on current step (not undo)', () => {
+    let state = makeInitialTrackerState(undoSteps)  // index=0, L is current
+    // L' is the inverse of L, but nothing to undo — treated as wrong direction on current step
+    state = applyTrackerMove(state, undoSteps, move('L', 'CCW'))
+    expect(state.trackingState).toBe('warning')  // wrong direction for L CW → warning
+    expect(state.currentStepIndex).toBe(0)
+  })
+
+  it('same direction as previous step (not inverse) → wrong state', () => {
+    let state = advanceTo(1)  // L done, R is current
+    // Doing L again (same direction as completed L) is not an undo
+    state = applyTrackerMove(state, undoSteps, move('L', 'CW'))
+    expect(state.trackingState).toBe('wrong')
+    expect(state.wrongSegments).toEqual([{ face: 'L', netTurns: 1 }])
+  })
+
+  it('armed state — undo-like move is ignored', () => {
+    const singleStep: ScrambleStep[] = [step('R', 'CW')]
+    let state = makeInitialTrackerState(singleStep)
+    state = applyTrackerMove(state, singleStep, move('R', 'CW'))  // complete → armed
+    expect(state.trackingState).toBe('armed')
+    state = applyTrackerMove(state, singleStep, move('R', 'CCW'))  // R' — ignored
+    expect(state.trackingState).toBe('armed')
+    expect(state.currentStepIndex).toBe(1)
+  })
+})
