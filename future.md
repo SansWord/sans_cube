@@ -2,6 +2,9 @@
 
 ## On-going, Next
 
+## Investigate
+- **Save a shared solve into own history** — shared solve at `#shared-F8x2wwtsSuv3I5NEqdNA` needs to be importable into localStorage or Firestore. Currently shared solves are view-only with no way to copy them into your own solve list.
+
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
 - ~~[trend stats] - when select range and move mouse out-of-window, it should select the last point but it turns out can't select the range properly because there's no mouse-up triggered to finish the selection~~ — fixed in v1.13
