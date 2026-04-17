@@ -1,7 +1,7 @@
 import type { SolveMethod } from '../types/solve'
-import { CFOP, ROUX } from '../methods/index'
+import { CFOP, ROUX, FREEFORM } from '../methods/index'
 
-const METHODS: SolveMethod[] = [CFOP, ROUX]
+const METHODS: SolveMethod[] = [CFOP, ROUX, FREEFORM]
 
 interface Props {
   method: SolveMethod
