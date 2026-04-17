@@ -75,9 +75,11 @@ Receives one new parameter: `aheadState: 'none' | 'done' | 'warning'`. The ahead
 
 All new branches are inside the normal `'scrambling'` state in `applyTrackerMove`.
 
+**Priority:** the current step's face is always checked first. The ahead branch only fires when `move.face !== steps[currentStepIndex].face`. This means same-face sequences (e.g. `R R`) are never eligible for ahead execution — the first R is processed as the current step.
+
 ### Branch 1 — Ahead step move
 
-**Condition:** `move.face === steps[currentStepIndex + 1].face` AND the ahead step is eligible (commutes + bounds).
+**Condition:** `move.face !== steps[currentStepIndex].face` AND `move.face === steps[currentStepIndex + 1].face` AND the ahead step is eligible (bounds + commutes).
 
 Track net turns on the ahead face using the same net-turn logic as the existing warning state:
 
