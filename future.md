@@ -47,7 +47,7 @@
 - scramble optimization: for example, if we have UD pattern, it should be able to turn D and then U.
 
 ## URL / Routing
-- **hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.
+- ~~**hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.~~ — done in v1.20.0 (`useHashRouter` consolidates all listeners; typed `Route` union; `pushState`/`replaceState` write-back strategy)
 
 ## Code Quality (Refactor Backlog)
 ~~**Promote `PositionMove` and retire the `Move` alias**~~ — done; `Move` alias deleted, all 24 files updated to `PositionMove`. New solves also now stamped `schemaVersion: 2` at creation.

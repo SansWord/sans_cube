@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.20.0](#v1200--hash-router-consolidation-2026-04-16-2104) | Single `useHashRouter` hook replaces 3 scattered `hashchange` listeners; typed `Route` union; `pushState` on modal open, `replaceState` on param updates |
 | [v1.19.4](#v1194--replay-gyro-orientation-correction-2026-04-16-1822) | FSM orientation correction applied during replay — cube no longer drifts after M/E/S moves in playback |
 | [v1.19.3](#v1193--per-solve-migrate-button--shared-solve-owner-detection-2026-04-16) | Per-solve "Migrate to v2" button; shared solve owner detection via registry doc; unified review flow |
 | [v1.19.2](#v1192--migration-debug-ux--relaxed-invariant--solve-list-color-coding-2026-04-16) | Migration debug button, relaxed invariant (cube-solved only), migrationNote persisted, solve list color coding |
@@ -48,6 +49,31 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.20.0 — hash router consolidation (2026-04-16 21:04)
+
+**Review:** not yet
+
+**Design docs:**
+- Hash Router: [Spec](superpowers/specs/2026-04-16-hash-router-design.md) [Plan](superpowers/plans/2026-04-16-hash-router.md)
+
+**What was built:**
+- **`useHashRouter` hook** (`src/hooks/useHashRouter.ts`): single `hashchange` + `popstate` listener, `parseHash` pure function, `Route` discriminated union (`debug` | `solve` | `shared` | `trends` | `none`), `TrendsHashParams` type moved here from `TrendsModal`.
+- **`App.tsx`**: removed own `hashchange` listener; calls `useHashRouter()` once; passes `currentRoute` prop to `TimerScreen`; `#debug` toggle switches to `replaceState`.
+- **`TimerScreen.tsx`**: accepts `currentRoute` prop; removed own `hashchange` listener; boot resolution uses typed route instead of raw hash; `pushState` on solve/shared modal open (was `replaceState`); context-aware close; `initialParams` passed to `TrendsModal`.
+- **`useSharedSolve.ts`**: accepts `currentRoute` parameter; removed boot effect and hashchange listener; reacts to `currentRoute.type === 'shared'`; removed race-condition workaround (`replaceState` in `doLoad`).
+- **`TrendsModal.tsx`**: accepts `initialParams: TrendsHashParams`; removed `parseHashParams()` init; `pushState` on first open, `replaceState` for param updates; `detailOpen` guard prevents overwriting `#solve`/`#shared` URL.
+- **12 unit tests** for `parseHash` covering all route types, invalid inputs, and param edge cases.
+- **`docs/url-routes.md`** updated to document the new architecture, write strategy table, and boot resolution rules.
+
+**Key technical learnings:**
+- `[insight]` `pushState`/`replaceState` do **not** fire `hashchange` or `popstate` — so write-backs from components never re-trigger the router. No loop risk.
+- `[insight]` `#shared` does not need to wait for `cloudLoading` — it fetches a single public Firestore document and is independent of user data or auth state. `#solve` and `#trends` do wait.
+- `[gotcha]` The old `useSharedSolve` had a race condition: `TimerScreen`'s URL-sync effect could call `replaceState('')` while the shared solve fetch was still in-flight, clearing `#shared-{id}` from the URL. The fix was removing that write-back from `doLoad` and letting `TimerScreen`'s `sharedSolve` effect own the URL instead.
+- `[insight]` `TrendsModal`'s `isFirstMountRef` distinguishes first render (→ `pushState`, adds a history entry so back button works) from subsequent param updates (→ `replaceState`, no history accumulation on filter changes).
+- `[note]` `detailOpen` guard in `TrendsModal`'s URL sync effect prevents it from overwriting `#solve` or `#shared` while a detail modal is open on top of trends.
 
 ---
 
