@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { SolveRecord, SolveFilter } from '../types/solve'
-import { getMethod, CFOP, ROUX } from '../methods/index'
+import { getMethod, CFOP, ROUX, FREEFORM } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
@@ -135,9 +135,10 @@ function buildColorMap(
   grouped: boolean,
 ): Record<string, string> {
   if (method === 'all') {
-    // Merge colors from all methods so Roux phase names don't fall back to gray
+    // Merge colors from all methods so Roux/Freeform phase names don't fall back to gray
     return {
       ...buildColorMapForMethod(ROUX, grouped),
+      ...buildColorMapForMethod(FREEFORM, grouped),
       ...buildColorMapForMethod(CFOP, grouped),
     }
   }
@@ -536,6 +537,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
               <option value="all">All</option>
               <option value="cfop">CFOP</option>
               <option value="roux">Roux</option>
+              <option value="freeform">Freeform</option>
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
