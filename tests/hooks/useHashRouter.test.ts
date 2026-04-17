@@ -57,6 +57,13 @@ describe('parseHash', () => {
     expect(route.params.totalToggle.total).toBe(true)
   })
 
+  it('parses #trends with method=freeform', () => {
+    const route = parseHash('#trends?method=freeform')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.method).toBe('freeform')
+  })
+
   it('returns none for invalid method', () => {
     const route = parseHash('#trends?method=invalid')
     expect(route.type).toBe('trends')

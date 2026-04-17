@@ -6,7 +6,7 @@ export interface TrendsHashParams {
   grouped: boolean
   totalToggle: { exec: boolean; recog: boolean; total: boolean }
   phaseToggle: { exec: boolean; recog: boolean; total: boolean }
-  method: 'all' | 'cfop' | 'roux' | null
+  method: 'all' | 'cfop' | 'roux' | 'freeform' | null
   driver: 'all' | 'cube' | 'mouse' | null
 }
 
@@ -38,8 +38,8 @@ function parseTrendsParams(hash: string): TrendsHashParams {
   const phaseToggle = { exec: ptSet.has('exec'), recog: ptSet.has('recog'), total: ptSet.has('total') }
   if (!phaseToggle.exec && !phaseToggle.recog && !phaseToggle.total) phaseToggle.total = true
   const methodRaw = params.get('method')
-  const method = (['all', 'cfop', 'roux'] as const).includes(methodRaw as 'all')
-    ? (methodRaw as 'all' | 'cfop' | 'roux')
+  const method = (['all', 'cfop', 'roux', 'freeform'] as const).includes(methodRaw as 'all')
+    ? (methodRaw as 'all' | 'cfop' | 'roux' | 'freeform')
     : null
   const driverRaw = params.get('driver')
   const driver = (['all', 'cube', 'mouse'] as const).includes(driverRaw as 'all')
