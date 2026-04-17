@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.21.0](#v1210--scramble-undo-2026-04-17-0247) | Undo completed scramble steps by doing the inverse move; double steps (U2) use warning state seeded at `net=2` for two-move undo/re-complete |
 | [v1.20.1](#v1201--url-routing-bug-fixes-2026-04-16-2354) | Fix: `#trends` direct URL / ESC-from-solve blinking; fix `#solve` from trends restoring to trends on ESC; modal overlay opacity reduced |
 | [v1.20.0](#v1200--hash-router-consolidation-2026-04-16-2104) | Single `useHashRouter` hook replaces 3 scattered `hashchange` listeners; typed `Route` union; `pushState` on modal open, `replaceState` on param updates |
 | [v1.19.4](#v1194--replay-gyro-orientation-correction-2026-04-16-1822) | FSM orientation correction applied during replay — cube no longer drifts after M/E/S moves in playback |
@@ -52,6 +53,24 @@ A record of what was built and what was learned, especially around co-working wi
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
 
 ---
+
+## v1.21.0 — Scramble undo (2026-04-17 02:47)
+
+**Review:** not yet
+
+**Design docs:**
+- Scramble Undo: [Spec](superpowers/specs/2026-04-17-scramble-undo-design.md) [Plan](superpowers/plans/2026-04-17-scramble-undo.md)
+
+**What was built:**
+- Undo completed scramble steps by doing the inverse move (R' undoes R, L' undoes L) while in `scrambling` state
+- Double-step undo (U2): any move on the same face enters warning mode; two same-direction moves undo it (white), one of each direction re-completes it (green)
+- Undo is chainable — multiple consecutive undos walk back through completed steps
+- Armed state (scramble fully done) ignores all moves including undo-like ones — no change to existing behaviour
+
+**Key technical learnings:**
+- `[insight]` Double-step undo reuses the existing `warning` state with no new flags: pre-decrement `currentStepIndex` before entering warning, then seed `warningNetTurns = 2 + delta` (where delta = ±1 from the trigger move direction). The existing `net4=0` (cancel) and `net4=2` (advance) paths then produce exactly the right undo/re-complete outcomes without any changes to the warning resolver.
+- `[gotcha]` Seeding at `2` (not `2 + delta`) was the initial plan — it's wrong. The trigger move's direction must be folded in (same pattern as normal double-step entry), otherwise it takes 3 moves instead of 2 to resolve the undo.
+- `[note]` Undo only triggers when `move.face !== expected.face` — so if the current step and previous step share the same face, forward takes priority and undo is unreachable. Scramble generators avoid consecutive same-face moves, so this edge case doesn't arise in practice.
 
 ## v1.20.1 — URL routing bug fixes (2026-04-16 23:54)
 
