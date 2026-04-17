@@ -55,6 +55,8 @@
 
 ## Code Quality (Refactor Backlog)
 
+**Data-driven method registry** — Currently CFOP/Roux (and now Freeform) are registered in 5+ places by hand: `methods/index.ts`, `MethodSelector.tsx`, `SolveHistorySidebar.tsx`, `TrendsModal.tsx`, `MethodFilter` type. Refactor so a single `ALL_METHODS` array is the source of truth and all dropdowns/filter logic derive from it. Makes adding a 4th method (ZZ, etc.) a one-file change.
+
 **Effect deps: move guards to refs in URL write effects** — The "trigger vs. reader" principle: effect deps should only contain values whose changes should re-run the effect. Values used only as guards (`if (x) return`) belong in refs, not deps. Two guards are still in deps:
 - `sharedSolve` and `sharedSolveLoading` in the selectedSolve URL write effect
 - `showTrends` in the sharedSolve URL write effect (already using `showTrendsRef` in the selectedSolve effect — apply same pattern here)
