@@ -106,6 +106,7 @@ function StatsSection({ solves, solveFilter, updateSolveFilter, onOpenTrends, cl
               <option value="all">All</option>
               <option value="cfop">CFOP</option>
               <option value="roux">Roux</option>
+              <option value="freeform">Freeform</option>
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
