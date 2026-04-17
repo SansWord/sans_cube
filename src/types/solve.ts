@@ -51,7 +51,7 @@ export interface SolveMethod {
   phases: Phase[]
 }
 
-export type MethodFilter = 'all' | 'cfop' | 'roux'
+export type MethodFilter = 'all' | 'cfop' | 'roux' | 'freeform'
 
 export type DriverFilter = 'all' | 'cube' | 'mouse'
 
