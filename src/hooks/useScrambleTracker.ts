@@ -152,6 +152,13 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   // Warning state: track net turns on the expected face (mod 4)
   if (trackingState === 'warning') {
     if (move.face !== expected.face) {
+      // Ahead step check (same eligibility rule as in scrambling state)
+      const aheadEligible =
+        currentStepIndex + 1 < steps.length &&
+        commutes(expected.face, steps[currentStepIndex + 1].face)
+      if (aheadEligible && move.face === steps[currentStepIndex + 1].face) {
+        return applyAheadMove(state, steps, move)
+      }
       const delta = move.direction === 'CW' ? 1 : -1
       return {
         ...state,

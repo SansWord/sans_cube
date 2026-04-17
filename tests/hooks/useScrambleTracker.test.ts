@@ -438,6 +438,42 @@ describe('applyTrackerMove — ahead step (scrambling state)', () => {
   })
 })
 
+describe('applyTrackerMove — ahead step from warning state', () => {
+  // L current, R ahead (commutes with L), D non-commuting
+  const aheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW'), step('D', 'CCW')]
+
+  it("L' (warning) then R (ahead done) — both active simultaneously", () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L enters warning
+    expect(state.trackingState).toBe('warning')
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))   // R done ahead
+    expect(state.aheadState).toBe('done')
+    expect(state.trackingState).toBe('warning')   // L still in warning
+    expect(state.stepStates[0]).toBe('warning')   // L orange
+    expect(state.stepStates[1]).toBe('done')      // R green
+  })
+
+  it("L' (warning) then R' (ahead warning) — both warning simultaneously", () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L warning
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CCW'))  // R ahead warning
+    expect(state.trackingState).toBe('warning')
+    expect(state.aheadState).toBe('warning')
+    expect(state.stepStates[0]).toBe('warning')   // L orange
+    expect(state.stepStates[1]).toBe('warning')   // R orange
+  })
+
+  it('from warning: D (third face) → wrong mode, aheadState preserved', () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L warning
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))   // R done ahead
+    state = applyTrackerMove(state, aheadSteps, move('D', 'CW'))   // D wrong face → wrong
+    expect(state.trackingState).toBe('wrong')
+    expect(state.aheadState).toBe('done')         // R still tracked
+    expect(state.stepStates[1]).toBe('done')      // R green preserved
+  })
+})
+
 describe('commutes()', () => {
   it('opposite face pairs commute', () => {
     expect(commutes('R', 'L')).toBe(true)
