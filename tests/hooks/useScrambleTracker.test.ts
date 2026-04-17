@@ -474,6 +474,46 @@ describe('applyTrackerMove — ahead step from warning state', () => {
   })
 })
 
+describe('applyTrackerMove — Branch 3: advance by 2 when ahead done', () => {
+  const aheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW'), step('D', 'CCW')]
+
+  it('R done ahead then L done → skip to D (advance by 2)', () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))  // R done ahead
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CW'))  // L done → skip R
+    expect(state.currentStepIndex).toBe(2)          // jumped to D
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.aheadState).toBe('none')
+    expect(state.stepStates[0]).toBe('done')        // L green
+    expect(state.stepStates[1]).toBe('done')        // R green
+    expect(state.stepStates[2]).toBe('current')     // D white
+  })
+
+  it('R done ahead then L done — armed when R is last step', () => {
+    // Steps: [L, R] only — R done ahead, then L done → armed
+    const twoSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW')]
+    let state = makeInitialTrackerState(twoSteps)
+    state = applyTrackerMove(state, twoSteps, move('R', 'CW'))   // R done ahead
+    state = applyTrackerMove(state, twoSteps, move('L', 'CW'))   // L done → skip R → armed
+    expect(state.trackingState).toBe('armed')
+    expect(state.currentStepIndex).toBe(2)
+    expect(state.stepStates[0]).toBe('done')
+    expect(state.stepStates[1]).toBe('done')
+  })
+
+  it('R done ahead then L fulfilled via warning → also skips to D', () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))   // R done ahead
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L wrong dir → warning
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L net=-2
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L net=-3 ≡ +1 → fulfilled
+    expect(state.currentStepIndex).toBe(2)
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.aheadState).toBe('none')
+    expect(state.stepStates[2]).toBe('current')     // D white
+  })
+})
+
 describe('commutes()', () => {
   it('opposite face pairs commute', () => {
     expect(commutes('R', 'L')).toBe(true)

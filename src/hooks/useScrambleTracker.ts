@@ -175,6 +175,22 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
     if (net4 === fulfilledNet4) {
       const nextIndex = currentStepIndex + 1
       const isArmed = nextIndex >= steps.length
+
+      if (state.aheadState === 'done') {
+        const skipIndex = currentStepIndex + 2
+        const isArmedAfterSkip = skipIndex >= steps.length
+        return {
+          ...state,
+          trackingState: isArmedAfterSkip ? 'armed' : 'scrambling',
+          stepStates: buildStepStates(steps, skipIndex, skipIndex, null, 'none'),
+          currentStepIndex: skipIndex,
+          wrongSegments: [],
+          warningNetTurns: 0,
+          aheadState: 'none',
+          aheadNetTurns: 0,
+        }
+      }
+
       return {
         ...state,
         trackingState: isArmed ? 'armed' : 'scrambling',
@@ -255,6 +271,20 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
   if (move.direction === expected.direction) {
     const nextIndex = currentStepIndex + 1
     const isArmed = nextIndex >= steps.length
+
+    if (state.aheadState === 'done') {
+      const skipIndex = currentStepIndex + 2
+      const isArmedAfterSkip = skipIndex >= steps.length
+      return {
+        ...state,
+        trackingState: isArmedAfterSkip ? 'armed' : 'scrambling',
+        stepStates: buildStepStates(steps, skipIndex, skipIndex, null, 'none'),
+        currentStepIndex: skipIndex,
+        aheadState: 'none',
+        aheadNetTurns: 0,
+      }
+    }
+
     return {
       ...state,
       trackingState: isArmed ? 'armed' : 'scrambling',
