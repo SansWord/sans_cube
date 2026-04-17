@@ -514,6 +514,46 @@ describe('applyTrackerMove — Branch 3: advance by 2 when ahead done', () => {
   })
 })
 
+describe('applyTrackerMove — Branch 2 sub-case: ahead warning transfers to current warning', () => {
+  const aheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW'), step('D', 'CCW')]
+
+  it("R' (ahead warning) then L done → R becomes current in warning", () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CCW'))  // R ahead warning, aheadNetTurns=-1
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CW'))   // L done → R becomes current
+    expect(state.currentStepIndex).toBe(1)          // now at R
+    expect(state.trackingState).toBe('warning')     // R in warning
+    expect(state.warningNetTurns).toBe(-1)          // transferred from aheadNetTurns
+    expect(state.aheadState).toBe('none')
+    expect(state.aheadNetTurns).toBe(0)
+    expect(state.stepStates[0]).toBe('done')        // L green
+    expect(state.stepStates[1]).toBe('warning')     // R orange
+    expect(state.stepStates[2]).toBe('pending')     // D gray
+  })
+
+  it("R' (ahead warning) then L fulfilled via warning → R still becomes current in warning", () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CCW'))  // R ahead warning, net=-1
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // L wrong dir → L warning
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // net=-2
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CCW'))  // net=-3 ≡ +1 → L fulfilled
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.trackingState).toBe('warning')     // R in warning (transferred)
+    expect(state.warningNetTurns).toBe(-1)
+    expect(state.aheadState).toBe('none')
+  })
+
+  it('after transfer, user can fix R by doing R (net cancels → pending)', () => {
+    let state = makeInitialTrackerState(aheadSteps)
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CCW'))  // R ahead warning, net=-1
+    state = applyTrackerMove(state, aheadSteps, move('L', 'CW'))   // L done → R current in warning
+    state = applyTrackerMove(state, aheadSteps, move('R', 'CW'))   // R: net=-1+1=0 → cancel
+    expect(state.trackingState).toBe('scrambling')
+    expect(state.currentStepIndex).toBe(1)
+    expect(state.stepStates[1]).toBe('current')     // R back to white
+  })
+})
+
 describe('commutes()', () => {
   it('opposite face pairs commute', () => {
     expect(commutes('R', 'L')).toBe(true)

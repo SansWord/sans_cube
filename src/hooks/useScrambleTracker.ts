@@ -191,6 +191,19 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
         }
       }
 
+      if (state.aheadState === 'warning' && !isArmed) {
+        return {
+          ...state,
+          trackingState: 'warning',
+          stepStates: buildStepStates(steps, nextIndex, nextIndex, nextIndex, 'none'),
+          currentStepIndex: nextIndex,
+          wrongSegments: [],
+          warningNetTurns: state.aheadNetTurns,
+          aheadState: 'none',
+          aheadNetTurns: 0,
+        }
+      }
+
       return {
         ...state,
         trackingState: isArmed ? 'armed' : 'scrambling',
@@ -280,6 +293,18 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
         trackingState: isArmedAfterSkip ? 'armed' : 'scrambling',
         stepStates: buildStepStates(steps, skipIndex, skipIndex, null, 'none'),
         currentStepIndex: skipIndex,
+        aheadState: 'none',
+        aheadNetTurns: 0,
+      }
+    }
+
+    if (state.aheadState === 'warning' && !isArmed) {
+      return {
+        ...state,
+        trackingState: 'warning',
+        stepStates: buildStepStates(steps, nextIndex, nextIndex, nextIndex, 'none'),
+        currentStepIndex: nextIndex,
+        warningNetTurns: state.aheadNetTurns,
         aheadState: 'none',
         aheadNetTurns: 0,
       }
