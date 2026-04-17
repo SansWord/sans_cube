@@ -135,6 +135,27 @@ export function applyTrackerMove(state: TrackerState, steps: ScrambleStep[], mov
 
   // Normal scrambling state
   if (move.face !== expected.face) {
+    if (currentStepIndex > 0 && move.face === steps[currentStepIndex - 1].face) {
+      const prevStep = steps[currentStepIndex - 1]
+      const newIndex = currentStepIndex - 1
+      if (prevStep.double) {
+        const delta = move.direction === 'CW' ? 1 : -1
+        return {
+          ...state,
+          trackingState: 'warning',
+          currentStepIndex: newIndex,
+          warningNetTurns: 2 + delta,
+          stepStates: buildStepStates(steps, newIndex, newIndex, newIndex),
+        }
+      }
+      if (move.direction !== prevStep.direction) {
+        return {
+          ...state,
+          currentStepIndex: newIndex,
+          stepStates: buildStepStates(steps, newIndex, newIndex, null),
+        }
+      }
+    }
     const delta = move.direction === 'CW' ? 1 : -1
     return {
       ...state,

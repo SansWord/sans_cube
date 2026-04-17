@@ -279,7 +279,7 @@ describe('applyTrackerMove — double-step undo', () => {
     state = applyTrackerMove(state, doubleUndoSteps, move('U', 'CW'))  // trigger undo-warning
     expect(state.trackingState).toBe('warning')
     expect(state.currentStepIndex).toBe(1)
-    expect(state.warningNetTurns).toBe(2)
+    expect(state.warningNetTurns).toBe(3)
     expect(state.stepStates[0]).toBe('done')    // L still green
     expect(state.stepStates[1]).toBe('warning') // U2 now orange
     expect(state.stepStates[2]).toBe('pending') // D now gray
