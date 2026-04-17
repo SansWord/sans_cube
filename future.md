@@ -50,7 +50,7 @@
 - **hashchange handler audit** — the app currently has multiple independent `hashchange` listeners spread across `App.tsx`, `TimerScreen.tsx`, `useSharedSolve.ts`, and `TrendsModal.tsx`. Worth auditing how many there are and exploring whether they should be consolidated into a single router or at least a shared hook. Deferred while M-move migration is in progress.
 
 ## Code Quality (Refactor Backlog)
-- **Promote `PositionMove` and retire the `Move` alias** — Phase 3 introduces `PositionMove` as the canonical name for position-based moves, with `Move` kept as a backward-compat alias. A follow-up session should replace all existing `Move` usages with `PositionMove` and delete the alias. Do as a standalone mechanical rename session (~20+ files).
+~~**Promote `PositionMove` and retire the `Move` alias**~~ — done; `Move` alias deleted, all 24 files updated to `PositionMove`. New solves also now stamped `schemaVersion: 2` at creation.
 
 
 Scanned 2026-04-09. Items #1, #2, #4, #5, #8, #9 done. ~~#10 was a false positive~~ (`bestAo` is not exported and IS used). Remaining:
