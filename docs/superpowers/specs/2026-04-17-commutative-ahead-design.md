@@ -42,7 +42,7 @@ Encoded as a pure helper:
 function commutes(face1: Face, face2: Face): boolean
 ```
 
-The ahead step is eligible only when `commutes(steps[currentStepIndex].face, steps[currentStepIndex + 1].face)` is true, **and** `currentStepIndex + 1 < steps.length` (bounds guard — no ahead step on the last step).
+The ahead step is eligible only when `currentStepIndex + 1 < steps.length` (bounds guard — checked first to avoid out-of-bounds access) **and** `commutes(steps[currentStepIndex].face, steps[currentStepIndex + 1].face)` is true.
 
 ---
 
