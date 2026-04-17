@@ -10,6 +10,7 @@
 - ZZ method support
 - ~~allow to update and changes methods of a SolveRecord and calculate its correct phase during update~~
 - Roux sometimes CMLL is not corrected detected to be done: https://sansword.github.io/sans_cube/#solve-1775811251412 - this is not a bug, but how flexible we want it to treat CMLL is done: if the only difference is U moves, should we think CMLL is done?
+- **CFOP phase detection breaks with middle-slice moves** — CFOP algorithms (OLL, PLL, F2L insertions) occasionally use M/E/S moves (e.g. Niklas, some PLL algs). The current CFOP phase detector only tracks outer-face moves and will misidentify phase boundaries when a solver uses any slice move during a CFOP solve. Needs investigation: either teach CFOP phase detection about slice moves, or flag affected solves.
 
 ## ~~Hardware Clock~~ — done in v1.52
 - ~~when connect hardware, getting its time and identify the difference with wall-clock time. after that, use timestamp from hardware with adjusted difference as clock time. trust time on event instead of Date.now() to calculate overall solving time.~~
