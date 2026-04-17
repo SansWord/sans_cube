@@ -58,16 +58,18 @@ A record of what was built and what was learned, especially around co-working wi
 - **`correctMovesV1toV2` exported** (`migrateSolveV1toV2.ts`): extracts the center-tracking move correction loop into a standalone function reusable outside the migration invariant path.
 - **Fully relaxed migration invariant**: migration now succeeds as long as the corrected moves solve the cube (`freshPhases !== null`). Phase count, labels, turns, and timing differences are logged as a diff summary but no longer block migration.
 - **`migrationNote?: string`** added to `SolveRecord`: when phases differ between v1 and fresh recomputed values, the per-phase diff is stored in the record and persisted (localStorage + Firestore). Cleared by user on review.
-- **"Debug migration" button** in `SolveDetailModal` unmigrated warning banner: intercepts `console.warn`, runs `migrateSolveV1toV2`, then calls `correctMovesV1toV2` to list every face-label change (index, serial, old→new). Output shown inline below the button.
+- **"Debug migration" button** in `SolveDetailModal` unmigrated warning banner: intercepts `console.warn`, runs `migrateSolveV1toV2`, then calls `correctMovesV1toV2` to list every face-label change (index, serial, old→new). Output shown inline below the button. Full move table in WCA notation with v1/v2 columns, phase separators, and `*` markers on changed rows.
 - **`migrationNote` banner** in `SolveDetailModal`: blue block showing the phase diff, with a "Mark reviewed" button that clears the field and calls `onUpdate`.
 - **"Stamp v2" banner** in `SolveDetailModal`: shown for v1 solves without M/E/S moves — no corrections needed, just sets `schemaVersion: 2` and persists.
 - **Solve list migration color coding** (`SolveHistorySidebar`): time cell colored orange (v1 + M/E/S, migration failed), blue (v1 without M/E/S needing stamp, OR migrated with `migrationNote`), normal (clean v2).
+- **Slice move direction correction** (`correctMovesV1toV2`): when a slice changes identity (e.g. S→E after M'), the direction must flip if the original anchor color landed on the opposite side of the new anchor face. Added `SLICE_ANCHOR_COLOR`, `SLICE_ANCHOR_FACE`, `OPPOSITE_FACE` constants and the flip check. Covered by 5 new unit tests.
 
 **Key technical learnings:**
 
 - `[gotcha]` **Null cubeTimestamps propagate as NaN through arithmetic.** M-pair moves inserted retroactively have `null` timestamps. Without guarding, `NaN` enters cumulative delay calculations and stalls replay entirely. Fill nulls with the nearest prior valid timestamp before any arithmetic.
 - `[insight]` **Migration invariant was blocking valid migrations.** Correcting M face labels changes the simulated cube state at each step, which can shift phase boundaries and change turn counts and timing. The stored phases (computed with wrong labels) won't match freshly recomputed ones — but both the old and new data are self-consistent. The right signal is just "did the corrected moves solve the cube?" — not "did the phases reproduce exactly?"
 - `[insight]` **Extracting the move-correction loop as a separate function pays off immediately.** The debug button needs corrected moves even when migration "fails" (to show what changed). Without `correctMovesV1toV2`, the debug button would have had to duplicate the center-tracking loop.
+- `[gotcha]` **Slice move direction is anchored to the color face, not a fixed axis — and it flips when the slice changes identity.** In v1, GAN reports "S CW" meaning CW as viewed from the green face (S's anchor). After M', green is at U. The corrected slice is E, whose anchor is D. U is opposite D, so the direction flips: `S CW → E CCW`. The rule: find where the original anchor color currently is; if it's on the opposite face from the new slice's anchor, flip CW↔CCW. Face moves (U/L/R/F/D/B) don't need this — their CW is always relative to the face itself, which the label correction already handles.
 
 ---
 

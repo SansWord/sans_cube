@@ -30,6 +30,12 @@ const PAIR_TO_SLICE: Record<string, string> = {
   FB: 'S', BF: 'S',
 }
 
+// The anchor color defines which direction is "CW" for each slice (same direction as that face).
+// M CW = same as L (orange); E CW = same as D (yellow); S CW = same as F (green).
+const SLICE_ANCHOR_COLOR: Record<string, string> = { M: 'O', E: 'Y', S: 'G' }
+const SLICE_ANCHOR_FACE: Record<string, string>  = { M: 'L', E: 'D', S: 'F' }
+const OPPOSITE_FACE: Record<string, string> = { L: 'R', R: 'L', U: 'D', D: 'U', F: 'B', B: 'F' }
+
 function geoFaceForColor(facelets: string, color: string): string {
   const i = CENTERS.findIndex(p => facelets[p] === color)
   return GEO_FACES[i]
@@ -40,15 +46,24 @@ export function correctMovesV1toV2(solve: SolveRecord): Move[] {
   let facelets = SOLVED_FACELETS
   return solve.moves.map(move => {
     let correctedFace: string
+    let correctedDir = move.direction
     if (move.face === 'M' || move.face === 'E' || move.face === 'S') {
       const [colorA, colorB] = SLICE_TO_COLORS[move.face]
       const faceA = geoFaceForColor(facelets, colorA)
       const faceB = geoFaceForColor(facelets, colorB)
       correctedFace = PAIR_TO_SLICE[faceA + faceB] ?? move.face
+      // Direction is anchored to the original slice's anchor color current position.
+      // If that color is now on the opposite side of the new slice's anchor face, flip.
+      const anchorColor = SLICE_ANCHOR_COLOR[move.face]
+      const anchorCurrentFace = geoFaceForColor(facelets, anchorColor)
+      const newAnchorFace = SLICE_ANCHOR_FACE[correctedFace]
+      if (anchorCurrentFace === OPPOSITE_FACE[newAnchorFace]) {
+        correctedDir = move.direction === 'CW' ? 'CCW' : 'CW'
+      }
     } else {
       correctedFace = geoFaceForColor(facelets, FACE_TO_COLOR[move.face])
     }
-    const corrected: Move = { ...move, face: correctedFace as Move['face'] }
+    const corrected: Move = { ...move, face: correctedFace as Move['face'], direction: correctedDir }
     facelets = applyMoveToFacelets(facelets, corrected)
     return corrected
   })
