@@ -13,7 +13,7 @@ From `future.md`:
 
 > add a "freeform" method that only has one cube-is-solved phase. we can use this for future preparation. method filter should support this for record list and stats
 
-Freeform is an opt-in "ignore phase analysis" choice. It records only the wall-clock solve and total turn count, useful when the solver is practicing in a way that doesn't map cleanly to CFOP or Roux.
+Freeform is an opt-in "ignore phase analysis" choice. It records only the total solve time (`timeMs`, derived from hardware `cubeTimestamp` with a per-solve calibrated offset — same as CFOP/Roux) and total turn count, useful when the solver is practicing in a way that doesn't map cleanly to CFOP or Roux.
 
 ## Design Decisions
 
