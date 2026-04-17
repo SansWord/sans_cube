@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { SolveRecord } from '../types/solve'
 import { loadSharedSolve, SHARE_ID_RE } from '../services/firestoreSharing'
 import { logSharedSolveViewed } from '../services/analytics' // used inside doLoad for boot-only analytics
+import type { Route } from './useHashRouter'
 
 export interface UseSharedSolveResult {
   sharedSolve: SolveRecord | null
@@ -10,7 +11,7 @@ export interface UseSharedSolveResult {
   clearSharedSolve: () => void
 }
 
-export function useSharedSolve(): UseSharedSolveResult {
+export function useSharedSolve(currentRoute: Route): UseSharedSolveResult {
   const [sharedSolve, setSharedSolve] = useState<SolveRecord | null>(null)
   const [sharedSolveLoading, setSharedSolveLoading] = useState(false)
   const [sharedSolveNotFound, setSharedSolveNotFound] = useState(false)
@@ -30,37 +31,23 @@ export function useSharedSolve(): UseSharedSolveResult {
       setSharedSolveLoading(false)
       if (solve) {
         setSharedSolve(solve)
-        // Restore the hash — the URL-update effect in TimerScreen may have cleared it while the fetch was in flight
-        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#shared-${shareId}`)
       } else {
         showNotFound()
       }
     })
   }, [showNotFound])
 
-  // Boot: resolve #shared-{shareId} on mount
-  useEffect(() => {
-    const hash = window.location.hash
-    if (!hash.startsWith('#shared-')) return
-    const shareId = hash.replace('#shared-', '')
-    doLoad(shareId, true)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const isBootRef = useRef(true)
 
-  // Hashchange: handle navigation to a #shared- URL
   useEffect(() => {
-    const handler = () => {
-      const hash = window.location.hash
-      if (!hash.startsWith('#shared-')) return
-      const shareId = hash.replace('#shared-', '')
-      doLoad(shareId)
-    }
-    window.addEventListener('hashchange', handler)
-    return () => window.removeEventListener('hashchange', handler)
-  }, [doLoad])
+    if (currentRoute.type !== 'shared') return
+    const logAnalytics = isBootRef.current
+    isBootRef.current = false
+    doLoad(currentRoute.shareId, logAnalytics)
+  }, [currentRoute, doLoad])
 
   const clearSharedSolve = useCallback(() => {
     setSharedSolve(null)
-    history.replaceState(null, '', window.location.pathname + window.location.search)
   }, [])
 
   return { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve }
