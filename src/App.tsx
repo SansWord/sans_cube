@@ -26,6 +26,7 @@ import { detectMethodMismatches } from './utils/detectMethod'
 import type { MethodMismatch } from './utils/detectMethod'
 import { SolveDetailModal } from './components/SolveDetailModal'
 import type { SolveRecord } from './types/solve'
+import { useHashRouter } from './hooks/useHashRouter'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -40,9 +41,13 @@ export default function App() {
   const resetCenterTracking = useCallback(() => { const next = resetCenterPositions(); resetSensorOffset(); return next }, [resetCenterPositions, resetSensorOffset])
   const gestureResetRef = useRef<() => void>(resetAll)
   const [moves, setMoves] = useState<PositionMove[]>([])
-  const [mode, setMode] = useState<'debug' | 'timer'>(() =>
-    window.location.hash === '#debug' ? 'debug' : 'timer'
+  const { currentRoute } = useHashRouter()
+  const [mode, setMode] = useState<'debug' | 'timer'>(
+    () => window.location.hash === '#debug' ? 'debug' : 'timer'
   )
+  useEffect(() => {
+    setMode(currentRoute.type === 'debug' ? 'debug' : 'timer')
+  }, [currentRoute])
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
@@ -115,14 +120,6 @@ export default function App() {
     if (status === 'disconnected') setBattery(null)
   }, [status])
 
-  useEffect(() => {
-    const handler = () => {
-      setMode(window.location.hash === '#debug' ? 'debug' : 'timer')
-    }
-    window.addEventListener('hashchange', handler)
-    return () => window.removeEventListener('hashchange', handler)
-  }, [])
-
   useCubeDriverEvent(driver, 'move', (m) => setMoves((prev) => [...prev.slice(-100), m]), driverVersion)
   useCubeDriverEvent(driver, 'replacePreviousMove', (m) => setMoves((prev) => [...prev.slice(0, -1), m]), driverVersion)
   useCubeDriverEvent(driver, 'move', (m) => {
@@ -148,7 +145,9 @@ export default function App() {
         mode={mode}
         onToggleMode={() => setMode((m) => {
           const next = m === 'debug' ? 'timer' : 'debug'
-          window.location.hash = next === 'debug' ? '#debug' : ''
+          history.replaceState(null, '', next === 'debug'
+            ? `${window.location.pathname}${window.location.search}#debug`
+            : window.location.pathname + window.location.search)
           return next
         })}
         battery={battery}
@@ -173,6 +172,7 @@ export default function App() {
           interactive={driverType === 'mouse'}
           onCubeMove={handleCubeMove}
           cloudConfig={cloudConfig}
+          currentRoute={currentRoute}
         />
       ) : (
         <>
