@@ -414,6 +414,28 @@ describe('applyTrackerMove — ahead step (scrambling state)', () => {
     state = applyTrackerMove(state, lastSteps, move('L', 'CW'))  // L is not ahead, should be wrong
     expect(state.trackingState).toBe('wrong')
   })
+
+  it('double ahead step: first turn → warning, second turn → done', () => {
+    // L current, R2 ahead (double)
+    const doubleAheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW', true), step('D', 'CCW')]
+    let state = makeInitialTrackerState(doubleAheadSteps)
+    state = applyTrackerMove(state, doubleAheadSteps, move('R', 'CW'))  // first turn
+    expect(state.aheadState).toBe('warning')
+    expect(state.stepStates[1]).toBe('warning')
+    state = applyTrackerMove(state, doubleAheadSteps, move('R', 'CW'))  // second turn → done
+    expect(state.aheadState).toBe('done')
+    expect(state.stepStates[1]).toBe('done')
+    expect(state.currentStepIndex).toBe(0)  // L still current
+  })
+
+  it('double ahead step: CW then CCW → cancelled back to pending', () => {
+    const doubleAheadSteps: ScrambleStep[] = [step('L', 'CW'), step('R', 'CW', true), step('D', 'CCW')]
+    let state = makeInitialTrackerState(doubleAheadSteps)
+    state = applyTrackerMove(state, doubleAheadSteps, move('R', 'CW'))   // net=1 → warning
+    state = applyTrackerMove(state, doubleAheadSteps, move('R', 'CCW'))  // net=0 → none
+    expect(state.aheadState).toBe('none')
+    expect(state.stepStates[1]).toBe('pending')
+  })
 })
 
 describe('commutes()', () => {
