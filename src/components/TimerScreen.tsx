@@ -24,7 +24,7 @@ import type { CubeRenderer } from '../rendering/CubeRenderer'
 import type { Quaternion, Face } from '../types/cube'
 import { SOLVED_FACELETS } from '../types/cube'
 import { MouseDriver } from '../drivers/MouseDriver'
-import { shareSolve, unshareSolve } from '../services/firestoreSharing'
+import { shareSolve, unshareSolve, isSharedSolveOwner } from '../services/firestoreSharing'
 import { logSolveRecorded } from '../services/analytics'
 import { useSharedSolve } from '../hooks/useSharedSolve'
 
@@ -108,6 +108,7 @@ export function TimerScreen({
 
   const [showTrends, setShowTrends] = useState(false)
   const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve()
+  const [sharedSolveIsOwned, setSharedSolveIsOwned] = useState(false)
   const urlResolvedRef = useRef(false)
   const initialHashRef = useRef(window.location.hash)
 
@@ -169,6 +170,14 @@ export function TimerScreen({
   useEffect(() => {
     if (sharedSolve) { setSelectedSolve(null); setShowTrends(false) }
   }, [sharedSolve])
+
+  // Check if current user owns the shared solve via their registry doc
+  useEffect(() => {
+    const uid = cloudConfig?.user?.uid
+    const shareId = sharedSolve?.shareId
+    if (!sharedSolve || !uid || !shareId) { setSharedSolveIsOwned(false); return }
+    void isSharedSolveOwner(uid, shareId).then(setSharedSolveIsOwned)
+  }, [sharedSolve, cloudConfig?.user?.uid])
 
   const tracker = useScrambleTracker(steps, driver, () => setArmed(true), driverVersion)
 
@@ -449,9 +458,13 @@ export function TimerScreen({
         <SolveDetailModal
           solve={sharedSolve}
           onClose={clearSharedSolve}
-          onDelete={() => {}}
-          onUpdate={async () => {}}
-          readOnly
+          onDelete={sharedSolveIsOwned ? (id) => { deleteSolve(id); clearSharedSolve() } : () => {}}
+          onUpdate={sharedSolveIsOwned ? async (updated) => { await updateSolve(updated) } : async () => {}}
+          onUnshare={sharedSolveIsOwned && cloudConfig?.user
+            ? async (shareId) => { await unshareSolve(cloudConfig.user!.uid, shareId); clearSharedSolve() }
+            : undefined
+          }
+          readOnly={!sharedSolveIsOwned}
         />
       )}
 

@@ -58,6 +58,14 @@ export async function updateSharedSolve(shareId: string, solve: SolveRecord): Pr
 }
 
 /**
+ * Check if the given user owns a shared solve by looking up their registry doc.
+ */
+export async function isSharedSolveOwner(uid: string, shareId: string): Promise<boolean> {
+  const snap = await getDoc(registryRef(uid, shareId))
+  return snap.exists()
+}
+
+/**
  * Fetch a shared solve by shareId. No auth required.
  * Returns null if the document does not exist.
  */

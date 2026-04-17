@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.19.3](#v1193--per-solve-migrate-button--shared-solve-owner-detection-2026-04-16) | Per-solve "Migrate to v2" button; shared solve owner detection via registry doc; unified review flow |
 | [v1.19.2](#v1192--migration-debug-ux--relaxed-invariant--solve-list-color-coding-2026-04-16) | Migration debug button, relaxed invariant (cube-solved only), migrationNote persisted, solve list color coding |
 | [v1.19.1](#v1191--eo-detection-fix--migration-invariant--test-coverage-2026-04-16) | EO detection fix (UD+FB split), relaxed migration invariant, v1 fixture + genuine migration test |
 | [v1.19.0](#v1190--mes-migration-part-2-2026-04-16-1248) | M/E/S migration — auto-correct stored v1 face labels on load; Firestore migration button + review UX |
@@ -46,6 +47,23 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.19.3 — per-solve migrate button + shared solve owner detection (2026-04-16)
+
+**Review:** not yet
+
+**What was built:**
+- **"Migrate to v2" button** in the orange warning banner (`SolveDetailModal`): runs `migrateSolveV1toV2` on demand, saves the result via `onUpdate` if the cube is solved after correction, otherwise shows an inline error. Loading state prevents double-clicks.
+- **Debug migration log enriched**: status line now appears at the top — `✓ Migration would SUCCEED` or `✗ Migration would FAIL` — followed by phase diff details (`⚠ Phase differences after migration: …`) or `✓ No phase differences` when phases match exactly.
+- **Unified "Mark reviewed" action**: previously the `migrationNote` banner's "Mark reviewed" only cleared `migrationNote`, and the migration review section's "Mark as reviewed" only cleared `movesV1`. Both now clear both fields in one write.
+- **Migration banners hidden for shared (readOnly) viewers**: `showMigrationWarning`, `showSchemaVersionBump`, and `migrationNote` banners are all suppressed when `readOnly`. A minimal read-only inaccuracy notice (no buttons) is shown instead for v1+M/E/S shared solves.
+- **Shared solve owner detection** (`firestoreSharing.ts`, `TimerScreen.tsx`): `isSharedSolveOwner(uid, shareId)` does a single `getDoc` on `users/{uid}/shared_solves/{shareId}`. O(1) — a registry doc exists iff the user owns the share. Result stored in `sharedSolveIsOwned` state; owner sees full modal (migrate/review/unshare buttons, working `onUpdate`/`onDelete`); non-owner gets `readOnly`.
+
+**Key technical learnings:**
+- `[insight]` **Firestore ownership check by path is O(1) regardless of collection size.** `getDoc` on a known path is a direct key lookup — no scan. Safe even if a user has millions of shared solves.
+- `[gotcha]` **Two separate "Mark reviewed" buttons were each clearing only their own field**, leaving the other stale. Whenever a review action semantically clears a "pending review" state, it should clear all related fields in one write. Here: `movesV1` and `migrationNote` are always cleared together.
 
 ---
 

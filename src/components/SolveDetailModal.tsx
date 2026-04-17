@@ -67,6 +67,8 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [localSolve, setLocalSolve] = useState(solve)
   const [saving, setSaving] = useState(false)
   const [reviewingMigration, setReviewingMigration] = useState(false)
+  const [migratingToV2, setMigratingToV2] = useState(false)
+  const [migrateToV2Error, setMigrateToV2Error] = useState<string | null>(null)
   const [methodError, setMethodError] = useState<string | null>(null)
   const [savedConfirmation, setSavedConfirmation] = useState(false)
   const rendererRef = useRef<CubeRenderer | null>(null)
@@ -311,33 +313,86 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
           </div>
         </div>
 
-        {showMigrationWarning && (
+        {showMigrationWarning && !readOnly && (
           <div style={{ marginBottom: 12, padding: '8px 12px', background: '#2a1a00', border: '1px solid #e8a02066', borderRadius: 4, fontSize: 11, color: '#e8a020' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span>Phase analysis may be inaccurate — this solve was recorded before M/E/S tracking was fixed.</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+              {!readOnly && (
+                <button
+                  disabled={migratingToV2}
+                  onClick={async () => {
+                    setMigratingToV2(true)
+                    setMigrateToV2Error(null)
+                    try {
+                      const result = migrateSolveV1toV2(localSolve)
+                      if ((result.schemaVersion ?? 1) >= 2) {
+                        setLocalSolve(result)
+                        await onUpdate(result)
+                      } else {
+                        setMigrateToV2Error('Migration failed — cube not solved after correction.')
+                      }
+                    } catch (e) {
+                      setMigrateToV2Error(e instanceof Error ? e.message : 'Unknown error')
+                    } finally {
+                      setMigratingToV2(false)
+                    }
+                  }}
+                  style={{ flexShrink: 0, background: '#3a2a00', border: '1px solid #e8a02066', borderRadius: 3, color: '#e8a020', fontSize: 10, padding: '2px 8px', cursor: migratingToV2 ? 'default' : 'pointer' }}
+                >
+                  {migratingToV2 ? 'Migrating...' : 'Migrate to v2'}
+                </button>
+              )}
               <button
                 onClick={() => {
+                  const wca = (face: string, dir: string) => dir === 'CCW' ? `${face}'` : face
                   const logs: string[] = []
                   const origWarn = console.warn
                   console.warn = (...args: unknown[]) => {
                     logs.push(args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '))
                     origWarn(...args)
                   }
-                  try { migrateSolveV1toV2(localSolve) } finally { console.warn = origWarn }
+                  let result: ReturnType<typeof migrateSolveV1toV2>
+                  try { result = migrateSolveV1toV2(localSolve) } finally { console.warn = origWarn }
+                  const migrationSucceeded = (result!.schemaVersion ?? 1) >= 2
+                  const phaseStatus = migrationSucceeded
+                    ? (result!.migrationNote
+                        ? `⚠ Phase differences after migration:\n${result!.migrationNote}`
+                        : '✓ No phase differences — phases match exactly after correction.')
+                    : null
+                  logs.unshift([
+                    migrationSucceeded
+                      ? '✓ Migration would SUCCEED — cube solved after correction.'
+                      : '✗ Migration would FAIL — corrected moves do not solve the cube.',
+                    phaseStatus,
+                  ].filter(Boolean).join('\n'))
 
                   const corrected = correctMovesV1toV2(localSolve)
-                  const changed = corrected.filter((m, i) => m.face !== localSolve.moves[i].face)
-                  if (changed.length > 0) {
-                    logs.push(`\nCorrected moves (${changed.length} face labels changed):`)
-                    corrected.forEach((m, i) => {
-                      const orig = localSolve.moves[i]
-                      if (m.face !== orig.face) {
-                        logs.push(`  [${i}] serial=${orig.serial} ${orig.face} ${orig.direction} → ${m.face} ${m.direction}`)
-                      }
-                    })
-                  } else {
-                    logs.push('\n(no face labels changed by correction)')
+                  const changedCount = corrected.filter((m, i) => m.face !== localSolve.moves[i].face).length
+                  logs.push(`\nFull move list (${localSolve.moves.length} moves, ${changedCount} labels changed — * marks changes):`)
+                  logs.push(`${'#'.padStart(4)}  ${'serial'.padEnd(7)}  ${'v1'.padEnd(4)}  ${'v2'.padEnd(4)}`)
+                  logs.push('─'.repeat(28))
+
+                  // Build phase boundary map: move index → phase label
+                  const phaseStarts = new Map<number, string>()
+                  let cum = 0
+                  for (const ph of localSolve.phases) {
+                    phaseStarts.set(cum, ph.label)
+                    cum += ph.turns
                   }
+
+                  localSolve.moves.forEach((orig, i) => {
+                    if (phaseStarts.has(i)) {
+                      const label = phaseStarts.get(i)!
+                      logs.push(`====== ${label} ${'='.repeat(Math.max(0, 20 - label.length))}`)
+                    }
+                    const corr = corrected[i]
+                    const changed = corr.face !== orig.face
+                    const v1 = wca(orig.face, orig.direction)
+                    const v2 = wca(corr.face, corr.direction)
+                    const marker = changed ? '*' : ' '
+                    logs.push(`${marker}${String(i).padStart(3)}  ${String(orig.serial).padEnd(7)}  ${v1.padEnd(4)}  ${v2.padEnd(4)}`)
+                  })
 
                   setMigrationDebugLog(logs.length > 0 ? logs : ['(no warnings — migration may have succeeded or fast-pathed)'])
                 }}
@@ -345,7 +400,11 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
               >
                 Debug migration
               </button>
+              </div>
             </div>
+            {migrateToV2Error && (
+              <div style={{ marginTop: 6, fontSize: 10, color: '#e94560' }}>{migrateToV2Error}</div>
+            )}
             {migrationDebugLog && (
               <pre style={{ marginTop: 8, marginBottom: 0, fontSize: 10, color: '#ffcc66', whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#1a1000', padding: 6, borderRadius: 3 }}>
                 {migrationDebugLog.join('\n')}
@@ -354,7 +413,13 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
           </div>
         )}
 
-        {showSchemaVersionBump && (
+        {showMigrationWarning && readOnly && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', background: '#2a1a00', border: '1px solid #e8a02066', borderRadius: 4, fontSize: 11, color: '#e8a020' }}>
+            Phase analysis may be inaccurate — this solve was recorded before M/E/S move tracking was introduced.
+          </div>
+        )}
+
+        {showSchemaVersionBump && !readOnly && (
           <div style={{ marginBottom: 12, padding: '8px 12px', background: '#001a2a', border: '1px solid #2080e066', borderRadius: 4, fontSize: 11, color: '#60b8ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span>This solve predates schema versioning. No move corrections needed — just a version stamp.</span>
@@ -372,13 +437,14 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
           </div>
         )}
 
-        {localSolve.migrationNote && (
+        {localSolve.migrationNote && !readOnly && (
           <div style={{ marginBottom: 12, padding: '8px 12px', background: '#001a2a', border: '1px solid #2080e066', borderRadius: 4, fontSize: 11, color: '#60b8ff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
               <span style={{ fontWeight: 600 }}>Migration note — phases changed during v1→v2 migration:</span>
               <button
                 onClick={async () => {
-                  const updated = { ...localSolve, migrationNote: undefined }
+                  const { movesV1: _, migrationNote: __, ...rest } = localSolve
+                  const updated = rest as typeof localSolve
                   setLocalSolve(updated)
                   await onUpdate(updated)
                 }}
@@ -627,10 +693,11 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
                   disabled={reviewingMigration}
                   onClick={async () => {
                     setReviewingMigration(true)
-                    const { movesV1: _, ...updated } = localSolve
-                    setLocalSolve(updated as typeof localSolve)
+                    const { movesV1: _, migrationNote: __, ...rest } = localSolve
+                    const updated = rest as typeof localSolve
+                    setLocalSolve(updated)
                     try {
-                      await onUpdate(updated as typeof localSolve)
+                      await onUpdate(updated)
                     } catch {
                       setLocalSolve(localSolve)
                     } finally {
