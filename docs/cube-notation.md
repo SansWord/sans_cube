@@ -191,6 +191,31 @@ To detect which slice move occurred, the translator identifies which pair of out
 | Y + W (Bottom + Top centers) | E |
 | G + B (Front + Back centers) | S |
 
+### Slice move direction after center drift
+
+Each slice move's CW direction is defined relative to an **anchor face**:
+
+| Slice | Anchor face | Anchor color |
+|-------|-------------|--------------|
+| `M`   | `L` (left)  | Orange (`O`) |
+| `E`   | `D` (down)  | Yellow (`Y`) |
+| `S`   | `F` (front) | Green (`G`)  |
+
+"M CW" means "same direction as L CW", and the GAN hardware anchors this to the **current geometric position of the anchor color**, not a fixed axis.
+
+After `M'`, green moves from F to U. GAN still reports `S` for moves of the green–blue slice, but CW now means "CW as seen from U" (where green currently is). However, E's anchor is D — the opposite of U — so what GAN calls `S CW` is physically `E CCW`.
+
+**The rule:** when correcting a slice's identity (e.g. S→E), check where the original anchor color currently is. If it's on the **opposite face** from the new slice's anchor, flip CW↔CCW. If it's on the **same face**, keep the direction.
+
+| Scenario | Original | After M' centers | Corrected |
+|----------|----------|-----------------|-----------|
+| Green at U (opp. of E anchor D) | `S CW` | G→U, B→D | `E CCW` |
+| Green at U | `S CCW` | G→U, B→D | `E CW` |
+| Green at D (same as E anchor D) | `S CW` | G→D, B→U | `E CW` |
+| No drift, green at F | `S CW` | G→F, B→B | `S CW` |
+
+**Face moves are unaffected.** When GAN reports `U CW` with white at B (after M'), the correction relabels it `B CW` — "CW from white" = "CW from B", so no flip is needed. The direction is always relative to the face itself.
+
 ### Adding support for new hardware
 
 Before implementing a new cube driver, determine which event model it uses:
