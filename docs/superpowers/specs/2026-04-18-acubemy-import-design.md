@@ -44,7 +44,7 @@ importedFrom?: {
 - **`id`:**
   - localStorage mode — sequential integer, continues from local counter.
   - Firestore mode — uses acubemy's historical completion timestamp (ms). On collision with an existing doc, bump by +1ms until unique.
-- **`date`:** always set to acubemy's historical completion timestamp, regardless of storage mode.
+- **`date`:** always set to acubemy's historical completion timestamp (Unix ms), regardless of storage mode. See §6 for the start-vs-completion semantics TBD.
 
 ## 3. Import Pipeline
 
@@ -54,8 +54,9 @@ importedFrom?: {
 [2] Build dedup set from existing store: Set<"acubemy:externalId">
         ↓
 [3] For each record:
-    a. Validate required fields are present (see §6)
+    a. Validate required fields are present and non-empty (see §6)
        → missing any? classify as "parse-error", skip the rest.
+       → raw_solution / raw_timestamps empty, or lengths mismatch? parse-error.
     b. Check externalId against dedup set
        → duplicate? classify as "duplicate", skip c–i.
     c. Parse raw_solution + raw_timestamps → ColorMove[]
@@ -69,7 +70,10 @@ importedFrom?: {
     h. Map gyro_data → QuaternionSnapshot[]
        (gyro_data missing is fine → quaternionSnapshots undefined;
         gyro_data present but malformed → quaternionSnapshots undefined + warning)
-    i. Build SolveRecord draft with importedFrom = { source: 'acubemy', externalId: solve_id }
+    i. Build SolveRecord draft:
+       - date: new Date(acubemy.date).getTime()
+       - timeMs: raw_timestamps[raw_timestamps.length - 1]
+       - importedFrom: { source: 'acubemy', externalId: solve_id }
         ↓
 [4] Classify each row: new | duplicate | parse-error | unsolved
     (new rows may additionally carry warnings, e.g. gyro-dropped)
@@ -130,7 +134,7 @@ Columns: `#`, `Date`, `Method`, `Time`, `Moves`, `Status`.
 
 - Rows sorted by date ascending (historical order).
 - Status cells use tooltips for details on errors and warnings.
-- No per-row checkboxes (Option A decision).
+- No per-row checkboxes.
 - `parse-error` rows still show whatever fields we *could* read (date, time, scramble) so users can identify them.
 
 ### Target-storage label
@@ -204,22 +208,26 @@ File-level errors replace the preview table; the user sees a "Try another file" 
 ### Required fields (absence → parse-error)
 
 - `solve_id` — external ID, dedup key
-- `date` — historical completion timestamp
+- `date` — ISO 8601 string (e.g. `"2026-04-18T10:09:22.202Z"`); converted to Unix ms via `new Date(date).getTime()`. **Start-vs-completion semantics: TBD.** sans_cube's native `date` is solve-completion time; this spec currently assumes acubemy's is too. If empirical testing shows acubemy's `date` is solve-start time, the pipeline should add `timeMs` when populating `SolveRecord.date` so the stored value remains completion time.
 - `scramble` — scramble string
-- `raw_solution` — authoritative move stream
-- `raw_timestamps` — matching timing array
-- `total_time` — solve wall-clock duration
+- `raw_solution` — authoritative move stream (must be non-empty)
+- `raw_timestamps` — matching timing array (must be non-empty; length must equal `raw_solution` length)
 
 ### Optional fields (used if present, tolerated if absent)
 
 - `analysis_type` → method detection, fallback to `freeform`
 - `gyro_data` → `quaternionSnapshots`
 
+### Derived fields (computed from required inputs)
+
+- `timeMs` — derived as `raw_timestamps[raw_timestamps.length - 1]` (the first element is always `0`, the last is the wall-clock solve duration). No separate `total_time` field is read from acubemy because it's redundant — in both observed example records it exactly equals the last `raw_timestamps` value.
+
 ### Ignored fields
 
 Acubemy provides these; we don't read them:
 
 - `solution` (we use `raw_solution` as authoritative)
+- `total_time` (redundant with `raw_timestamps[last]` — we derive it)
 - `cross_*`, `f2l_pair*_*`, `oll_*`, `pll_*` (we compute phases ourselves)
 - Any other acubemy-specific field
 
