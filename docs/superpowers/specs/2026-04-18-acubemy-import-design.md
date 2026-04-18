@@ -240,11 +240,33 @@ Each row ends up with one of:
 
 ### Gyro validation rules
 
+Acubemy's `gyro_data` format (confirmed against `example.json`):
+
+```json
+{
+  "q": { "w": 0.04584, "x": 0.34036, "y": 0.70443, "z": -0.62107 },
+  "t": 0
+}
+```
+
+Field mapping to `QuaternionSnapshot`:
+
+| acubemy | sans_cube |
+|---|---|
+| `entry.q.x` | `snapshot.quaternion.x` |
+| `entry.q.y` | `snapshot.quaternion.y` |
+| `entry.q.z` | `snapshot.quaternion.z` |
+| `entry.q.w` | `snapshot.quaternion.w` |
+| `entry.t` | `snapshot.relativeMs` |
+
+`t` is already relative to solve start (first entry is always `t: 0`), so no timestamp subtraction is needed.
+
 Each `gyro_data` entry must:
 
 - Be an object.
-- Have numeric `x`, `y`, `z`, `w` (quaternion components) and numeric `relativeMs` (or whichever timing field acubemy uses — confirmed against `example.json` during implementation).
-- All five must pass `Number.isFinite()`.
+- Contain a nested `q` object with numeric `x`, `y`, `z`, `w` quaternion components.
+- Contain a numeric `t`.
+- All five numbers must pass `Number.isFinite()`.
 
 Outcome of gyro validation:
 
