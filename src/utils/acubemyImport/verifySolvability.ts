@@ -15,7 +15,6 @@ export function verifySolvability(scramble: string, moves: PositionMove[]): bool
   // mis-parse things like "Rw" or "x" as a face.
   const rawTokens = scramble.trim().split(/\s+/).filter(Boolean)
   rawTokens.forEach((tok, i) => {
-    if (tok.length === 0) return
     const face = tok[0]
     const suffix = tok.slice(1)
     if (!OUTER_FACES.includes(face as Face) || (suffix !== '' && suffix !== "'" && suffix !== '2')) {
