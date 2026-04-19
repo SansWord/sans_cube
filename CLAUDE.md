@@ -40,6 +40,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - [`debug-mode.md`](docs/debug-mode.md) — what's in debug mode: diagnostic views, Firebase panel, maintenance buttons; update when buttons change
 - [`firebase-cloud-sync.md`](docs/firebase-cloud-sync.md) — cloud sync architecture, security, migration behavior, ID design
 - [`animation-system.md`](docs/animation-system.md) — Three.js animation details
+- [`import-data.md`](docs/import-data.md) — user guide + internal reference for bulk-importing solves from external sources (acubemy in v1)
 - [`manual-test-checklist.md`](docs/manual-test-checklist.md) — manual QA checklist
 - [`storage.md`](docs/storage.md) — all localStorage keys and Firestore structure; what syncs vs. what's local-only
 - [`time-model.md`](docs/time-model.md) — definitions of timeMs, executionMs, recognitionMs, and cubeTimestamp; how they relate

@@ -45,6 +45,7 @@ Stores a full `SolveRecord`. Key fields relevant to storage:
 | `phases` | `PhaseRecord[]` | CFOP/Roux phase breakdown. |
 | `method` | `string?` | `'cfop'` or `'roux'`. Absent on old solves, treated as `'cfop'`. |
 | `driver` | `string?` | `'cube'` or `'mouse'`. |
+| `importedFrom` | `{ source: 'acubemy', externalId: number \| string }?` | Set when a solve was imported from an external source. Used as a `(source, externalId)` dedup key and (in v1) not shown in the UI. |
 
 ### `users/{uid}/meta/counter`
 

@@ -38,6 +38,7 @@ When **signed in**:
 - **Restore example solves** — un-dismisses the built-in example solves; reloads
 - **Recalibrate solve times (hw clock)** — same recalibration as the cloud button, but for localStorage solves only
 - **Detect method mismatches** — scans localStorage solves and flags ones where the stored method likely disagrees with the actual solving technique used. See below.
+- **Import from acubemy** — opens the `AcubemyImportModal` to bulk-import acubemy JSON exports. See `docs/import-data.md` for the full flow.
 
 ### Method mismatch detector
 

@@ -19,12 +19,13 @@ import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
 import type { MethodMismatch } from './utils/detectMethod'
 import { SolveDetailModal } from './components/SolveDetailModal'
+import { AcubemyImportModal } from './components/AcubemyImportModal'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
 
@@ -79,6 +80,8 @@ export default function App() {
   const [methodMismatches, setMethodMismatches] = useState<MethodMismatch[] | null>(null)
   const [detectingMismatches, setDetectingMismatches] = useState(false)
   const [selectedDebugSolve, setSelectedDebugSolve] = useState<SolveRecord | null>(null)
+  const [showAcubemyImport, setShowAcubemyImport] = useState(false)
+  const [existingSolvesForImport, setExistingSolvesForImport] = useState<SolveRecord[] | null>(null)
 
   const handleDebugUpdate = async (updated: SolveRecord): Promise<void> => {
     if (cloudSync.enabled && cloudSync.user) {
@@ -109,6 +112,46 @@ export default function App() {
     setMethodMismatches((prev) => prev ? prev.filter((m) => m.solve.id !== id) : prev)
   }
 
+  // Commit imported acubemy drafts using the same primitives as handleDebugUpdate.
+  // We don't route through useSolveHistory because that hook lives in TimerScreen,
+  // which isn't mounted in debug mode. We re-read state inside the handler to
+  // guard against cloud-target changes between modal open and commit.
+  const handleAcubemyCommit = async (drafts: SolveRecord[]): Promise<void> => {
+    const useCloudNow = !!(cloudSync.enabled && cloudSync.user)
+    const uid = cloudSync.user?.uid ?? null
+
+    if (useCloudNow && uid) {
+      const existing = await loadSolvesFromFirestore(uid)
+      const usedDates = new Set(existing.map(s => s.date))
+      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
+      const counter = await loadNextSeqFromFirestore(uid)
+      let nextSeq = Math.max(maxSeq + 1, counter)
+
+      for (const draft of drafts) {
+        let date = draft.date
+        while (usedDates.has(date)) date += 1
+        usedDates.add(date)
+        const record: SolveRecord = { ...draft, date, id: date, seq: nextSeq }
+        nextSeq++
+        await addSolveToFirestore(uid, record)
+      }
+      await updateCounterInFirestore(uid, nextSeq)
+    } else {
+      const existing = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
+      const storedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NEXT_ID) ?? '1', 10) || 1
+      let nextSeq = Math.max(maxSeq + 1, storedCounter)
+      let nextId = nextSeq
+      const toWrite: SolveRecord[] = drafts.map(draft => {
+        const record: SolveRecord = { ...draft, id: nextId, seq: nextSeq }
+        nextId++; nextSeq++
+        return record
+      })
+      saveToStorage(STORAGE_KEYS.SOLVES, [...existing, ...toWrite])
+      localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
+    }
+  }
+
   const handleCubeMove = useCallback((face: Face, direction: 'CW' | 'CCW') => {
     const d = driver.current
     if (d instanceof MouseDriver) d.sendMove(face, direction)
@@ -136,7 +179,7 @@ export default function App() {
   return (
     <div style={mode === 'timer'
       ? { height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }
-      : { maxWidth: '600px', margin: '0 auto', minHeight: '100vh' }
+      : { maxWidth: '600px', margin: '0 auto', minHeight: '100vh', paddingBottom: 60 }
     }>
       <ConnectionBar
         status={status}
@@ -379,6 +422,19 @@ export default function App() {
             >
               Detect method mismatches
             </button>
+            <button
+              onClick={async () => {
+                if (cloudSync.enabled && cloudSync.user) {
+                  setExistingSolvesForImport(await loadSolvesFromFirestore(cloudSync.user.uid))
+                } else {
+                  setExistingSolvesForImport(loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, []))
+                }
+                setShowAcubemyImport(true)
+              }}
+              style={{ padding: '6px 14px', color: '#9b59b6', border: '1px solid #9b59b6', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Import from acubemy
+            </button>
           </div>
           {methodMismatches !== null && (
             <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
@@ -432,6 +488,15 @@ export default function App() {
               onClose={() => setSelectedDebugSolve(null)}
               onDelete={handleDebugDelete}
               onUpdate={handleDebugUpdate}
+            />
+          )}
+          {showAcubemyImport && existingSolvesForImport !== null && (
+            <AcubemyImportModal
+              open={true}
+              onClose={() => { setShowAcubemyImport(false); setExistingSolvesForImport(null) }}
+              existingSolves={existingSolvesForImport}
+              cloudConfig={cloudConfig}
+              onCommit={handleAcubemyCommit}
             />
           )}
         </>

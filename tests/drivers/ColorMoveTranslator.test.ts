@@ -208,4 +208,20 @@ describe('ColorMoveTranslator', () => {
       expect(received[1]).toMatchObject({ face: 'L', direction: 'CCW' })
     })
   })
+
+  // ── flush() for batch import ──────────────────────────────────────────────
+
+  it('flush() drains a pending single move synchronously', () => {
+    inner.simulateMove('W', 'CW', 1000, 1)   // U CW as white
+    expect(received).toHaveLength(0)          // still pending in fast-window
+    translator.flush()
+    expect(received).toHaveLength(1)
+    expect(received[0].face).toBe('U')
+    expect(received[0].direction).toBe('CW')
+  })
+
+  it('flush() with no pending is a no-op', () => {
+    translator.flush()
+    expect(received).toHaveLength(0)
+  })
 })
