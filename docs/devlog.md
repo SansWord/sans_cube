@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.23.0](#v1230--acubemy-import-2026-04-18-2226) | Bulk import from acubemy JSON with dedup, preview, and warnings — new `AcubemyImportModal` in debug mode; `importedFrom` schema field; `ColorMoveTranslator.flush()` for batch slice pairing |
 | [v1.22.1](#v1221--url-write-effect-mount-time-guards-2026-04-17-1647) | Fix: `#solve-{id}` modal infinite-blink on boot with cloud sync disabled; `#shared-{id}` duplicate history entry — extracted decisions to pure helpers |
 | [v1.22.0](#v1220--freeform-method-2026-04-17-1202) | Freeform method — single "Solved" phase; wired into filters, method selector, Trends color map, hash router; `detectMethod` skips Freeform |
 | [v1.21.1](#v1211--commutative-ahead-execution-2026-04-17-1015) | Execute the next scramble step before the current one when the two steps commute (opposite faces); live green/orange feedback on the scramble display |
@@ -54,6 +55,37 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.23.0 — Acubemy import (2026-04-18 22:26)
+
+**Review:** not yet
+
+**Design docs:**
+- Acubemy Import: [Spec](superpowers/specs/2026-04-18-acubemy-import-design.md) [Plan](superpowers/plans/2026-04-18-acubemy-import.md)
+
+**What was built:**
+- `importedFrom?: { source: 'acubemy'; externalId: number | string }` field on `SolveRecord` — used as the `(source, externalId)` dedup key.
+- `src/utils/acubemyImport/` — `parseRawSolution` (Western color map), `gyroMap` (quaternion field reorder + validation), `verifySolvability` (scramble-token whitelist + final-state check), `parseExport` (orchestrator: file-level validation, dedup short-circuit, per-record classification, preview summary).
+- `ColorMoveTranslator.flush()` — drains the pending move synchronously so batch/offline pipelines can use slice pairing without the live fast-window setTimeout.
+- `AcubemyImportModal` — file picker → preview table (sorted by date, status column with tooltips) → "Import N (skipping: …)" button → async writing overlay → `window.alert` on success.
+- Debug-mode "Import from acubemy" button wired into `App.tsx`; commit handler writes directly to localStorage or Firestore (not via `useSolveHistory`, which is unmounted in debug mode).
+- 13-file manual test pack in `data_input/acubemy_test/` (gitignored): covers file-level errors, every parse-error reason, unsolved, unknown method → freeform, malformed gyro → `gyro-dropped` warning, duplicates, happy path.
+- `docs/import-data.md` — user guide + internal reference for acubemy's export format and our field mapping.
+- Golden fixture test on `example.json` locks the pipeline to 2 importable records with pinned CFOP/Roux shapes (externalIds 388217 and 376615).
+
+**Key technical learnings:**
+- `[insight]` `ColorMoveTranslator`'s `FAST_WINDOW_MS` setTimeout couples slice pairing to wall-clock time — fine for live BLE moves but blocks batch import. Exposing a tiny `flush()` that just calls the existing `_flushPending()` decouples fast-window semantics from the event-driven live path without changing live behavior.
+- `[note]` `parseScramble` is lenient (first letter = face, ignores suffix shape). The importer validates the scramble token-by-token against `OUTER_FACES × ['', "'", '2']` BEFORE reusing `parseScramble`, so wide moves (`Rw`), rotations (`x`, `y`), and unknown tokens surface as explicit `parse-error` reasons — keeping `parse-error` distinct from `unsolved`.
+- `[gotcha]` Firestore doc ID is `String(solve.date)` — cloud-mode bulk imports with historical dates can collide with existing docs. Handler bumps `date += 1ms` in a `while (usedDates.has(date))` loop per draft to guarantee unique IDs before calling `addSolveToFirestore`. Same pattern is NOT needed for localStorage writes since those use a separate `nextId` counter.
+- `[insight]` Dedup short-circuit before `parseRawSolution` keeps re-import fast when 100% of rows are duplicates. A spy-based test (`vi.spyOn(__testing, 'parseRawSolution')`) pins this optimization so a future refactor can't silently undo it.
+- `[note]` `timeMs` comes from `raw_timestamps[last]`, not the last `PositionMove.cubeTimestamp`. The two can differ when `ColorMoveTranslator` pairs the last two ColorMoves into a slice (slice takes the earlier timestamp). The raw-timestamp value is the solver's actual wall-clock end time; using the paired slice's timestamp would understate the solve.
+- `[gotcha]` Acubemy's `gyro_data` uses `{q: {w, x, y, z}, t}` but sans_cube's `quaternionSnapshots` uses `{quaternion: {x, y, z, w}, relativeMs}` — both the field names AND the w/x/y/z ordering differ. `gyroMap` reorders per-sample; a malformed sample (NaN, missing field) flips the whole array to `null` and surfaces as a `gyro-dropped` warning (import proceeds without replay gyro).
+
+**Process learnings:**
+- `[insight]` Untrusted external JSON requires two distinct validation layers: presence/emptiness (caught by a required-field loop) AND shape/type (e.g., `solve_id` being a `number | string`, `raw_timestamps` being `number[]`). The first code-quality review flagged that presence alone would let `{solve_id: "abc"}` through to downstream `as number` casts, producing a silently-corrupt `SolveRecord`. Typed locals produced by runtime `typeof`/`Number.isFinite` checks are the fix — then the casts disappear.
+- `[note]` In subagent-driven development, asking the implementer to "commit in the feature worktree" was not enough — one subagent still committed to main. Prefix every Bash call with `cd /path/to/worktree &&` in the subagent prompt (and have them verify branch first) to prevent misdirection.
 
 ---
 
