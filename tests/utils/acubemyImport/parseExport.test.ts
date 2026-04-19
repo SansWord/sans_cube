@@ -92,4 +92,24 @@ describe('parseExport — per-record classification', () => {
     expect(result.summary?.rows.map(r => r.index)).toEqual([1, 2])
     expect(result.summary?.rows[0].date).toBeLessThan(result.summary!.rows[1].date!)
   })
+
+  it('classifies non-number/non-string solve_id as parse-error', () => {
+    const r = { ...BASE_RECORD, solve_id: { nested: 'object' } }
+    const result = parseExport([r], [])
+    expect(result.summary?.rows[0].status).toBe('parse-error')
+    expect(result.summary?.rows[0].reason).toMatch(/Invalid field: solve_id/)
+  })
+
+  it('accepts string solve_id as valid', () => {
+    const r = { ...BASE_RECORD, solve_id: 'abc-123' }
+    const result = parseExport([r], [])
+    expect(result.summary?.rows[0].status).toBe('new')
+  })
+
+  it('classifies raw_timestamps with non-numeric elements as parse-error', () => {
+    const r = { ...BASE_RECORD, raw_timestamps: ['0', 100] }
+    const result = parseExport([r], [])
+    expect(result.summary?.rows[0].status).toBe('parse-error')
+    expect(result.summary?.rows[0].reason).toMatch(/Invalid field: raw_timestamps/)
+  })
 })

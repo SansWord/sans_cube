@@ -1,8 +1,13 @@
 import type { SolveRecord } from '../../types/solve'
 
-/** Shape of one record in an acubemy export (fields we read or probe). */
+/** Shape of one record in an acubemy export (fields we read or probe).
+ *
+ * These fields come from untrusted external JSON, so the declared types are
+ * "best-effort hints" — parseExport runtime-validates each required field
+ * before use.
+ */
 export interface AcubemyRecord {
-  solve_id?: number
+  solve_id?: number | string
   date?: string
   scramble?: string
   raw_solution?: string

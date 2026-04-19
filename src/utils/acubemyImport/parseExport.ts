@@ -102,7 +102,9 @@ function classifyRecord(
   const warnings: Warning[] = []
   const displayMethod = mapMethod(rec.analysis_type)
 
-  // Required-field presence.
+  // Required-field presence + type validation. Because acubemy exports are
+  // untrusted external JSON, we must runtime-check types so downstream code
+  // can rely on narrowed locals instead of unsafe casts.
   for (const field of ACUBEMY_REQUIRED_FIELDS) {
     const v = rec[field]
     if (v === undefined || v === null
@@ -115,8 +117,30 @@ function classifyRecord(
     return { index, status: 'parse-error', reason: `Invalid date: "${rec.date}"`, warnings, method: displayMethod }
   }
 
+  // Per-field type narrowing (required fields only; presence already checked).
+  const solveIdRaw = rec.solve_id
+  if (!(typeof solveIdRaw === 'number' && Number.isFinite(solveIdRaw)) && typeof solveIdRaw !== 'string') {
+    return { index, status: 'parse-error', reason: 'Invalid field: solve_id (expected number or string)', warnings, method: displayMethod, date: parsedDate }
+  }
+  const externalId: number | string = solveIdRaw
+
+  if (typeof rec.scramble !== 'string') {
+    return { index, status: 'parse-error', reason: 'Invalid field: scramble (expected string)', warnings, method: displayMethod, date: parsedDate }
+  }
+  const scramble: string = rec.scramble
+
+  if (typeof rec.raw_solution !== 'string') {
+    return { index, status: 'parse-error', reason: 'Invalid field: raw_solution (expected string)', warnings, method: displayMethod, date: parsedDate }
+  }
+  const rawSolution: string = rec.raw_solution
+
+  if (!Array.isArray(rec.raw_timestamps)
+      || !rec.raw_timestamps.every((t) => typeof t === 'number' && Number.isFinite(t))) {
+    return { index, status: 'parse-error', reason: 'Invalid field: raw_timestamps (expected number[])', warnings, method: displayMethod, date: parsedDate }
+  }
+  const rawTimestamps: number[] = rec.raw_timestamps
+
   // Dedup short-circuit — before expensive parsing.
-  const externalId = rec.solve_id as number
   const key = `acubemy:${externalId}`
   if (dedup.has(key)) {
     return { index, status: 'duplicate', warnings, method: displayMethod, date: parsedDate }
@@ -125,18 +149,18 @@ function classifyRecord(
   // Parse moves.
   let colorMoves
   try {
-    colorMoves = __testing.parseRawSolution(rec.raw_solution as string, rec.raw_timestamps as number[])
+    colorMoves = __testing.parseRawSolution(rawSolution, rawTimestamps)
   } catch (e) {
     return { index, status: 'parse-error', reason: (e as Error).message, warnings, method: displayMethod, date: parsedDate }
   }
 
   const positionMoves = translateColorMoves(colorMoves)
-  const timeMs = (rec.raw_timestamps as number[])[(rec.raw_timestamps as number[]).length - 1]
+  const timeMs = rawTimestamps[rawTimestamps.length - 1]
 
   // Solvability.
   let solved: boolean
   try {
-    solved = verifySolvability(rec.scramble as string, positionMoves)
+    solved = verifySolvability(scramble, positionMoves)
   } catch (e) {
     return { index, status: 'parse-error', reason: (e as Error).message, warnings, method: displayMethod, date: parsedDate, timeMs, moveCount: positionMoves.length }
   }
@@ -151,12 +175,12 @@ function classifyRecord(
 
   // Phases.
   const method = getMethod(displayMethod)
-  const phases = computePhases(positionMoves, rec.scramble as string, method) ?? []
+  const phases = computePhases(positionMoves, scramble, method) ?? []
 
   const draft: SolveRecord = {
     id: 0,            // caller assigns
     schemaVersion: 2,
-    scramble: rec.scramble as string,
+    scramble,
     timeMs,
     moves: positionMoves,
     phases,
