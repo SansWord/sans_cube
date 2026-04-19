@@ -179,7 +179,7 @@ export default function App() {
   return (
     <div style={mode === 'timer'
       ? { height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }
-      : { maxWidth: '600px', margin: '0 auto', minHeight: '100vh' }
+      : { maxWidth: '600px', margin: '0 auto', minHeight: '100vh', paddingBottom: 60 }
     }>
       <ConnectionBar
         status={status}
