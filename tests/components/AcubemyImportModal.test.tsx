@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AcubemyImportModal } from '../../src/components/AcubemyImportModal'
-import { parseExport } from '../../src/utils/acubemyImport/parseExport'
-
-// parseExport imported per spec; referenced here to satisfy TS/ESLint unused checks.
-void parseExport
 
 const noop = () => {}
 
