@@ -35,6 +35,26 @@ The importer reads an acubemy JSON export and produces `SolveRecord` entries wit
 - The v1 UI does not badge imported solves visually — they look like native solves in the history list. A badge is planned (see `future.md`).
 - Re-importing the same export skips duplicates. There is no "update existing" flow in v1 (see `future.md`).
 
+### Manual smoke-test files
+
+`tests/fixtures/manual/acubemy/` contains 13 hand-crafted JSON files that exercise every error path and the happy path. Drag each into the file picker and confirm the expected status:
+
+| File | Expected |
+|---|---|
+| `1_invalid_json.json` | File-level: "File is not valid JSON." |
+| `2_not_array.json` | File-level: "Expected a JSON array…" |
+| `3_empty_array.json` | "No solves found in file." |
+| `4_not_acubemy.json` | "This doesn't look like an acubemy export." |
+| `5_missing_field.json` | 1 row, `parse-error` — "Missing field: raw_solution" |
+| `6_invalid_date.json` | 1 row, `parse-error` — date parse reason |
+| `7_invalid_token.json` | 1 row, `parse-error` — "Invalid token 'Q' at position 2" |
+| `8_unsupported_scramble.json` | 1 row, `parse-error` — "Unsupported scramble token 'Rw'…" |
+| `9_unsolved.json` | 1 row, `unsolved` |
+| `10_unknown_method.json` | 1 row, `new`, method = `freeform` |
+| `11_malformed_gyro.json` | 1 row, `new` with ⚠️ warning tooltip mentioning gyro |
+| `12_duplicates.json` | 2 rows, all `duplicate` (after importing 13 first) |
+| `13_happy_path.json` | 2 rows, all `new`, no warnings |
+
 ## Sources
 
 _The sections below are internal reference for maintainers describing each external source's export format and our field-mapping decisions. Safe to skip if you only want to use the importer._
