@@ -68,10 +68,51 @@ export function AcubemyImportModal({ open, onClose, existingSolves, cloudConfig,
           </>
         )}
 
-        {/* parsed / writing states added in later tasks */}
+        {state.kind === 'parsed' && (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Date</th><th>Method</th><th>Time</th><th>Moves</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.summary.rows.map((row) => (
+                  <tr key={row.index}>
+                    <td>{row.index}</td>
+                    <td>{row.date ? new Date(row.date).toLocaleString() : '—'}</td>
+                    <td>{row.method ?? '—'}</td>
+                    <td>{row.timeMs !== undefined ? (row.timeMs / 1000).toFixed(2) + 's' : '—'}</td>
+                    <td>{row.moveCount ?? '—'}</td>
+                    <td title={row.reason || row.warnings.join(', ') || undefined}>
+                      {row.status === 'new' && '✅ new'}
+                      {row.status === 'duplicate' && '🔁 duplicate'}
+                      {row.status === 'parse-error' && '⚠️ parse-error'}
+                      {row.status === 'unsolved' && '❌ unsolved'}
+                      {row.warnings.length > 0 && ' ⚠️'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* writing state added in later tasks */}
 
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={onClose} disabled={state.kind === 'writing'}>Cancel</button>
+          {state.kind === 'parsed' && (() => {
+            const c = state.summary.counts
+            const warnClause = c.warnings > 0 ? `; ⚠️ ${c.warnings} with warnings` : ''
+            const label = `Import ${c.new} (skipping: ${c.duplicate} duplicate, ${c.parseError} parse-error, ${c.unsolved} unsolved${warnClause})`
+            return (
+              <button
+                disabled={c.new === 0}
+                onClick={() => { /* commit added in Task 11 */ }}
+              >{label}</button>
+            )
+          })()}
         </div>
       </div>
     </div>
