@@ -98,7 +98,11 @@ export function AcubemyImportModal({ open, onClose, existingSolves, cloudConfig,
           </>
         )}
 
-        {/* writing state added in later tasks */}
+        {state.kind === 'writing' && (
+          <div style={{ ...modalStyle, background: 'rgba(0,0,0,0.8)' }} role="status">
+            <div style={{ color: '#fff' }}>Importing solves to {cloudConfig.enabled && cloudConfig.user ? 'cloud' : 'local storage'}…</div>
+          </div>
+        )}
 
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={onClose} disabled={state.kind === 'writing'}>Cancel</button>
@@ -106,10 +110,31 @@ export function AcubemyImportModal({ open, onClose, existingSolves, cloudConfig,
             const c = state.summary.counts
             const warnClause = c.warnings > 0 ? `; ⚠️ ${c.warnings} with warnings` : ''
             const label = `Import ${c.new} (skipping: ${c.duplicate} duplicate, ${c.parseError} parse-error, ${c.unsolved} unsolved${warnClause})`
+            const parsedState = state
             return (
               <button
                 disabled={c.new === 0}
-                onClick={() => { /* commit added in Task 11 */ }}
+                onClick={async () => {
+                  const drafts = parsedState.summary.rows
+                    .filter(r => r.status === 'new' && r.draft)
+                    .map(r => r.draft!)
+                  const nowCloud = !!(cloudConfig.enabled && cloudConfig.user)
+                  if (parsedState.openedWithCloud && !nowCloud) {
+                    console.warn('Target changed to Local — proceeding with current setting.')
+                  }
+                  setState({ kind: 'writing' })
+                  try {
+                    await onCommit(drafts)
+                    setState({ kind: 'initial' })
+                    window.alert(`Imported ${drafts.length} solves from acubemy.`)
+                    onClose()
+                  } catch (e) {
+                    setState({
+                      kind: 'error',
+                      message: `Import failed after ${drafts.length} solves. Any solves already written remain. (${(e as Error).message})`,
+                    })
+                  }
+                }}
               >{label}</button>
             )
           })()}

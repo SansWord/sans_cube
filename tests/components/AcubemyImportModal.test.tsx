@@ -88,3 +88,44 @@ describe('AcubemyImportModal — parsed state', () => {
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+describe('AcubemyImportModal — commit', () => {
+  const goodRecord = {
+    solve_id: 42, date: '2026-04-18T10:09:22.202Z', scramble: 'R',
+    raw_solution: "R'", raw_timestamps: [0], analysis_type: 'cfop',
+  }
+
+  async function openAndParse(onCommit: (drafts: any[]) => Promise<void>, cloudConfig = { enabled: false, user: null }) {
+    const { container } = render(
+      <AcubemyImportModal open={true} onClose={() => {}} existingSolves={[]}
+        cloudConfig={cloudConfig as any} onCommit={onCommit} />
+    )
+    const file = new File([JSON.stringify([goodRecord])], 'ex.json', { type: 'application/json' })
+    const input = container.querySelector('input[type=file]')!
+    Object.defineProperty(input, 'files', { value: [file] })
+    fireEvent.change(input)
+    await screen.findByRole('button', { name: /Import 1/i })
+  }
+
+  it('calls onCommit with only the "new" drafts', async () => {
+    const onCommit = vi.fn().mockResolvedValue(undefined)
+    await openAndParse(onCommit)
+    fireEvent.click(screen.getByRole('button', { name: /Import 1/i }))
+    await vi.waitFor(() => expect(onCommit).toHaveBeenCalled())
+    const drafts = onCommit.mock.calls[0][0]
+    expect(drafts).toHaveLength(1)
+    expect(drafts[0].importedFrom).toEqual({ source: 'acubemy', externalId: 42 })
+  })
+
+  it('shows writing overlay during async commit', async () => {
+    let resolve: () => void
+    const pending = new Promise<void>(r => { resolve = r })
+    const onCommit = vi.fn().mockReturnValue(pending)
+    await openAndParse(onCommit)
+    fireEvent.click(screen.getByRole('button', { name: /Import 1/i }))
+    expect(screen.getByText(/Importing solves/i)).toBeTruthy()
+    expect((screen.getByText(/Cancel/).closest('button') as HTMLButtonElement).disabled).toBe(true)
+    resolve!()
+    await vi.waitFor(() => expect(screen.queryByText(/Importing solves/i)).toBeNull())
+  })
+})
