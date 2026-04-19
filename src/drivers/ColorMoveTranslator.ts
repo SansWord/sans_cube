@@ -64,6 +64,11 @@ export class ColorMoveTranslator extends CubeEventEmitter implements CubeDriver 
     this._clearFastTimeout()
   }
 
+  /** Flush any pending single move (bypassing the fast-window timeout). For batch import. */
+  flush(): void {
+    this._flushPending()
+  }
+
   /** Look up which geometric face currently has this color's center sticker. */
   private _geometricFace(color: FaceletColor): Face {
     const i = ColorMoveTranslator.CENTERS.findIndex(pos => this._facelets[pos] === color)
