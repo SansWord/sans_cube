@@ -36,6 +36,10 @@ export interface SolveRecord {
   isExample?: boolean
   method?: string       // 'cfop' | 'roux' | 'freeform'; absent on old solves, treated as 'cfop'
   shareId?: string      // Firestore doc ID in public_solves; absent = not shared
+  importedFrom?: {
+    source: 'acubemy'
+    externalId: number | string
+  }
 }
 
 export interface Phase {
