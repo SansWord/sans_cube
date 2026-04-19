@@ -147,6 +147,7 @@ export function AcubemyImportModal({ open, onClose, existingSolves, cloudConfig,
 const modalStyle: React.CSSProperties = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+  paddingBottom: 60,
 }
 const modalContent: React.CSSProperties = {
   background: '#1a1a1a', color: '#ccc', padding: 20, borderRadius: 8,
