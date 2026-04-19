@@ -71,7 +71,7 @@ A record of what was built and what was learned, especially around co-working wi
 - `ColorMoveTranslator.flush()` — drains the pending move synchronously so batch/offline pipelines can use slice pairing without the live fast-window setTimeout.
 - `AcubemyImportModal` — file picker → preview table (sorted by date, status column with tooltips) → "Import N (skipping: …)" button → async writing overlay → `window.alert` on success.
 - Debug-mode "Import from acubemy" button wired into `App.tsx`; commit handler writes directly to localStorage or Firestore (not via `useSolveHistory`, which is unmounted in debug mode).
-- 13-file manual test pack in `data_input/acubemy_test/` (gitignored): covers file-level errors, every parse-error reason, unsolved, unknown method → freeform, malformed gyro → `gyro-dropped` warning, duplicates, happy path.
+- 13-file manual test pack in `tests/fixtures/manual/acubemy/`: covers file-level errors, every parse-error reason, unsolved, unknown method → freeform, malformed gyro → `gyro-dropped` warning, duplicates, happy path.
 - `docs/import-data.md` — user guide + internal reference for acubemy's export format and our field mapping.
 - Golden fixture test on `example.json` locks the pipeline to 2 importable records with pinned CFOP/Roux shapes (externalIds 388217 and 376615).
 
