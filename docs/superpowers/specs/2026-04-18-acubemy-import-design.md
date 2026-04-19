@@ -44,7 +44,7 @@ importedFrom?: {
 - **`id`:**
   - localStorage mode — sequential integer, continues from local counter.
   - Firestore mode — uses acubemy's historical completion timestamp (ms). On collision with an existing doc, bump by +1ms until unique.
-- **`date`:** always set to acubemy's historical completion timestamp (Unix ms), regardless of storage mode. See §6 for the start-vs-completion semantics TBD.
+- **`date`:** always set to acubemy's historical completion timestamp (Unix ms), regardless of storage mode.
 
 ## 3. Import Pipeline
 
@@ -62,8 +62,11 @@ importedFrom?: {
     c. Parse raw_solution + raw_timestamps → ColorMove[]
     d. Feed ColorMove[] through ColorMoveTranslator → PositionMove[]
        (slice pairing via FAST_WINDOW_MS is handled inside the translator)
-    e. Solvability check: apply scramble + PositionMoves to SOLVED_FACELETS,
-       then call isSolvedFacelets(finalFacelets) → must return true
+    e. Solvability check: parse scramble via parseScramble, apply it +
+       PositionMoves to SOLVED_FACELETS, then call isSolvedFacelets(finalFacelets)
+       → must return true.
+       Scramble parsing failures (unsupported notation, unknown tokens) throw
+       out of this step and classify as parse-error, not unsolved.
     f. Method detection from analysis_type
        (missing/unknown → freeform fallback, NOT parse-error)
     g. Compute phases via existing phase detector (same code path as native solves)
@@ -78,7 +81,7 @@ importedFrom?: {
 [4] Classify each row: new | duplicate | parse-error | unsolved
     (new rows may additionally carry warnings, e.g. gyro-dropped)
         ↓
-[5] Preview table rendered → user clicks "Import N (skipping: X duplicate, Y parse-error, Z unsolved)"
+[5] Preview table rendered → user clicks "Import N (skipping: X duplicate, Y parse-error, Z unsolved; ⚠️ W with warnings)"
         ↓
 [6] Commit: write only `new` rows via the current storage write path
     (same code as recording a native solve — no new write API)
@@ -149,7 +152,7 @@ The label is based on `cloudConfig.enabled` at modal-open time and **re-checked 
 ### Action buttons
 
 - `Cancel` — closes modal, nothing written. Disabled during Writing state.
-- `Import N (skipping: X duplicate, Y parse-error, Z unsolved)` — primary. Disabled when N=0.
+- `Import N (skipping: X duplicate, Y parse-error, Z unsolved; ⚠️ W with warnings)` — primary. Disabled when N=0. The `⚠️ W with warnings` clause is omitted when W=0.
 
 ### Warnings
 
@@ -159,7 +162,7 @@ v1 warnings:
 
 - `gyro-dropped` — `gyro_data` was present but failed validation. Tooltip: `Gyro data present but malformed — will import without replay gyro.`
 
-Warnings don't affect the skip-breakdown count. Not stored on `SolveRecord` — once imported, a warned row is indistinguishable from a clean `new` row.
+Warnings don't affect the skip count (a warned row still imports). They appear as a separate `⚠️ W with warnings` clause in the import button label so the user sees how much data is being silently dropped before confirming. Not stored on `SolveRecord` — once imported, a warned row is indistinguishable from a clean `new` row.
 
 ### Writing overlay
 
@@ -208,7 +211,7 @@ File-level errors replace the preview table; the user sees a "Try another file" 
 ### Required fields (absence → parse-error)
 
 - `solve_id` — external ID, dedup key
-- `date` — ISO 8601 string (e.g. `"2026-04-18T10:09:22.202Z"`); converted to Unix ms via `new Date(date).getTime()`. **Start-vs-completion semantics: TBD.** sans_cube's native `date` is solve-completion time; this spec currently assumes acubemy's is too. If empirical testing shows acubemy's `date` is solve-start time, the pipeline should add `timeMs` when populating `SolveRecord.date` so the stored value remains completion time.
+- `date` — ISO 8601 string (e.g. `"2026-04-18T10:09:22.202Z"`); converted to Unix ms via `new Date(date).getTime()` and stored directly on `SolveRecord.date`. Acubemy's `date` is solve-completion time (confirmed empirically), matching sans_cube's convention — no offset adjustment needed.
 - `scramble` — scramble string
 - `raw_solution` — authoritative move stream (must be non-empty)
 - `raw_timestamps` — matching timing array (must be non-empty; length must equal `raw_solution` length)
@@ -242,6 +245,7 @@ Each row ends up with one of:
   - `Missing field: raw_solution`
   - `Invalid token "X" at position 42`
   - `raw_timestamps length (72) ≠ raw_solution length (73)`
+  - `Unsupported scramble token "Rw" at position 3` — scramble string contains notation sans_cube's `parseScramble` doesn't support (wide moves, rotations, unknown tokens, etc.)
   - Unknown `analysis_type` does NOT cause parse-error (falls back to freeform).
 - **`unsolved`** — pipeline completed but `isSolvedFacelets(finalState)` returned false. Tooltip: `Final cube state not solved after applying scramble + moves.`
 - **`new`** — passed all checks. May carry warnings.
@@ -336,20 +340,33 @@ Outcome of gyro validation:
 
 ### Manual test files
 
-Prepared in `data_input/acubemy_test/` (uncommitted, for SansWord to drag into the picker). Files 5–8 start from real records in `example.json` and mutate a single field; `gyro_data` may be removed on slightly-broken records as needed.
+Prepared in `data_input/acubemy_test/` (uncommitted, for SansWord to drag into the picker). Per-record test files (5–11) start from real records in `example.json` and mutate a single field; `gyro_data` may be removed on slightly-broken records as needed.
+
+Ordered to follow the pipeline: file-level validation (1–4) → required-field checks (5–6) → per-step parse errors (7–8) → solvability (9) → method fallback (10) → warning path (11) → dedup (12) → success (13).
 
 | Filename | Scenario | Expected outcome |
 |---|---|---|
+| **File-level errors** | | |
 | `1_invalid_json.json` | Malformed JSON | File-level: "File is not valid JSON." |
 | `2_not_array.json` | Top-level is `{}` | File-level: "Expected a JSON array of solve records." |
 | `3_empty_array.json` | `[]` | File-level: "No solves found in file." |
 | `4_not_acubemy.json` | Array of unrelated objects | File-level: "This doesn't look like an acubemy export." |
+| **Required-field failures** | | |
 | `5_missing_field.json` | One record missing `raw_solution` | Mixed preview; one `parse-error` with "Missing field: raw_solution" |
-| `6_invalid_token.json` | `raw_solution: "U R Q L"` | One `parse-error` with "Invalid token at position 2" |
-| `7_unsolved.json` | Last move stripped | One `unsolved` row |
-| `8_unknown_method.json` | `analysis_type: "yau"` | Row imports as `freeform`, no error |
-| `9_duplicates.json` | Same records as `example.json` | After importing example first, all rows `duplicate` |
-| `10_happy_path.json` | Same as `tests/fixtures/acubemy_example.json` | All rows `new` |
+| `6_invalid_date.json` | `date: "not-a-date"` | One `parse-error` with a date-parse reason |
+| **Per-step parse errors** | | |
+| `7_invalid_token.json` | `raw_solution: "U R Q L"` | One `parse-error` with "Invalid token at position 2" |
+| `8_unsupported_scramble.json` | Scramble contains unsupported notation (e.g. `Rw`) | One `parse-error` from scramble parser |
+| **Solvability failure** | | |
+| `9_unsolved.json` | Last move stripped | One `unsolved` row |
+| **Method fallback (no error)** | | |
+| `10_unknown_method.json` | `analysis_type: "yau"` | Row imports as `freeform`, no error |
+| **Warning path** | | |
+| `11_malformed_gyro.json` | `gyro_data` entries missing `q` or non-finite numbers | Row imports as `new` with ⚠️ "gyro-dropped" tooltip |
+| **Dedup** | | |
+| `12_duplicates.json` | Same records as `13_happy_path.json` | After importing happy-path first, all rows `duplicate` |
+| **Success** | | |
+| `13_happy_path.json` | Same as `tests/fixtures/acubemy_example.json` | All rows `new`, no warnings |
 
 ### Not tested (out of scope for v1)
 
@@ -363,7 +380,6 @@ Prepared in `data_input/acubemy_test/` (uncommitted, for SansWord to drag into t
 - "Imported from acubemy" badge in `SolveDetailModal`.
 - Per-row exclusion checkboxes in preview.
 - Per-record progress indicator during write.
-- Warning-count in import button label.
 - Top-level menu entry for the importer (lives in `#debug` only).
 
 ### Deferred features
@@ -377,7 +393,33 @@ Prepared in `data_input/acubemy_test/` (uncommitted, for SansWord to drag into t
 
 ### Documentation updates shipping with the feature
 
-- **`docs/import-data.md`** (new) — user-facing guide + internal design reference. Covers supported formats, how-to, dedup behavior, warning semantics, `importedFrom` schema. Added to CLAUDE.md's Documentation list.
+- **`docs/import-data.md`** (new) — user-facing guide + internal reference. Added to CLAUDE.md's Documentation list. Structured as:
+
+  - **User guide** — what the importer does, how to use it (open `#debug` → "Import from acubemy" → file picker → preview → confirm), what the status icons / warnings mean, known caveats (imported solves land at the end of `seq` causing the backward time-jump in Trends, the `importedFrom` badge is absent in v1, etc.).
+
+  - **Sources** — opens with a note: "The sections below are internal reference for maintainers describing each external source's export format and our field-mapping decisions. Safe to skip if you only want to use the importer."
+
+    - **Acubemy** — subsections:
+      - **Reference: export format** — every top-level field we saw in their export, with a short description of what each does. Each field gets: name, type, example, role, our usage status (used / ignored / unknown).
+        - `solve_id` — numeric external ID. Unique per solve in acubemy. → used as `importedFrom.externalId` (dedup key).
+        - `date` — ISO 8601 string; solve-completion timestamp. → parsed to Unix ms, stored as `SolveRecord.date`.
+        - `scramble` — scramble string in standard WCA-compatible notation. → stored as `SolveRecord.scramble`.
+        - `total_time` — wall-clock solve duration in ms. → ignored; we derive from `raw_timestamps[last]` to avoid divergence.
+        - `raw_solution` — space-separated flat move stream: outer-face turns only, one letter per quarter-turn (e.g. `U R U' R'`). Letters map to **colors** via a fixed Western scheme (U=W, D=Y, F=G, B=Blue, L=O, R=Red). Slice moves like M/E/S are expressed as two simultaneous outer turns (e.g. `L R'` with identical or near-identical timestamps), which is structurally equivalent to our `ColorMove` stream — the cube hardware emits per-face color events and acubemy records them verbatim. → fed through our `ColorMoveTranslator` to produce `PositionMove[]` with slice pairing and v1→v2 center tracking.
+        - `raw_timestamps` — array of timestamps (ms since first move), one per `raw_solution` token. First value is always 0; last equals `total_time`. → zipped with `raw_solution` to form `ColorMove.cubeTimestamp`; last value also gives `SolveRecord.timeMs`.
+        - `solution` — space-separated move string in **position-based notation** with doubles/rotations/wides/slices (e.g. `R U R' U' F2 M'`). Analogous to our `PositionMove` stream — it's acubemy's own interpretation of the raw events, with pairs collapsed to slices. → ignored on import; we run our own translator on `raw_solution` to produce our canonical `PositionMove[]`, so we don't trust their interpretation.
+        - `analysis_type` — method string: `"cfop"`, `"roux"`, etc. → mapped to `SolveRecord.method`; unknown values fall back to `freeform`.
+        - `gyro_data` — array of `{ q: {w,x,y,z}, t }` samples (see §6). → mapped to `SolveRecord.quaternionSnapshots`.
+        - `cross_*`, `f2l_pair*_*`, `oll_*`, `pll_*` — acubemy's phase analysis (phase labels, move counts, timings). → ignored; we compute phases ourselves via the existing phase detector so sans_cube's phase model remains the single source of truth.
+        - Any other top-level field not listed above — **unknown / not explored**. Worth investigating in a follow-up if the importer needs more data, but not required for v1. Document them here as they're discovered.
+      - **Our field mapping** — compact table summarizing the above: each source field → destination field on `SolveRecord`, or "ignored (reason)", or "unknown".
+      - **Verified semantics** — confirmed facts useful for future maintenance:
+        - `date` = completion time (user-confirmed against acubemy UI).
+        - `raw_timestamps[0] = 0` (first move); `raw_timestamps[last] = total_time`.
+        - `gyro_data[*].t` = ms since first move (same frame as `raw_timestamps`).
+        - Color scheme = Western (U=W, D=Y, F=G, B=Blue, L=O, R=Red).
+        - Gyro sample rate ≈ 22 Hz from hardware; acubemy records all samples (no throttle).
+        - Quaternion reference frame assumed to match sans_cube's raw sensor frame; empirical verification tracked as a separate task in `future.md`.
 - `docs/storage.md` — note the `importedFrom` field on `SolveRecord`.
 - `docs/debug-mode.md` — add the "Import from acubemy" button.
 - `docs/ui-architecture.md` — add `AcubemyImportModal`.
