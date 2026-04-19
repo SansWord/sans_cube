@@ -14,9 +14,10 @@ main.tsx
     │   ├── OrientationConfig
     │   ├── FaceletDebug
     │   ├── MoveHistory
-    │   └── SolveDetailModal         ← overlay when a mismatch solve is selected
-    │       ├── PhaseBar
-    │       └── CubeCanvas
+    │   ├── SolveDetailModal         ← overlay when a mismatch solve is selected
+    │   │   ├── PhaseBar
+    │   │   └── CubeCanvas
+    │   └── AcubemyImportModal      ← overlay when "Import from acubemy" is clicked
     ├── AnalyticsBanner              ← fixed-position bottom overlay, no props, one-time dismiss
     └── [timer mode]
         └── TimerScreen
@@ -87,6 +88,16 @@ Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on m
 Props: `onUpdate`, `onDelete`, `onShare?`, `onUnshare?`, `readOnly?` — `onShare`/`onUnshare` are only passed when cloud sync is enabled and the user is signed in. When `readOnly` is true (viewer mode), all action controls (delete, share, copy-as-example) are hidden.
 
 Rendered in three contexts: inside `TimerScreen` (timer mode, editable), directly in `App` (debug mode — opened from the method mismatch detector results list), and in viewer mode when `#shared-{shareId}` is open (read-only).
+
+### `AcubemyImportModal` (`src/components/AcubemyImportModal.tsx`)
+
+| Prop | Description |
+|---|---|
+| `open` | Whether the modal is visible |
+| `onClose` | Close handler |
+| `existingSolves` | Current solve list (for dedup + max-seq calculation) |
+| `cloudConfig` | `CloudConfig` at modal-open time; target is re-checked at commit |
+| `onCommit` | `(drafts: SolveRecord[]) => Promise<void>` — writes the new drafts via the parent's storage path |
 
 ### `SolveHistorySidebar` (`src/components/SolveHistorySidebar.tsx`)
 
