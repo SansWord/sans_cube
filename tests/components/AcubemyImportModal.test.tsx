@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AcubemyImportModal } from '../../src/components/AcubemyImportModal'
+import type { User } from 'firebase/auth'
+import type { CloudConfig } from '../../src/hooks/useSolveHistory'
+import type { SolveRecord } from '../../src/types/solve'
 
 const noop = () => {}
 
@@ -38,7 +41,7 @@ describe('AcubemyImportModal — initial state', () => {
         open={true}
         onClose={noop}
         existingSolves={[]}
-        cloudConfig={{ enabled: true, user: { email: 'a@b.com', uid: 'u1' } as any }}
+        cloudConfig={{ enabled: true, user: { email: 'a@b.com', uid: 'u1' } as unknown as User }}
         onCommit={vi.fn()}
       />
     )
@@ -95,10 +98,10 @@ describe('AcubemyImportModal — commit', () => {
     raw_solution: "R'", raw_timestamps: [0], analysis_type: 'cfop',
   }
 
-  async function openAndParse(onCommit: (drafts: any[]) => Promise<void>, cloudConfig = { enabled: false, user: null }) {
+  async function openAndParse(onCommit: (drafts: SolveRecord[]) => Promise<void>, cloudConfig: CloudConfig = { enabled: false, user: null }) {
     const { container } = render(
       <AcubemyImportModal open={true} onClose={() => {}} existingSolves={[]}
-        cloudConfig={cloudConfig as any} onCommit={onCommit} />
+        cloudConfig={cloudConfig} onCommit={onCommit} />
     )
     const file = new File([JSON.stringify([goodRecord])], 'ex.json', { type: 'application/json' })
     const input = container.querySelector('input[type=file]')!
