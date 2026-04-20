@@ -1,128 +1,120 @@
-// L face layout (viewed from left, U=top, F=right):
-//   UBL(36) UL(37)  UFL(38)
-//   BL(39)  Lc(40)  FL(41)
-//   DBL(42) DL(43)  DFL(44)
+import {
+  OPPOSITE,
+  U_CENTER,
+  D_CENTER,
+  F_CENTER,
+  B_CENTER,
+  type Edge,
+  edgesOnFace,
+  cornersOnFace,
+  findFaceWithColor,
+} from './cubeGeometry'
+import { reorientToStandard } from './applyMove'
+
+// Roux side-block (1×2×3): 1 center + 1 "long" edge + 2 perpendicular edges
+// on the same face + 2 corners at the long edge's ends. A block is identified
+// by two cubie colors: main color (O for FB, R for SB) and long color (Y for
+// both — the stickers on the 3-long side). The perp ends get whatever G/B
+// stickers the corners contribute.
 //
-// R face layout (viewed from right, U=top, F=left):
-//   UFR(9)  UR(10)  UBR(11)
-//   FR(12)  Rc(13)  BR(14)
-//   DFR(15) DR(16)  DBR(17)
+// Why not compare every sticker to its live center: M-slice moves drift the
+// U/F/D/B centers while leaving the block's 6 cubies physically in place, so
+// the long-Y stickers on the block are no longer adjacent to the Y center.
+// The block is still "formed" — we just check main against its (undriftable)
+// own center, long against hardcoded Y, and each perp face for internal
+// consistency across its edge+corner pair.
+function isBlockOnFace(
+  f: string,
+  mainFace: number,
+  longEdge: Edge,
+  longColor: string,
+): boolean {
+  const mainColor = f[mainFace]
+  const longFace = longEdge[1] === mainFace ? longEdge[3] : longEdge[1]
+  const oppLong = OPPOSITE[longFace]
 
-// ── Left-side blocks ──────────────────────────────────────────────────────────
+  const longMainPos = longEdge[1] === mainFace ? longEdge[0] : longEdge[2]
+  const longLongPos = longEdge[1] === mainFace ? longEdge[2] : longEdge[0]
+  if (f[longMainPos] !== mainColor) return false
+  if (f[longLongPos] !== longColor) return false
 
-// rows 1+2: BL Lc FL DBL DL DFL
-export function isLDBlockDone(f: string): boolean {
-  return (
-    f[39] === 'O' && f[41] === 'O' && f[42] === 'O' && f[43] === 'O' && f[44] === 'O' &&
-    f[50] === 'B' && f[50] === f[53] &&                       // B: BL, DBL
-    f[21] === 'G' && f[21] === f[24] &&                       // F: FL, DFL
-    f[27] === 'Y' && f[27] === f[30] && f[30] === f[33]       // D: DFL, DL, DBL
+  const perpEdges = edgesOnFace(mainFace).filter((e) => {
+    const other = e[1] === mainFace ? e[3] : e[1]
+    return other !== longFace && other !== oppLong
+  })
+
+  const blockCorners = cornersOnFace(mainFace).filter((c) =>
+    c.some(([, ctr]) => ctr === longFace),
   )
+
+  for (const c of blockCorners) {
+    for (const [pos, ctr] of c) {
+      if (ctr === mainFace && f[pos] !== mainColor) return false
+      if (ctr === longFace && f[pos] !== longColor) return false
+    }
+  }
+
+  for (const e of perpEdges) {
+    const perpFace = e[1] === mainFace ? e[3] : e[1]
+    const perpMainPos = e[1] === mainFace ? e[0] : e[2]
+    const perpSidePos = e[1] === mainFace ? e[2] : e[0]
+    if (f[perpMainPos] !== mainColor) return false
+    const perpCorner = blockCorners.find((c) => c.some(([, ctr]) => ctr === perpFace))
+    if (!perpCorner) return false
+    const cornerPerpPos = perpCorner.find(([, ctr]) => ctr === perpFace)![0]
+    if (f[cornerPerpPos] !== f[perpSidePos]) return false
+  }
+
+  return true
 }
 
-// rows 0+1: UBL UL UFL BL Lc FL
-export function isLUBlockDone(f: string): boolean {
-  return (
-    f[36] === 'O' && f[37] === 'O' && f[38] === 'O' && f[39] === 'O' && f[41] === 'O' &&
-    f[0]  === 'Y' && f[0] === f[3] && f[3] === f[6] &&        // U: UBL, UL, UFL
-    f[47] === 'G' && f[47] === f[50] &&                       // B: UBL, BL
-    f[18] === 'B' && f[18] === f[21]                          // F: UFL, FL
-  )
-}
-
-// cols 1+2: UL UFL Lc FL DL DFL
-export function isLFBlockDone(f: string): boolean {
-  return (
-    f[37] === 'O' && f[38] === 'O' && f[41] === 'O' && f[43] === 'O' && f[44] === 'O' &&
-    f[3]  === 'G' && f[3] === f[6] &&                         // U: UL, UFL
-    f[18] === 'Y' && f[18] === f[21] && f[21] === f[24] &&    // F: UFL, FL, DFL
-    f[27] === 'B' && f[27] === f[30]                          // D: DFL, DL
-  )
-}
-
-// cols 0+1: UBL UL BL Lc DBL DL
-export function isLBBlockDone(f: string): boolean {
-  return (
-    f[36] === 'O' && f[37] === 'O' && f[39] === 'O' && f[42] === 'O' && f[43] === 'O' &&
-    f[0]  === 'B' && f[0] === f[3] &&                         // U: UBL, UL
-    f[47] === 'Y' && f[47] === f[50] && f[50] === f[53] &&    // B: UBL, BL, DBL
-    f[30] === 'G' && f[30] === f[33]                          // D: DL, DBL
-  )
-}
-
-// ── Right-side blocks ─────────────────────────────────────────────────────────
-
-// rows 1+2: FR Rc BR DFR DR DBR
-export function isRDBlockDone(f: string): boolean {
-  return (
-    f[12] === 'R' && f[14] === 'R' && f[15] === 'R' && f[16] === 'R' && f[17] === 'R' &&
-    f[23] === 'G' && f[23] === f[26] &&                       // F: FR, DFR
-    f[48] === 'B' && f[48] === f[51] &&                       // B: BR, DBR
-    f[29] === 'Y' && f[29] === f[32] && f[32] === f[35]       // D: DFR, DR, DBR
-  )
-}
-
-// rows 0+1: UFR UR UBR FR Rc BR
-export function isRUBlockDone(f: string): boolean {
-  return (
-    f[9]  === 'R' && f[10] === 'R' && f[11] === 'R' && f[12] === 'R' && f[14] === 'R' &&
-    f[2]  === 'Y' && f[2] === f[5] && f[5] === f[8] &&        // U: UBR, UR, UFR
-    f[20] === 'B' && f[20] === f[23] &&                       // F: UFR, FR
-    f[45] === 'G' && f[45] === f[48]                          // B: UBR, BR
-  )
-}
-
-// cols 0+1: UFR UR FR Rc DFR DR
-export function isRFBlockDone(f: string): boolean {
-  return (
-    f[9]  === 'R' && f[10] === 'R' && f[12] === 'R' && f[15] === 'R' && f[16] === 'R' &&
-    f[5]  === 'G' && f[5] === f[8] &&                         // U: UR, UFR
-    f[20] === 'Y' && f[20] === f[23] && f[23] === f[26] &&    // F: UFR, FR, DFR
-    f[29] === 'B' && f[29] === f[32]                          // D: DFR, DR
-  )
-}
-
-// cols 1+2: UR UBR Rc BR DR DBR
-export function isRBBlockDone(f: string): boolean {
-  return (
-    f[10] === 'R' && f[11] === 'R' && f[14] === 'R' && f[16] === 'R' && f[17] === 'R' &&
-    f[2]  === 'B' && f[2] === f[5] &&                         // U: UBR, UR
-    f[45] === 'Y' && f[45] === f[48] && f[48] === f[51] &&    // B: UBR, BR, DBR
-    f[32] === 'G' && f[32] === f[35]                          // D: DR, DBR
-  )
-}
-
-// ── Phase checks ──────────────────────────────────────────────────────────────
-
-function isLeftBlockDone(f: string): boolean {
-  return isLDBlockDone(f) || isLUBlockDone(f) || isLFBlockDone(f) || isLBBlockDone(f)
-}
-
-function isRightBlockDone(f: string): boolean {
-  return isRDBlockDone(f) || isRUBlockDone(f) || isRFBlockDone(f) || isRBBlockDone(f)
+// If a (mainColor, longColor) 1×2×3 block is assembled on `mainFace`, returns
+// the color of the center currently adjacent to the long-face stickers. For
+// (O, Y) or (R, Y) this is one of {W, Y, G, B} — never O/R since O↔R are
+// opposite and M/E/S cycles never swap them into adjacent positions.
+// Returns undefined if no orientation of the block is complete.
+function blockOrientation(
+  f: string,
+  mainFace: number,
+  longColor: string,
+): string | undefined {
+  for (const edge of edgesOnFace(mainFace)) {
+    if (isBlockOnFace(f, mainFace, edge, longColor)) {
+      const longFace = edge[1] === mainFace ? edge[3] : edge[1]
+      return f[longFace]
+    }
+  }
+  return undefined
 }
 
 export function isFirstBlockDone(f: string): boolean {
-  return isLeftBlockDone(f) || isRightBlockDone(f)
+  const oFace = findFaceWithColor(f, 'O')
+  if (oFace !== undefined && blockOrientation(f, oFace, 'Y') !== undefined) return true
+  const rFace = findFaceWithColor(f, 'R')
+  if (rFace !== undefined && blockOrientation(f, rFace, 'Y') !== undefined) return true
+  return false
 }
 
+// Second block: both (O, Y) and (R, Y) blocks complete, pointing at the same
+// (possibly drifted) neighbor color — i.e. their long axes align spatially.
 export function isSecondBlockDone(f: string): boolean {
-  return (
-      (isLDBlockDone(f) && isRDBlockDone(f)) ||
-      (isLUBlockDone(f) && isRUBlockDone(f)) ||
-      (isLFBlockDone(f) && isRFBlockDone(f)) ||
-      (isLBBlockDone(f) && isRBBlockDone(f))
-    )
+  const oFace = findFaceWithColor(f, 'O')
+  const rFace = findFaceWithColor(f, 'R')
+  if (oFace === undefined || rFace === undefined) return false
+  const oOrient = blockOrientation(f, oFace, 'Y')
+  const rOrient = blockOrientation(f, rFace, 'Y')
+  return oOrient !== undefined && oOrient === rOrient
 }
 
-// CMLL: all 4 corners in the layer opposite the two blocks are solved.
-// Checked in 4 rotational positions (matching block orientations).
-// M-slice edges are ignored throughout.
-
-// U-layer corners: UBL UFL UFR UBR
+// CMLL: the 4 corners opposite the blocks' long-Y face are permuted & oriented
+// correctly. CMLL face = opposite of the block's long face. After reorient,
+// blocks sit on L/R (chirality-preserved), so the long face can be U/D/F/B
+// depending on M-slice drift — we dispatch to the matching isXCMLLDone variant.
+// Color equality (not hardcoded 'W') tolerates drift: after M the center at the
+// CMLL face isn't W anymore, but all 4 corner stickers there are still equal.
 function isUCMLLDone(f: string): boolean {
   return (
-    f[0] ==='W' && f[0] === f[2] && f[2] === f[6] && f[6] === f[8] &&  // U: all same
+    f[0] === f[2] && f[2] === f[6] && f[6] === f[8] &&  // U: all 4 corners same
     f[18] === f[20] &&  // F: UFL, UFR
     f[45] === f[47] &&  // B: UBR, UBL
     f[36] === f[38] &&  // L: UBL, UFL
@@ -130,10 +122,9 @@ function isUCMLLDone(f: string): boolean {
   )
 }
 
-// D-layer corners: DBL DFL DFR DBR
 function isDCMLLDone(f: string): boolean {
   return (
-    f[27] ==='W' && f[27] === f[29] && f[29] === f[33] && f[33] === f[35] &&  // D: all same
+    f[27] === f[29] && f[29] === f[33] && f[33] === f[35] &&  // D: all 4 corners same
     f[24] === f[26] &&  // F: DFL, DFR
     f[51] === f[53] &&  // B: DBR, DBL
     f[42] === f[44] &&  // L: DBL, DFL
@@ -141,10 +132,9 @@ function isDCMLLDone(f: string): boolean {
   )
 }
 
-// F-layer corners: UFL UFR DFL DFR
 function isFCMLLDone(f: string): boolean {
   return (
-    f[18] ==='W' && f[18] === f[20] && f[20] === f[24] && f[24] === f[26] &&  // F: all same
+    f[18] === f[20] && f[20] === f[24] && f[24] === f[26] &&  // F: all 4 corners same
     f[6]  === f[8]  &&  // U: UFL, UFR
     f[27] === f[29] &&  // D: DFL, DFR
     f[38] === f[44] &&  // L: UFL, DFL
@@ -152,10 +142,9 @@ function isFCMLLDone(f: string): boolean {
   )
 }
 
-// B-layer corners: UBL UBR DBL DBR
 function isBCMLLDone(f: string): boolean {
   return (
-    f[45] ==='W' && f[45] === f[47] && f[47] === f[51] && f[51] === f[53] &&  // B: all same
+    f[45] === f[47] && f[47] === f[51] && f[51] === f[53] &&  // B: all 4 corners same
     f[0]  === f[2]  &&  // U: UBL, UBR
     f[33] === f[35] &&  // D: DBL, DBR
     f[36] === f[42] &&  // L: UBL, DBL
@@ -164,9 +153,26 @@ function isBCMLLDone(f: string): boolean {
 }
 
 export function isCMLLDone(f: string): boolean {
-  return isSecondBlockDone(f) && (
-    isUCMLLDone(f) || isDCMLLDone(f) || isFCMLLDone(f) || isBCMLLDone(f)
-  )
+  const n = reorientToStandard(f)
+  if (!isSecondBlockDone(n)) return false
+  const oFace = findFaceWithColor(n, 'O')
+  if (oFace === undefined) return false
+  let longFace: number | undefined
+  for (const edge of edgesOnFace(oFace)) {
+    if (isBlockOnFace(n, oFace, edge, 'Y')) {
+      longFace = edge[1] === oFace ? edge[3] : edge[1]
+      break
+    }
+  }
+  if (longFace === undefined) return false
+  const cmllFace = OPPOSITE[longFace]
+  switch (cmllFace) {
+    case U_CENTER: return isUCMLLDone(n)
+    case D_CENTER: return isDCMLLDone(n)
+    case F_CENTER: return isFCMLLDone(n)
+    case B_CENTER: return isBCMLLDone(n)
+  }
+  return false
 }
 
 function isMSliceUD(f: string): boolean {
@@ -177,10 +183,10 @@ function isMSliceUD(f: string): boolean {
 }
 
 function isMSliceFB(f: string): boolean {
-  return (f[7]  === 'W' || f[7]  === 'Y') &&   // UF
-         (f[1]  === 'W' || f[1]  === 'Y') &&   // UB
-         (f[28] === 'W' || f[28] === 'Y') &&   // DF
-         (f[34] === 'W' || f[34] === 'Y')      // DB
+  return (f[19] === 'W' || f[19] === 'Y') &&   // UF-F
+         (f[25] === 'W' || f[25] === 'Y') &&   // DF-F
+         (f[46] === 'W' || f[46] === 'Y') &&   // UB-B
+         (f[52] === 'W' || f[52] === 'Y')      // DB-B
 }
 
 function isMSlice(f: string): boolean {
@@ -193,7 +199,7 @@ function isMSlice(f: string): boolean {
 //   blocks at D (LD+RD) → UL, UR
 //   blocks at U (LU+RU) → DL, DR (UL/UR are inside the blocks)
 function isEODoneUD(f: string): boolean {
-  // corner allignment
+  // corner alignment
   const isCornerAligned =
     (f[36] === f[38]) && (f[38] === f[42]) && (f[42] === f[44]) && (f[44] === "O") &&
     (f[9] === f[11]) && (f[11] === f[15]) && (f[15] === f[17]) && (f[17] === "R")
@@ -212,7 +218,7 @@ function isEODoneUD(f: string): boolean {
 //   blocks at B (LB+RB) → FL, FR
 //   blocks at F (LF+RF) → BL, BR (BL/BR are inside the blocks)
 function isEODoneFB(f: string): boolean {
-  // corner allignment
+  // corner alignment
   const isCornerAligned =
     (f[36] === f[38]) && (f[38] === f[42]) && (f[42] === f[44]) && (f[44] === "O") &&
     (f[9] === f[11]) && (f[11] === f[15]) && (f[15] === f[17]) && (f[17] === "R")
@@ -226,7 +232,8 @@ function isEODoneFB(f: string): boolean {
 }
 
 export function isEODone(f: string): boolean {
-  return isEODoneFB(f) || isEODoneUD(f)
+  const n = reorientToStandard(f)
+  return isEODoneFB(n) || isEODoneUD(n)
 }
 
 // Two free column edges (not inside the blocks) placed at home.
@@ -235,11 +242,14 @@ export function isEODone(f: string): boolean {
 //   blocks at U (LU+RU) → DL + DR
 //   blocks at F (LF+RF) → BL + BR
 //   blocks at B (LB+RB) → FL + FR
+// Reorient first so hardcoded 'W'/'O'/'R' sticker checks stay valid under
+// whole-cube rotations.
 export function isULURDone(f: string): boolean {
-  return isEODone(f) && (
-    (f[3]  === 'W' && f[37] === 'O' && f[5]  === 'W' && f[10] === 'R') ||  // UL + UR
-    (f[30] === 'W' && f[43] === 'O' && f[32] === 'W' && f[16] === 'R') ||  // DL + DR
-    (f[50] === 'W' && f[39] === 'O' && f[48] === 'W' && f[14] === 'R') ||  // BL + BR
-    (f[21] === 'W' && f[41] === 'O' && f[23] === 'W' && f[12] === 'R')     // FL + FR
+  const n = reorientToStandard(f)
+  return isEODone(n) && (
+    (n[3]  === 'W' && n[37] === 'O' && n[5]  === 'W' && n[10] === 'R') ||  // UL + UR
+    (n[30] === 'W' && n[43] === 'O' && n[32] === 'W' && n[16] === 'R') ||  // DL + DR
+    (n[50] === 'W' && n[39] === 'O' && n[48] === 'W' && n[14] === 'R') ||  // BL + BR
+    (n[21] === 'W' && n[41] === 'O' && n[23] === 'W' && n[12] === 'R')     // FL + FR
   )
 }
