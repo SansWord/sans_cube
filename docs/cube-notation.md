@@ -152,6 +152,55 @@ indices: 3,4,5  →  10,13,16  →  32,31,30  →  43,40,37
 
 ---
 
+## Cube Geometry Module (`src/utils/cubeGeometry.ts`)
+
+Shared source of truth for the facelet layout above, consumed by phase-detection predicates in `src/utils/cfop.ts` and `src/utils/roux.ts`. Encodes the face centers, edges, corners, and face-lookup helpers as data tables so phase logic can be written generically without hardcoding positions per face.
+
+### Exports
+
+| Export | Shape | Purpose |
+|--------|-------|---------|
+| `U_CENTER`, `R_CENTER`, `F_CENTER`, `D_CENTER`, `L_CENTER`, `B_CENTER` | `number` (4, 13, 22, 31, 40, 49) | Face center indices — named constants for readability |
+| `FACE_CENTERS` | `readonly number[]` | All 6 center indices for iteration |
+| `FACE_POSITIONS` | `Record<number, number[]>` | Center index → 9 sticker indices on that face |
+| `OPPOSITE` | `Record<number, number>` | Center index → opposite-face center index (U↔D, F↔B, L↔R) |
+| `EDGES` | `Edge[]` (12 entries) | All 12 edge cubies |
+| `CORNERS` | `Corner[]` (8 entries) | All 8 corner cubies |
+
+### Edge and Corner shape
+
+Each edge is a 4-tuple: `[posA, centerA, posB, centerB]` — the two sticker positions and their owning face centers. Example: `[7, U_CENTER, 19, F_CENTER]` is the UF edge (position 7 on U, position 19 on F).
+
+Each corner is a 3-tuple of `[position, owningFaceCenter]` pairs. Example: `[[8, U_CENTER], [20, F_CENTER], [9, R_CENTER]]` is the UFR corner with its three stickers.
+
+### Helpers
+
+| Helper | Signature | Notes |
+|--------|-----------|-------|
+| `edgesOnFace(centerIdx)` | `(number) => Edge[]` | The 4 edges touching the given face |
+| `cornersOnFace(centerIdx)` | `(number) => Corner[]` | The 4 corners touching the given face |
+| `findFaceWithColor(f, color)` | `(string, string) => number \| undefined` | Which face's center currently shows this color — the key to drift tolerance |
+
+### The live-center pattern
+
+When writing phase logic, compare stickers against `f[ctr]` (live center) rather than hardcoded color letters:
+
+```ts
+// Wrong — breaks after M/E/S drift or whole-cube rotation:
+if (f[pos] !== 'Y') return false
+
+// Right — survives drift:
+if (f[pos] !== f[centerIdx]) return false
+```
+
+Centers drift under slice moves; facelet positions are spatially fixed. `findFaceWithColor` + live-center comparison gives you the target face dynamically without caring about orientation. This is why CFOP and Roux predicates can check "is this phase done?" regardless of whether the solver has applied `M`, `M2`, or rotated the whole cube mid-solve.
+
+For phases that involve pair-equality (e.g. CMLL corner consistency), use `f[a] === f[b]` checks — these tolerate both drift AND AUF (U-layer moves that permute the corners without breaking them), since all 4 equivalent stickers stay the same color whatever it happens to be.
+
+Phase predicates that also need to normalize whole-cube rotations (e.g. `isEODone`, `isULURDone` in `roux.ts`) first call `reorientToStandard` from `applyMove.ts`, then use hardcoded direction references (`'O'` for L-center, `'R'` for R-center) that are guaranteed valid after reorient. `reorientToStandard` only undoes x/y/z rotations — it does NOT fix M/E/S drift, so live-center lookups are still required.
+
+---
+
 ## GAN Cube BLE Protocol
 
 GAN smart cube BLE events are **color-based**, not position-based.
