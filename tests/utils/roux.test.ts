@@ -121,9 +121,9 @@ describe('isCMLLDone', () => {
     expect(isCMLLDone(f)).toBe(false)
   })
 
-  it('returns false after U move (corners leave home faces)', () => {
+  it('returns true after U move (corners is allowed to leave home faces)', () => {
     const f = applyMoves(SOLVED_FACELETS, [move('U')])
-    expect(isCMLLDone(f)).toBe(false)
+    expect(isCMLLDone(f)).toBe(true)
   })
 })
 

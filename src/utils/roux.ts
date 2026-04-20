@@ -193,7 +193,12 @@ function isMSlice(f: string): boolean {
 //   blocks at D (LD+RD) → UL, UR
 //   blocks at U (LU+RU) → DL, DR (UL/UR are inside the blocks)
 function isEODoneUD(f: string): boolean {
-  return isCMLLDone(f) && isMSlice(f) && (
+  // corner allignment
+  const isCornerAligned =
+    (f[36] === f[38]) && (f[38] === f[42]) && (f[42] === f[44]) && (f[44] === "O") &&
+    (f[9] === f[11]) && (f[11] === f[15]) && (f[15] === f[17]) && (f[17] === "R")
+
+  return isCornerAligned && isCMLLDone(f) && isMSlice(f) && (
     // blocks at D: column edges UL, UR
     ((f[3]  === 'W' || f[3]  === 'Y') && (f[5]  === 'W' || f[5]  === 'Y')) ||
     // blocks at U: column edges DL, DR
@@ -207,7 +212,12 @@ function isEODoneUD(f: string): boolean {
 //   blocks at B (LB+RB) → FL, FR
 //   blocks at F (LF+RF) → BL, BR (BL/BR are inside the blocks)
 function isEODoneFB(f: string): boolean {
-  return isCMLLDone(f) && isMSlice(f) && (
+  // corner allignment
+  const isCornerAligned =
+    (f[36] === f[38]) && (f[38] === f[42]) && (f[42] === f[44]) && (f[44] === "O") &&
+    (f[9] === f[11]) && (f[11] === f[15]) && (f[15] === f[17]) && (f[17] === "R")
+
+  return isCornerAligned && isCMLLDone(f) && isMSlice(f) && (
     // blocks at B: column edges FL, FR
     ((f[21]  === 'W' || f[21]  === 'Y') && (f[23]  === 'W' || f[23]  === 'Y')) ||
     // blocks at F: column edges BL, BR
