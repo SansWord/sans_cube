@@ -6,6 +6,8 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.24.1](#v1241--roux-center-drift--rotation-invariance-2026-04-20-1517) | Roux isDone predicates tolerate M/E/S center drift and whole-cube rotations; extracted shared `cubeGeometry.ts`; rotation-invariance property tests; Sune-based CMLL false-positive guard |
+| [v1.24.0](#v1240--cfop-center-drift-tolerance-2026-04-20-1158) | CFOP isDone predicates (`isCrossDone`, `countCompletedF2LSlots`, `isEOLLDone`, `isOLLDone`, `isCPLLDone`) no longer assume Y on D / W on U — look up target color's current face and compare against live centers |
 | [v1.23.0](#v1230--acubemy-import-2026-04-18-2226) | Bulk import from acubemy JSON with dedup, preview, and warnings — new `AcubemyImportModal` in debug mode; `importedFrom` schema field; `ColorMoveTranslator.flush()` for batch slice pairing |
 | [v1.22.1](#v1221--url-write-effect-mount-time-guards-2026-04-17-1647) | Fix: `#solve-{id}` modal infinite-blink on boot with cloud sync disabled; `#shared-{id}` duplicate history entry — extracted decisions to pure helpers |
 | [v1.22.0](#v1220--freeform-method-2026-04-17-1202) | Freeform method — single "Solved" phase; wired into filters, method selector, Trends color map, hash router; `detectMethod` skips Freeform |
@@ -55,6 +57,48 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.24.1 — Roux center drift + rotation invariance (2026-04-20 15:17)
+
+**Review:** not yet
+
+**What was built:**
+- Extracted `src/utils/cubeGeometry.ts` — face centers, `FACE_POSITIONS`, `OPPOSITE`, `EDGES`, `CORNERS` tables, plus `edgesOnFace` / `cornersOnFace` / `findFaceWithColor` helpers. Previously inlined in `cfop.ts`; now consumed by both `cfop.ts` and `roux.ts`.
+- `isFirstBlockDone` / `isSecondBlockDone`: detect 1×2×3 blocks by comparing main-color to the block face's **live center** and long-color to hardcoded `'Y'`. The long-Y stickers stay on the block across M/E/S even though the Y center drifts away — that's the drift-invariant identity of the block. Pair-consistency between the long edge and its corners handles the now-unlabeled perpendicular faces.
+- `isCMLLDone`: reorient first, then dispatch to `isUCMLLDone` / `isDCMLLDone` / `isFCMLLDone` / `isBCMLLDone` based on the block's long face (CMLL face = `OPPOSITE[longFace]`). After reorient, blocks sit on L/R, so long face can be any of U/D/F/B. Each variant uses color equality (`f[a] === f[b]`) rather than hardcoded `'W'`, so M-drifted states with the correct cubies still pass.
+- `isEODone` / `isULURDone`: call `reorientToStandard` first so the remaining hardcoded `'W'` / `'O'` / `'R'` sticker checks are valid under x/y/z. EO also adds an explicit corner-alignment guard on the L/R faces.
+- Test suite grew from ~15 to 38 Roux tests. Added `checkRotationInvariant` helper that applies every whole-cube rotation of length ≤ 3 to each predicate — rotated solved is still solved, rotated broken is still broken. Added M-drift tests for FB / SB / CMLL. Replaced toothless `R U R'` CMLL false-positive test with Sune (block-preserving CMLL alg) plus explicit `isSecondBlockDone === true` precondition so short-circuit regressions can't silently pass.
+- Rolls up two earlier Roux commits from the same day: `f1e8a63` (relaxed `isCMLLDone` so U-layer doesn't have to sit on original home face) and `e5a6524` (EO corner-alignment guard on L/R).
+
+**Key technical learnings:**
+- `[insight]` After M-slice drift the "long face" of a Roux block is whichever face the Y-center currently sits on, not D. So CMLL detection can't dispatch purely on "W is on U" — it has to locate the block's long face dynamically (`isBlockOnFace` loop) and take the opposite. This is a consequence of the Roux block being defined by cubies, not by face colors: the block stays physically intact through M/E/S while the Y center wanders.
+- `[insight]` Replacing hardcoded color checks with `f[a] === f[b]` pair equality makes the predicate invariant under drift AND U-layer scrambling. The 4 CMLL-face corner stickers are all the same color when CMLL is done — whatever that color happens to be — so equality checks survive both center drift and AUF (U-layer moves that permute the corners without breaking them).
+- `[gotcha]` A regression test for "blocks complete + CMLL scrambled" using `R U R'` is toothless: `R` breaks SB, so `isSecondBlockDone === false` short-circuits before the CMLL check ever runs. Use a block-preserving CMLL alg (Sune: `R U R' U R U2 R'`) to get both blocks intact AND U-layer permuted. Always assert the precondition (`expect(isSecondBlockDone(f)).toBe(true)`) so the test can't silently regress by triggering the short-circuit.
+- `[note]` Rotation-invariance property tests catch a whole class of bugs cheaply — enumerate all 24 whole-cube orientations (or a representative ≤3-length subset) and assert `fn(rotated) === fn(base)` for both `true` and `false` baselines. Much stronger than spot-checking `fn(x(solved))`.
+- `[gotcha]` Center drift after slice moves is NOT the same as drift after whole-cube rotations. `reorientToStandard` only undoes the latter (moves W back to U, G back to F via x/y/z). M/E/S drift leaves centers in a state that `reorientToStandard` can't fix, so block/CMLL predicates still need to tolerate live-center lookups even *after* reorient.
+
+**Process learnings:**
+- `[insight]` Code review by a fresh-context subagent caught two issues the main loop had stopped noticing: (1) the toothless regression test described above, (2) a stricter-than-needed guard (`blockOrientation !== 'Y'`) that over-rejected M-drifted states. The main loop was primed by the intricate block-detection work and treated "current CMLL dispatch goes only to U-face" as acceptable — fresh eyes immediately asked "why not dispatch to whichever face is opposite the long face?"
+
+---
+
+## v1.24.0 — CFOP center drift tolerance (2026-04-20 11:58)
+
+**Review:** not yet
+
+**What was built:**
+- Relaxed the CFOP phase predicates in `src/utils/cfop.ts` to tolerate center drift under M/E/S slice moves and whole-cube x/y/z rotations. Previously each predicate assumed Y sits on D and W sits on U; now each one looks up the target color's current face index via `findFaceWithColor(f, color)` and compares adjacent-face stickers against the **live center color** of that face (`f[ctr]`) instead of hardcoded letters.
+- `isCrossDone`: Y-face is found dynamically; each D-edge checked against `f[ctr]` for its adjacent side.
+- `countCompletedF2LSlots`: enumerates the 4 F2L slots as (D-face, side1, side2) corner+edge pairs, filtering out the opposite-side pair. Works regardless of which face Y currently sits on.
+- `isEOLLDone` / `isOLLDone` / `isCPLLDone`: W-face is looked up dynamically; sticker checks reference the face's live center color.
+- Introduced inline geometry tables (`FACE_CENTERS`, `OPPOSITE`, `EDGES`, `CORNERS`) — these were later extracted to `cubeGeometry.ts` in v1.24.1 and shared with Roux.
+- Added rotation-invariance tests: `isCrossDone`, `countCompletedF2LSlots`, `isEOLLDone`, `isOLLDone`, `isCPLLDone` all pass after `x` / `y` / `z` rotations.
+
+**Key technical learnings:**
+- `[insight]` The right abstraction for phase detection in a drifted cube is "find the face whose center matches the target color, then compare against live centers," not "pass in a rotation matrix and un-rotate." The cube's facelet positions are spatially fixed; only center colors drift. So the lookup is O(6) and the rest of the logic doesn't care about orientation.
+- `[note]` Tests that apply an `x` / `y` / `z` rotation to a solved cube and expect the predicate to still return `true` are a natural fit here — cheap to write, catch any regression that re-introduces a hardcoded color assumption.
 
 ---
 
