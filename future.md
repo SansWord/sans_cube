@@ -1,6 +1,7 @@
 # Future Work
 
 ## On-going, Next
+- **Manual review: storage module** — the storage module (v1.25.0) has not been manually reviewed end-to-end. Run through the manual test checklist and verify cloud sync, local storage, and import flows work correctly.
 
 ## Investigate
 - **Save a shared solve into own history** — shared solve at `#shared-F8x2wwtsSuv3I5NEqdNA` needs to be importable into localStorage or Firestore. Currently shared solves are view-only with no way to copy them into your own solve list.
