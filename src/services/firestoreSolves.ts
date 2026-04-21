@@ -57,21 +57,47 @@ export async function migrateLocalSolvesToFirestore(uid: string, solves: SolveRe
 }
 
 /**
- * Renumbers all Firestore solves sequentially (1..n) by date order.
- * Only writes solves whose seq actually changes; counter is always updated.
- * Returns the next seq to use (n + 1).
+ * Renumbers Firestore solves tail-only: preserves rows before the first seq mismatch,
+ * renumbers from the mismatch forward (filtering to only rows whose seq actually differs
+ * from the target). Counter is always updated. Chunked via bulkUpdateSolvesInFirestore.
+ * Returns expanded result for the scope panel commit callback.
  */
-export async function renumberSolvesInFirestore(uid: string): Promise<number> {
-  const solves = await loadSolvesFromFirestore(uid)
+export async function renumberSolvesInFirestore(
+  uid: string,
+  onProgress?: (batchIndex: number, batchCount: number) => void,
+): Promise<{
+  nextSeq: number
+  renumbered: number
+  firstMismatchIndex: number
+  firstMismatchSolve: SolveRecord | null
+}> {
+  const raw = await loadSolvesFromFirestore(uid)
+  const solves = [...raw].sort((a, b) => a.date - b.date)
   const nextSeq = solves.length + 1
-  const changed = solves
-    .map((s, i) => ({ s, newSeq: i + 1 }))
-    .filter(({ s, newSeq }) => s.seq !== newSeq)
-  await Promise.all([
-    ...changed.map(({ s, newSeq }) => setDoc(solveDocRef(uid, s), sanitize({ ...s, seq: newSeq }))),
-    updateCounterInFirestore(uid, nextSeq),
-  ])
-  return nextSeq
+  const firstMismatchIndex = solves.findIndex((s, i) => s.seq !== i + 1)
+
+  if (firstMismatchIndex === -1) {
+    await updateCounterInFirestore(uid, nextSeq)
+    return { nextSeq, renumbered: 0, firstMismatchIndex: -1, firstMismatchSolve: null }
+  }
+
+  const changed: SolveRecord[] = []
+  for (let i = firstMismatchIndex; i < solves.length; i++) {
+    const target = i + 1
+    if (solves[i].seq !== target) {
+      changed.push({ ...solves[i], seq: target })
+    }
+  }
+
+  await bulkUpdateSolvesInFirestore(uid, changed, onProgress ?? (() => {}))
+  await updateCounterInFirestore(uid, nextSeq)
+
+  return {
+    nextSeq,
+    renumbered: changed.length,
+    firstMismatchIndex,
+    firstMismatchSolve: solves[firstMismatchIndex],
+  }
 }
 
 /**
