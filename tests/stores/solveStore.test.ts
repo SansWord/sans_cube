@@ -101,6 +101,13 @@ describe('solveStore — configure (cloud)', () => {
     expect(firestoreMock.loadSolvesFromFirestore).toHaveBeenCalledWith('u2')
   })
 
+  it('cloud fetch failure sets status=error and records error message', async () => {
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockRejectedValue(new Error('network'))
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().status).toBe('error'))
+    expect(solveStore.getSnapshot().error).toMatch(/network/)
+  })
+
   it('cloud-on → cloud-off reverts to localStorage view with status=idle', async () => {
     localStorage.setItem(STORAGE_KEYS.SOLVES, JSON.stringify([localSolve(5)]))
     solveStore.configure({ enabled: true, user: U1 })

@@ -127,7 +127,7 @@ export const solveStore = {
     const dismissedExamples = loadDismissedExamples()
     nextId = Math.max(
       loadNextId(),
-      localSolves.length > 0 ? Math.max(...localSolves.map(s => s.id)) + 1 : 1,
+      localSolves.length > 0 ? Math.max(...localSolves.map(s => s.seq ?? s.id)) + 1 : 1,
     )
 
     if (!useCloud) {
