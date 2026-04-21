@@ -240,7 +240,8 @@ export const solveStore = {
     }
 
     // Cloud path — optimistic append all, then chunk through setDoc with allSettled.
-    setState({ solves: [...state.solves, ...drafts] })
+    const snapshot = state.solves
+    setState({ solves: [...snapshot, ...drafts] })
 
     const CHUNK = 100
     const chunks: SolveRecord[][] = []
@@ -269,15 +270,13 @@ export const solveStore = {
       // Counter write is best-effort; per-solve writes already reflect reality.
     }
 
-    // Roll back failed drafts in a single state update.
+    // Roll back failed drafts: rebuild from pre-optimistic snapshot + committed solves.
+    const failedIds = new Set(failed.map(f => f.draft.id))
+    const committed = drafts.filter(d => !failedIds.has(d.id))
     if (failed.length > 0) {
-      const failedIds = new Set(failed.map(f => f.draft.id))
-      setState({ solves: state.solves.filter(s => !failedIds.has(s.id)) })
+      setState({ solves: [...snapshot, ...committed] })
     }
 
-    const committedIds = new Set(drafts.map(d => d.id))
-    for (const f of failed) committedIds.delete(f.draft.id)
-    const committed = drafts.filter(d => committedIds.has(d.id))
     return { committed, failed }
   },
 
