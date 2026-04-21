@@ -194,6 +194,14 @@ describe('solveStore — CRUD (local mode)', () => {
     warn.mockRestore()
   })
 
+  it('updateSolve({ isExample: true }) is a no-op', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await solveStore.updateSolve({ ...localSolve(99), isExample: true })
+    expect(solveStore.getSnapshot().solves).toHaveLength(0)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
   it('nextSolveIds increments seq and persists', () => {
     const a = solveStore.nextSolveIds()
     const b = solveStore.nextSolveIds()

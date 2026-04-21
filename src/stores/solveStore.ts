@@ -215,7 +215,7 @@ export const solveStore = {
   },
 
   async deleteSolve(id: number): Promise<void> {
-    if (id < 0) { this.dismissExample(id); return }
+    if (id < 0) { solveStore.dismissExample(id); return }
     const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
     const uid = lastCloudConfig?.user?.uid ?? null
     const snapshot = state.solves
