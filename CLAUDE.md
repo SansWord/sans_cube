@@ -93,6 +93,21 @@ When writing promotional content (LinkedIn posts, social media, release announce
 
 This project uses three-part semver: `vX.Y.0` for main releases, `vX.Y.1` / `vX.Y.2` for follow-up sessions on the same version, and `vX.Y.0-design` for design-only sessions (devlog entry only, no git tag). Git tags, devlog headings, and TL;DR anchors must always match. See global CLAUDE.md Project Conventions for the full rule.
 
+## "Ship it" shortcut
+
+When SansWord says **"ship it"** (or equivalent like "let's ship", "ship this"), it means run the full release flow on the current feature branch:
+
+1. **Stage uncommitted work** — commit any pending changes with a clear message.
+2. **Update docs** — refresh any affected files in `docs/` (especially `debug-mode.md`, `ui-architecture.md`, etc. per the keep-up-to-date rules above).
+3. **Update devlog** — add or refresh the `vX.Y.Z` entry in `docs/devlog.md` and the TL;DR table row at the top. Cross off completed items in `future.md`. Commit these doc changes.
+4. **Verify tests** — `npm run test` must pass on the branch before merging.
+5. **Merge to main** — `git checkout main && git merge --no-ff <branch> -m "Merge branch '<branch>' — vX.Y.Z <title>"`. Re-run `npm run test` on the merged result.
+6. **Tag** — `git tag -a vX.Y.Z -m "vX.Y.Z — <title>"` at the merge commit. If the tag already exists locally on a mid-branch commit (created early in the session), delete and re-create it pointing at the merge commit (only if not yet pushed).
+7. **Push** — `git push origin main --follow-tags`.
+8. **Clean up** — `git branch -d <feature-branch>`.
+
+If any step fails (test failures, push rejected, etc.), stop and report — don't paper over the failure.
+
 ## End of Session
 
 Remind SansWord to update `docs/devlog.md` at the end of each session (see global CLAUDE.md for format). When writing a new entry, also update the **TL;DR table** at the top of `docs/devlog.md` with a one-line summary of the new version.
