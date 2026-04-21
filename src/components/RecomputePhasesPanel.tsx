@@ -17,6 +17,8 @@ export interface RecomputePhasesPanelProps {
     changes: RecomputeChange[],
     onProgress: (batchIndex: number, batchCount: number) => void,
   ) => Promise<void>
+  /** Optional: when provided, sample changed-row ids and failed ids render as clickable buttons. */
+  onSolveClick?: (solve: SolveRecord) => void
 }
 
 type PanelState =
@@ -35,7 +37,19 @@ function phaseBoundariesMs(phases: PhaseRecord[]): string {
   }).join(' | ')
 }
 
-export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }: RecomputePhasesPanelProps) {
+function SolveIdLink({ solve, onClick }: { solve: SolveRecord; onClick?: (s: SolveRecord) => void }) {
+  if (!onClick) return <>#{solve.id}</>
+  return (
+    <button
+      onClick={() => onClick(solve)}
+      style={{ background: 'none', border: 'none', color: '#3498db', cursor: 'pointer', padding: 0, fontSize: 11, fontFamily: 'monospace', textDecoration: 'underline' }}
+    >
+      #{solve.id}
+    </button>
+  )
+}
+
+export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, onSolveClick }: RecomputePhasesPanelProps) {
   const [state, setState] = useState<PanelState>({ kind: 'idle' })
 
   const runScan = async () => {
@@ -89,7 +103,7 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }:
               <div style={{ color: '#888', marginBottom: 4 }}>Sample changed (first 5):</div>
               {state.results.changed.slice(0, 5).map(({ solve, oldPhases, newPhases }) => (
                 <div key={solve.id} style={{ borderTop: '1px solid #222', padding: '3px 0' }}>
-                  <div>#{solve.id} <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
+                  <div><SolveIdLink solve={solve} onClick={onSolveClick} /> <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
                   <div style={{ color: '#e74c3c' }}>old: {phaseBoundariesMs(oldPhases)}</div>
                   <div style={{ color: '#4c4' }}>new: {phaseBoundariesMs(newPhases)}</div>
                 </div>
@@ -100,7 +114,14 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }:
           {state.results.failed.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ color: '#888', marginBottom: 4 }}>Failed solve ids (excluded from commit):</div>
-              <div>{state.results.failed.map((s) => `#${s.id}`).join(', ')}</div>
+              <div>
+                {state.results.failed.map((s, i) => (
+                  <span key={s.id}>
+                    {i > 0 && ', '}
+                    <SolveIdLink solve={s} onClick={onSolveClick} />
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

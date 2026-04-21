@@ -79,6 +79,45 @@ describe('RecomputePhasesPanel — results', () => {
     await waitFor(() => expect(screen.getByText(/Failed: 1/)).toBeTruthy())
     expect(screen.getByText(/#300/)).toBeTruthy()
   })
+
+  it('clicking a failed solve id calls onSolveClick with that solve', async () => {
+    const failedSolve: SolveRecord = { id: 700, scramble: 'U', timeMs: 0, moves: [], phases: [], date: 0, method: 'cfop' }
+    const onSolveClick = vi.fn()
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [failedSolve]}
+        commitChanges={vi.fn()}
+        onSolveClick={onSolveClick}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Failed: 1/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /#700/ }))
+    expect(onSolveClick).toHaveBeenCalledWith(failedSolve)
+  })
+
+  it('clicking a sample changed-row id calls onSolveClick with that solve', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const changedSolve: SolveRecord = {
+      ...roux, id: 800,
+      phases: fresh.map((p, i) => i === 0 ? { ...p, turns: p.turns + 1 } : p),
+    }
+    const onSolveClick = vi.fn()
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [changedSolve]}
+        commitChanges={vi.fn()}
+        onSolveClick={onSolveClick}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Changed: 1/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /#800/ }))
+    expect(onSolveClick).toHaveBeenCalledWith(changedSolve)
+  })
 })
 
 describe('RecomputePhasesPanel — commit', () => {

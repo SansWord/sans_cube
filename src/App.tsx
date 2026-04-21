@@ -385,6 +385,7 @@ export default function App() {
                     const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
                     await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
                   }}
+                  onSolveClick={setSelectedDebugSolve}
                 />
               </div>
             ) : (
@@ -460,6 +461,7 @@ export default function App() {
               saveToStorage(STORAGE_KEYS.SOLVES, updated)
               onProgress(1, 1)
             }}
+            onSolveClick={setSelectedDebugSolve}
           />
           {methodMismatches !== null && (
             <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
