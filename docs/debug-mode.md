@@ -30,6 +30,7 @@ When **signed in**:
 - **Recalibrate solve times (hw clock)** — fixes `timeMs` inflation in cloud solves caused by BLE delivery delay. Uses `moves[last].cubeTimestamp - moves[0].cubeTimestamp` as the true elapsed time. Only corrects (never inflates). Shows count of updated solves.
 - **Migrate solves to v2 (fix M/E/S labels)** — migrates all Firestore solves with `schemaVersion < 2` to v2. Shows pending count before confirmation. Solves that pass the phase invariant get `movesV1` written for user review via the solve detail modal. Shows migrated/failed counts on completion.
 - **Detect method mismatches** — same as the maintenance toolbar button, but reads from Firestore instead of localStorage.
+- **Recompute phases (Firestore)** — inline `<RecomputePhasesPanel>` that scans all Firestore solves, recomputes `phases` using the current `isDone` predicates, shows a dry-run summary (unchanged / changed / failed / skipped counts + up to 5 sample rows + failed ids), and commits only the changed, successfully-recomputed solves via chunked `Promise.all(setDoc)` (100 per chunk). See `src/utils/recomputeAllPhases.ts` and spec `docs/superpowers/specs/2026-04-20-bulk-recompute-phases-design.md`.
 
 ### Maintenance buttons (bottom toolbar)
 
@@ -39,6 +40,7 @@ When **signed in**:
 - **Recalibrate solve times (hw clock)** — same recalibration as the cloud button, but for localStorage solves only
 - **Detect method mismatches** — scans localStorage solves and flags ones where the stored method likely disagrees with the actual solving technique used. See below.
 - **Import from acubemy** — opens the `AcubemyImportModal` to bulk-import acubemy JSON exports. See `docs/import-data.md` for the full flow.
+- **Recompute phases (localStorage)** — same component as the cloud variant, targeting `localStorage`. Commits via a single `saveToStorage` write.
 
 ### Method mismatch detector
 
