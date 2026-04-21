@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterSolves } from '../src/hooks/useSolveHistory'
+import { filterSolves } from '../src/utils/solveStats'
 import type { SolveRecord, SolveFilter } from '../src/types/solve'
 
 function makeSolve(overrides: Partial<SolveRecord>): SolveRecord {

@@ -17,7 +17,7 @@ import { getMethod, CFOP, ROUX, FREEFORM } from '../methods/index'
 import { buildTotalData, buildPhaseData } from '../utils/trends'
 import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
-import { filterSolves } from '../hooks/useSolveHistory'
+import { filterSolves } from '../utils/solveStats'
 import type { TrendsHashParams } from '../hooks/useHashRouter'
 
 type Tab = 'total' | 'phases'
