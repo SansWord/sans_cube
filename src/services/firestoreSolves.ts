@@ -58,13 +58,17 @@ export async function migrateLocalSolvesToFirestore(uid: string, solves: SolveRe
 
 /**
  * Renumbers all Firestore solves sequentially (1..n) by date order.
+ * Only writes solves whose seq actually changes; counter is always updated.
  * Returns the next seq to use (n + 1).
  */
 export async function renumberSolvesInFirestore(uid: string): Promise<number> {
   const solves = await loadSolvesFromFirestore(uid)
   const nextSeq = solves.length + 1
+  const changed = solves
+    .map((s, i) => ({ s, newSeq: i + 1 }))
+    .filter(({ s, newSeq }) => s.seq !== newSeq)
   await Promise.all([
-    ...solves.map((s, i) => setDoc(solveDocRef(uid, s), sanitize({ ...s, seq: i + 1 }))),
+    ...changed.map(({ s, newSeq }) => setDoc(solveDocRef(uid, s), sanitize({ ...s, seq: newSeq }))),
     updateCounterInFirestore(uid, nextSeq),
   ])
   return nextSeq
@@ -112,4 +116,29 @@ export async function migrateSolvesToV2InFirestore(uid: string): Promise<{ migra
   }))
 
   return { migrated, failed }
+}
+
+/**
+ * Writes `solves` back to Firestore in chunks of 100 via Promise.all(setDoc).
+ * Invokes `onProgress(batchIndex, batchCount)` once with (0, batchCount) before any
+ * writes start, then with (i+1, batchCount) after each chunk completes (1-indexed).
+ *
+ * Chunks of 100 — not writeBatch(500) — because each solve is ~35 KB and 500 would
+ * exceed Firestore's 10 MB writeBatch payload limit. See spec doc for sizing details.
+ */
+export async function bulkUpdateSolvesInFirestore(
+  uid: string,
+  solves: SolveRecord[],
+  onProgress: (batchIndex: number, batchCount: number) => void = () => {},
+): Promise<void> {
+  const CHUNK_SIZE = 100
+  const chunks: SolveRecord[][] = []
+  for (let i = 0; i < solves.length; i += CHUNK_SIZE) {
+    chunks.push(solves.slice(i, i + CHUNK_SIZE))
+  }
+  onProgress(0, chunks.length)
+  for (let i = 0; i < chunks.length; i++) {
+    await Promise.all(chunks[i].map((s) => setDoc(solveDocRef(uid, s), sanitize(s))))
+    onProgress(i + 1, chunks.length)
+  }
 }

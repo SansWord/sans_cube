@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.25.0](#v1250--bulk-recompute-phases-2026-04-20-2119) | Bulk recompute phases debug panel — dry-run scan + commit only changed solves; single mount that branches on cloud-sync state; chunked `Promise.all(setDoc)` for cloud writes; clickable solve ids, sample filtered to turn-count diffs, batch-0 progress, optimized renumber |
 | [v1.24.1](#v1241--roux-center-drift--rotation-invariance-2026-04-20-1517) | Roux isDone predicates tolerate M/E/S center drift and whole-cube rotations; extracted shared `cubeGeometry.ts`; rotation-invariance property tests; Sune-based CMLL false-positive guard |
 | [v1.24.0](#v1240--cfop-center-drift-tolerance-2026-04-20-1158) | CFOP isDone predicates (`isCrossDone`, `countCompletedF2LSlots`, `isEOLLDone`, `isOLLDone`, `isCPLLDone`) no longer assume Y on D / W on U — look up target color's current face and compare against live centers |
 | [v1.23.0](#v1230--acubemy-import-2026-04-18-2226) | Bulk import from acubemy JSON with dedup, preview, and warnings — new `AcubemyImportModal` in debug mode; `importedFrom` schema field; `ColorMoveTranslator.flush()` for batch slice pairing |
@@ -57,6 +58,32 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.25.0 — bulk recompute phases (2026-04-20 21:19)
+
+**Review:** not yet
+
+**Design docs:**
+- Bulk Recompute Phases: [Spec](superpowers/specs/2026-04-20-bulk-recompute-phases-design.md) [Plan](superpowers/plans/2026-04-20-bulk-recompute-phases.md)
+
+**What was built:**
+- `src/utils/recomputeAllPhases.ts` — pure scanner returning `{unchanged, changed, failed, skipped}`. Skips `isExample` and `method === 'freeform'`; bucketing relies on a `phasesEqual` deep compare across `label / group / recognitionMs / executionMs / turns`.
+- `src/components/RecomputePhasesPanel.tsx` — inline debug panel: dry-run scan → bucket counts (with inline legend explaining each) → up to 5 sample changed rows showing per-phase turn counts + deltas (e.g. `Cross 7 steps(-1)`), filtered to changes with a turn-count diff (time-only changes still get committed but are rarely interesting to review) → failed solve ids → commit only changed + successfully-recomputed solves. Solve ids in both sample rows and failed list are clickable, opening the solve detail modal via an injected `onSolveClick` callback. Self-contained `useState` FSM (`idle / scanning / results / committing / committed`), parent injects `loadSolves` and `commitChanges` callbacks so the same component drives both stores. Cancel returns to idle from the dry-run; Scan button shows `Loading...` while fetching.
+- `src/services/firestoreSolves.ts` — `bulkUpdateSolvesInFirestore(uid, solves, onProgress)`; chunked `Promise.all(setDoc)` at 100 per chunk; emits `onProgress(0, batchCount)` before any writes (so the panel can render `batch 0 of N` immediately) plus `onProgress(i+1, batchCount)` after each chunk completes. Optimized `renumberSolvesInFirestore` to only write docs whose `seq` actually changes (counter doc still updated unconditionally — cheap single write).
+- `src/App.tsx` — single mount per feature (one `<RecomputePhasesPanel>` and one **Detect method mismatches** button) in the maintenance toolbar, branching on `cloudSync.enabled && cloudSync.user` to target Firestore vs localStorage. Label updates dynamically.
+- Docs: `debug-mode.md` updated; `future.md` got an item to investigate why Firestore solves seem to reload on each debug/timer toggle.
+
+**Key technical learnings:**
+- `[note]` Firestore `writeBatch(500)` would exceed the 10 MB payload limit at our ~35 KB per solve; chunked `Promise.all(setDoc)` at 100 per chunk is the right pattern and matches existing bulk handlers in `firestoreSolves.ts` (`renumberSolvesInFirestore`, `recalibrateSolvesInFirestore`, `migrateSolvesToV2InFirestore`).
+- `[insight]` Failed recomputes (moves don't replay to solved) are surfaced but excluded from commit — writing anything back on a solve whose own moves don't replay would compound bad data. The dry-run UI shows failed ids so the user can investigate them individually instead.
+- `[gotcha]` Computing per-phase deltas from raw millisecond values and *then* rounding for display produces phantom `(-0.0s)` artifacts when both rounded values are identical but their unrounded sources differ. The fix is to round *first*, then subtract — the diff must be derived from the values the user actually sees. (We then dropped time from the sample rows entirely in favor of just turn-count + delta, which sidestepped the issue and matched the data the user actually cares about.)
+- `[insight]` Progress callbacks should fire once before the first batch with `(0, total)` so the UI can render meaningful state during the gap between "user clicked Commit" and "first batch finished writing". Otherwise the panel renders `batch 0 of 0` (initial seed) and only updates after the first chunk completes — which on 100 cloud writes is several seconds of staring at a wrong number.
+
+**Process learnings:**
+- `[note]` Extracting the panel out of `App.tsx` (unlike the v1.9 mismatch scanner which is inlined) kept `App.tsx` from growing further — pattern to prefer for new debug panels. Injecting `loadSolves` / `commitChanges` / `onSolveClick` callbacks let one component cover both storage backends without branching internally and stay decoupled from routing.
+- `[insight]` Initial design mounted the panel twice (cloud sync block + maintenance toolbar), mirroring the v1.9 method-mismatch button. After SansWord asked to consolidate, both panels collapsed into a single mount that branches on cloud-sync state with a dynamic `(Firestore | localStorage)` label. Worth applying the same pattern to method mismatches in the future — done in this same session.
 
 ---
 

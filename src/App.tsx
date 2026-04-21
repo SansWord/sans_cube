@@ -19,13 +19,15 @@ import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
 import type { MethodMismatch } from './utils/detectMethod'
 import { SolveDetailModal } from './components/SolveDetailModal'
 import { AcubemyImportModal } from './components/AcubemyImportModal'
+import { RecomputePhasesPanel } from './components/RecomputePhasesPanel'
+import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
 
@@ -359,19 +361,6 @@ export default function App() {
                       ? `Done — ${migrateV2Result.migrated} migrated${migrateV2Result.failed > 0 ? `, ${migrateV2Result.failed} failed` : ''}`
                       : 'Migrate solves to v2 (fix M/E/S labels)'}
                 </button>
-                <button
-                  disabled={detectingMismatches}
-                  onClick={async () => {
-                    if (!cloudSync.user) return
-                    setDetectingMismatches(true)
-                    const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
-                    setMethodMismatches(detectMethodMismatches(solves))
-                    setDetectingMismatches(false)
-                  }}
-                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: detectingMismatches ? 'default' : 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
-                >
-                  {detectingMismatches ? 'Detecting...' : 'Detect method mismatches'}
-                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -414,13 +403,21 @@ export default function App() {
               {recalibrating === 'done' ? `Done — ${recalibratedCount} solve${recalibratedCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
             </button>
             <button
-              onClick={() => {
-                const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-                setMethodMismatches(detectMethodMismatches(solves))
+              disabled={detectingMismatches}
+              onClick={async () => {
+                if (cloudSync.enabled && cloudSync.user) {
+                  setDetectingMismatches(true)
+                  const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
+                  setMethodMismatches(detectMethodMismatches(solves))
+                  setDetectingMismatches(false)
+                } else {
+                  const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                  setMethodMismatches(detectMethodMismatches(solves))
+                }
               }}
-              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: detectingMismatches ? 'default' : 'pointer' }}
             >
-              Detect method mismatches
+              {detectingMismatches ? 'Detecting...' : `Detect method mismatches (${cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'})`}
             </button>
             <button
               onClick={async () => {
@@ -436,6 +433,28 @@ export default function App() {
               Import from acubemy
             </button>
           </div>
+          <RecomputePhasesPanel
+            targetLabel={cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'}
+            loadSolves={async () => {
+              if (cloudSync.enabled && cloudSync.user) {
+                return await loadSolvesFromFirestore(cloudSync.user.uid)
+              }
+              return loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+            }}
+            commitChanges={async (changes: RecomputeChange[], onProgress) => {
+              if (cloudSync.enabled && cloudSync.user) {
+                const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
+                await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
+              } else {
+                const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                const byId = new Map(changes.map((c) => [c.solve.id, c.newPhases]))
+                const updated = solves.map((s) => byId.has(s.id) ? { ...s, phases: byId.get(s.id)! } : s)
+                saveToStorage(STORAGE_KEYS.SOLVES, updated)
+                onProgress(1, 1)
+              }
+            }}
+            onSolveClick={setSelectedDebugSolve}
+          />
           {methodMismatches !== null && (
             <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
