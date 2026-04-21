@@ -36,13 +36,22 @@ function phaseBoundariesMs(phases: PhaseRecord[]): string {
 }
 
 export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }: RecomputePhasesPanelProps) {
-  void commitChanges // used in Task 7 commit flow
   const [state, setState] = useState<PanelState>({ kind: 'idle' })
 
   const runScan = async () => {
     setState({ kind: 'scanning' })
     const solves = await loadSolves()
     setState({ kind: 'results', results: recomputeAllPhases(solves) })
+  }
+
+  const runCommit = async () => {
+    if (state.kind !== 'results') return
+    const results = state.results
+    setState({ kind: 'committing', results, progress: { batch: 0, total: 0 } })
+    await commitChanges(results.changed, (batch, total) => {
+      setState({ kind: 'committing', results, progress: { batch, total } })
+    })
+    setState({ kind: 'committed', results, committedCount: results.changed.length })
   }
 
   return (
@@ -58,7 +67,6 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }:
       {state.kind === 'idle' && (
         <button onClick={runScan} style={buttonStyle('#3498db')}>Scan (dry run)</button>
       )}
-
       {state.kind === 'scanning' && <div style={{ color: '#888' }}>Scanning...</div>}
 
       {(state.kind === 'results' || state.kind === 'committing' || state.kind === 'committed') && (
@@ -93,6 +101,24 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }:
             <div style={{ marginBottom: 8 }}>
               <div style={{ color: '#888', marginBottom: 4 }}>Failed solve ids (excluded from commit):</div>
               <div>{state.results.failed.map((s) => `#${s.id}`).join(', ')}</div>
+            </div>
+          )}
+
+          {state.kind === 'results' && state.results.changed.length > 0 && (
+            <button onClick={runCommit} style={buttonStyle('#e8a020')}>
+              Commit {state.results.changed.length} change{state.results.changed.length === 1 ? '' : 's'}
+            </button>
+          )}
+
+          {state.kind === 'committing' && (
+            <div style={{ color: '#e8a020' }}>
+              Committing batch {state.progress.batch} of {state.progress.total}...
+            </div>
+          )}
+
+          {state.kind === 'committed' && (
+            <div style={{ color: '#4c4' }}>
+              Committed {state.committedCount} solve{state.committedCount === 1 ? '' : 's'}.
             </div>
           )}
         </div>

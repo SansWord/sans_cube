@@ -80,3 +80,80 @@ describe('RecomputePhasesPanel — results', () => {
     expect(screen.getByText(/#300/)).toBeTruthy()
   })
 })
+
+describe('RecomputePhasesPanel — commit', () => {
+  it('Commit button is hidden when no changes', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const unchangedSolve: SolveRecord = { ...roux, id: 400, phases: fresh }
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [unchangedSolve]}
+        commitChanges={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Unchanged: 1/)).toBeTruthy())
+    expect(screen.queryByRole('button', { name: /Commit/i })).toBeNull()
+  })
+
+  it('Commit button passes only changed solves to commitChanges and shows progress', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const changedSolve: SolveRecord = {
+      ...roux, id: 500,
+      phases: fresh.map((p, i) => i === 0 ? { ...p, turns: p.turns + 1 } : p),
+    }
+    const failedSolve: SolveRecord = { id: 501, scramble: 'U', timeMs: 0, moves: [], phases: [], date: 0, method: 'cfop' }
+
+    const commitChanges = vi.fn(async (_changes, onProgress) => { onProgress(1, 1) })
+
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [changedSolve, failedSolve]}
+        commitChanges={commitChanges}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Changed: 1/)).toBeTruthy())
+
+    fireEvent.click(screen.getByRole('button', { name: /Commit 1 change/i }))
+    await waitFor(() => expect(screen.getByText(/Committed 1 solve/i)).toBeTruthy())
+
+    expect(commitChanges).toHaveBeenCalledTimes(1)
+    const firstArg = commitChanges.mock.calls[0][0]
+    expect(firstArg).toHaveLength(1)
+    expect(firstArg[0].solve.id).toBe(500)
+  })
+
+  it('shows "batch X of Y" during commit', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const changedSolves: SolveRecord[] = Array.from({ length: 2 }, (_, i) => ({
+      ...roux, id: 600 + i,
+      phases: fresh.map((p, j) => j === 0 ? { ...p, turns: p.turns + 1 } : p),
+    }))
+    let resolveFirstBatch!: () => void
+    const commitChanges = vi.fn(async (_changes, onProgress) => {
+      onProgress(1, 2)
+      await new Promise<void>((resolve) => { resolveFirstBatch = resolve })
+      onProgress(2, 2)
+    })
+
+    render(
+      <RecomputePhasesPanel
+        targetLabel="Firestore"
+        loadSolves={async () => changedSolves}
+        commitChanges={commitChanges}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Changed: 2/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /Commit 2 changes/i }))
+    await waitFor(() => expect(screen.getByText(/batch 1 of 2/i)).toBeTruthy())
+    resolveFirstBatch()
+    await waitFor(() => expect(screen.getByText(/Committed 2 solves/i)).toBeTruthy())
+  })
+})
