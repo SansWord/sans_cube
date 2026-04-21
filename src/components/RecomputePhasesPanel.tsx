@@ -102,10 +102,15 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
         (see the Backup button in the maintenance toolbar, or <code>docs/data-backup.md</code>).
       </div>
 
-      {state.kind === 'idle' && (
-        <button onClick={runScan} style={buttonStyle('#3498db')}>Scan (dry run)</button>
+      {(state.kind === 'idle' || state.kind === 'scanning') && (
+        <button
+          onClick={runScan}
+          disabled={state.kind === 'scanning'}
+          style={buttonStyle('#3498db', state.kind === 'scanning')}
+        >
+          {state.kind === 'scanning' ? 'Loading...' : 'Scan (dry run)'}
+        </button>
       )}
-      {state.kind === 'scanning' && <div style={{ color: '#888' }}>Scanning...</div>}
 
       {(state.kind === 'results' || state.kind === 'committing' || state.kind === 'committed') && (
         <div>
@@ -184,9 +189,10 @@ const boxStyle: React.CSSProperties = {
   padding: '12px 16px', borderRadius: 6, marginTop: 8,
 }
 
-function buttonStyle(color: string): React.CSSProperties {
+function buttonStyle(color: string, disabled = false): React.CSSProperties {
   return {
-    alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer',
+    alignSelf: 'flex-start', padding: '3px 10px', cursor: disabled ? 'default' : 'pointer',
     background: '#222', color, border: `1px solid ${color}`, borderRadius: 3, fontSize: 11,
+    opacity: disabled ? 0.6 : 1,
   }
 }
