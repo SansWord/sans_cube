@@ -327,3 +327,53 @@ describe('solveStore — addMany', () => {
     expect(result.failed).toHaveLength(10)
   })
 })
+
+describe('solveStore — reload and runBulkOp', () => {
+  beforeEach(async () => {
+    localStorage.clear()
+    __resetForTests()
+    vi.clearAllMocks()
+    vi.mocked(firestoreMock.loadNextSeqFromFirestore).mockResolvedValue(1)
+  })
+
+  it('reload in cloud mode refetches', async () => {
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([localSolve(1)])
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([localSolve(1), localSolve(2)])
+    await solveStore.reload()
+    expect(solveStore.getSnapshot().solves).toHaveLength(2)
+  })
+
+  it('reload in local mode is a no-op', async () => {
+    solveStore.configure({ enabled: false, user: null })
+    await solveStore.reload()
+    expect(firestoreMock.loadSolvesFromFirestore).not.toHaveBeenCalled()
+  })
+
+  it('runBulkOp success: status refreshing → idle, reload runs', async () => {
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([])
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([localSolve(1)])
+    const observed: string[] = []
+    const unsub = solveStore.subscribe(() => observed.push(solveStore.getSnapshot().status))
+    const fn = vi.fn().mockResolvedValue('ok')
+    const result = await solveStore.runBulkOp(fn)
+    unsub()
+    expect(result).toBe('ok')
+    expect(observed).toContain('refreshing')
+    expect(solveStore.getSnapshot().status).toBe('idle')
+    expect(solveStore.getSnapshot().solves).toHaveLength(1)
+  })
+
+  it('runBulkOp failure: status error, no reload, error re-thrown', async () => {
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([])
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockClear()
+    await expect(solveStore.runBulkOp(() => Promise.reject(new Error('oops')))).rejects.toThrow('oops')
+    expect(solveStore.getSnapshot().status).toBe('error')
+    expect(firestoreMock.loadSolvesFromFirestore).not.toHaveBeenCalled()
+  })
+})

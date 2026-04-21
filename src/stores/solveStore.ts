@@ -111,6 +111,24 @@ async function doCloudLoad(uid: string, localSolves: SolveRecord[], token: numbe
   setState({ solves, status: 'idle', cloudReady: true, error: null })
 }
 
+async function reloadInternal(): Promise<void> {
+  const uid = lastCloudConfig?.user?.uid ?? null
+  const useCloud = !!(lastCloudConfig?.enabled && uid)
+  if (!useCloud || !uid) return
+  activeLoadToken++
+  const token = activeLoadToken
+  const [solves, nextSeq] = await Promise.all([
+    loadSolvesFromFirestore(uid),
+    loadNextSeqFromFirestore(uid),
+  ])
+  if (token !== activeLoadToken) return
+  if (nextSeq > nextId) {
+    nextId = nextSeq
+    saveNextId(nextId)
+  }
+  setState({ solves, cloudReady: true, error: null })
+}
+
 let lastConfigKey: string | null = null
 let lastCloudConfig: CloudConfig | null = null
 
@@ -278,6 +296,33 @@ export const solveStore = {
     }
 
     return { committed, failed }
+  },
+
+  async reload(): Promise<void> {
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    if (!useCloud) return
+    setState({ status: 'refreshing', error: null })
+    try {
+      await reloadInternal()
+      setState({ status: 'idle' })
+    } catch (e) {
+      setState({ status: 'error', error: String(e) })
+      throw e
+    }
+  },
+
+  async runBulkOp<T>(fn: () => Promise<T>): Promise<T> {
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    setState({ status: 'refreshing', error: null })
+    try {
+      const result = await fn()
+      if (useCloud) await reloadInternal()
+      setState({ status: 'idle' })
+      return result
+    } catch (e) {
+      setState({ status: 'error', error: String(e) })
+      throw e
+    }
   },
 
   async deleteSolve(id: number): Promise<void> {
