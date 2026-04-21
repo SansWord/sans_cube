@@ -19,7 +19,7 @@ import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, loadNextSeqFromFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
@@ -119,43 +119,30 @@ export default function App() {
     setMethodMismatches((prev) => prev ? prev.filter((m) => m.solve.id !== id) : prev)
   }
 
-  // Commit imported acubemy drafts using the same primitives as handleDebugUpdate.
-  // We don't route through useSolveHistory because that hook lives in TimerScreen,
-  // which isn't mounted in debug mode. We re-read state inside the handler to
-  // guard against cloud-target changes between modal open and commit.
   const handleAcubemyCommit = async (drafts: SolveRecord[]): Promise<void> => {
+    const current = solveStore.getSnapshot().solves
     const useCloudNow = !!(cloudSync.enabled && cloudSync.user)
     const uid = cloudSync.user?.uid ?? null
 
-    if (useCloudNow && uid) {
-      const existing = await loadSolvesFromFirestore(uid)
-      const usedDates = new Set(existing.map(s => s.date))
-      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
-      const counter = await loadNextSeqFromFirestore(uid)
-      let nextSeq = Math.max(maxSeq + 1, counter)
+    const usedDates = new Set(current.map(s => s.date))
+    const maxSeqLocal = Math.max(0, ...current.map(s => s.seq ?? 0))
+    const storedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NEXT_ID) ?? '1', 10) || 1
+    const cloudCounter = useCloudNow && uid ? await loadNextSeqFromFirestore(uid) : 0
+    let nextSeq = Math.max(maxSeqLocal + 1, storedCounter, cloudCounter)
 
-      for (const draft of drafts) {
-        let date = draft.date
-        while (usedDates.has(date)) date += 1
-        usedDates.add(date)
-        const record: SolveRecord = { ...draft, date, id: date, seq: nextSeq }
-        nextSeq++
-        await addSolveToFirestore(uid, record)
-      }
-      await updateCounterInFirestore(uid, nextSeq)
-    } else {
-      const existing = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
-      const storedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NEXT_ID) ?? '1', 10) || 1
-      let nextSeq = Math.max(maxSeq + 1, storedCounter)
-      let nextId = nextSeq
-      const toWrite: SolveRecord[] = drafts.map(draft => {
-        const record: SolveRecord = { ...draft, id: nextId, seq: nextSeq }
-        nextId++; nextSeq++
-        return record
-      })
-      saveToStorage(STORAGE_KEYS.SOLVES, [...existing, ...toWrite])
-      localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
+    const prepared: SolveRecord[] = drafts.map(draft => {
+      let date = draft.date
+      while (usedDates.has(date)) date += 1
+      usedDates.add(date)
+      const id = useCloudNow ? date : nextSeq
+      const record: SolveRecord = { ...draft, date, id, seq: nextSeq }
+      nextSeq++
+      return record
+    })
+
+    const { failed } = await solveStore.addMany(prepared)
+    if (failed.length > 0) {
+      throw new Error(`${failed.length} of ${prepared.length} failed to import`)
     }
   }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { SolveRecord } from '../types/solve'
-import type { CloudConfig } from '../hooks/useSolveHistory'
+import type { CloudConfig } from '../stores/solveStore'
 import type { PreviewSummary } from '../utils/acubemyImport/types'
 import { parseExport } from '../utils/acubemyImport/parseExport'
 
