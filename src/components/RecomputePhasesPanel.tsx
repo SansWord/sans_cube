@@ -28,6 +28,17 @@ type PanelState =
   | { kind: 'committing'; results: RecomputeResult; progress: { batch: number; total: number } }
   | { kind: 'committed'; results: RecomputeResult; committedCount: number }
 
+/** True when at least one matching phase has a different `turns` count. */
+function hasTurnsDiff(change: RecomputeChange): boolean {
+  for (let i = 0; i < change.newPhases.length; i++) {
+    const oldP = change.oldPhases[i]
+    const newP = change.newPhases[i]
+    if (!oldP || oldP.label !== newP.label) return true
+    if (oldP.turns !== newP.turns) return true
+  }
+  return change.oldPhases.length !== change.newPhases.length
+}
+
 /** Per-phase turn counts, formatted for display. Example: "Cross 7 steps | F2L1 5 steps". */
 function phaseRow(phases: PhaseRecord[]): string {
   return phases.map((p) => `${p.label} ${p.turns} steps`).join(' | ')
@@ -115,19 +126,29 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
             {' · '}
             <span style={{ color: '#888' }}>Skipped: {state.results.skipped.length}</span>
           </div>
+          <div style={{ color: '#666', fontSize: 10, marginBottom: 6, lineHeight: 1.5 }}>
+            <div><span style={{ color: '#4c4' }}>Unchanged</span>: recomputed phases match stored phases — nothing to write.</div>
+            <div><span style={{ color: '#e8a020' }}>Changed</span>: recomputed phases differ — will be written on commit.</div>
+            <div><span style={{ color: '#e74c3c' }}>Failed</span>: <code>recomputePhases</code> returned null (e.g. moves don't replay to a solved cube) — excluded from commit.</div>
+            <div><span style={{ color: '#888' }}>Skipped</span>: not scanned (example solve, or <code>method === 'freeform'</code>).</div>
+          </div>
 
-          {state.results.changed.length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ color: '#888', marginBottom: 4 }}>Sample changed (first 5):</div>
-              {state.results.changed.slice(0, 5).map(({ solve, oldPhases, newPhases }) => (
-                <div key={solve.id} style={{ borderTop: '1px solid #222', padding: '3px 0' }}>
-                  <div><SolveIdLink solve={solve} onClick={onSolveClick} /> <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
-                  <div style={{ color: '#e74c3c' }}>old: {phaseRow(oldPhases)}</div>
-                  <div style={{ color: '#4c4' }}>new: {phaseRowWithDiff(newPhases, oldPhases)}</div>
-                </div>
-              ))}
-            </div>
-          )}
+          {(() => {
+            const turnsDiffSamples = state.results.changed.filter(hasTurnsDiff).slice(0, 5)
+            if (turnsDiffSamples.length === 0) return null
+            return (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ color: '#888', marginBottom: 4 }}>Sample changed with turn-count diff (first 5):</div>
+                {turnsDiffSamples.map(({ solve, oldPhases, newPhases }) => (
+                  <div key={solve.id} style={{ borderTop: '1px solid #222', padding: '3px 0' }}>
+                    <div><SolveIdLink solve={solve} onClick={onSolveClick} /> <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
+                    <div style={{ color: '#e74c3c' }}>old: {phaseRow(oldPhases)}</div>
+                    <div style={{ color: '#4c4' }}>new: {phaseRowWithDiff(newPhases, oldPhases)}</div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
 
           {state.results.failed.length > 0 && (
             <div style={{ marginBottom: 8 }}>
