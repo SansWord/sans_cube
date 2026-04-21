@@ -24,6 +24,7 @@ export function useSolveStore() {
     reload:         solveStore.reload.bind(solveStore),
     runBulkOp:      solveStore.runBulkOp.bind(solveStore),
     dismissExample: solveStore.dismissExample.bind(solveStore),
+    reloadLocal:    solveStore.reloadLocal.bind(solveStore),
     status:         state.status,
     error:          state.error,
     cloudReady:     state.cloudReady,

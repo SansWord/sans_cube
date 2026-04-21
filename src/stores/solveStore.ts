@@ -325,6 +325,11 @@ export const solveStore = {
     }
   },
 
+  reloadLocal(): void {
+    if (lastCloudConfig?.enabled && lastCloudConfig?.user) return
+    setState({ solves: loadLocalSolves() })
+  },
+
   async deleteSolve(id: number): Promise<void> {
     if (id < 0) { solveStore.dismissExample(id); return }
     const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
