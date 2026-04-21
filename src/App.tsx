@@ -80,7 +80,7 @@ export default function App() {
     logCubeFirstMove(driverParam)
   }, driverVersion)
 
-const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
+  const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
   const [recalibratedCount, setRecalibratedCount] = useState(0)
   const [recalibratingCloud, setRecalibratingCloud] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibratedCloudCount, setRecalibratedCloudCount] = useState(0)
