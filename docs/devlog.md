@@ -61,6 +61,26 @@ A record of what was built and what was learned, especially around co-working wi
 
 ---
 
+## Meta — session cost analysis tooling (2026-04-21)
+
+**Review:** not yet
+
+**What was built:**
+- `scripts/cost_extract.py` — extracts token usage and cost from a single Claude Code session JSONL. Accepts a session name (from `/rename`) or a file path; auto-discovers subagent JSONLs from `<session-uuid>/subagents/`; outputs a token breakdown table (stable across rate card changes) and a cost estimate.
+- `docs/cost-analysis.md` — temporary reference doc for the script; marked for removal once extended into a Claude skill.
+- `CLAUDE.md` — two new sections: **Session Cost** (run the script for any one-off cost query) and **Feature Cost Tracking** (run once per phase after shipping a feature, save results to `articles/cost-<feature-name>.md`).
+- `future.md` — new `## Tooling` section with item to extend the script into a Claude skill.
+
+**Key technical learnings:**
+- `[gotcha]` Claude Code session JSONLs have two representations of cache write tokens: `cache_creation_input_tokens` (plain integer = total) and `cache_creation.ephemeral_5m/1h_input_tokens` (tier breakdown). Using both causes double-counting. Use only the `cache_creation` dict.
+- `[insight]` `cache_creation_input_tokens` as a plain integer being the sum of tiers is not documented anywhere obvious — discovered by comparing the two fields event-by-event and seeing they were always equal.
+- `[gotcha]` Sessions renamed mid-way via `/rename` have an early run of `custom-title` events with the old name, then new ones with the new name. Name lookup must scan the full file and use the **last** `custom-title` event.
+- `[insight]` Subagent JSONLs live at a predictable path — `<session-uuid>/subagents/*.jsonl` collocated with the main session file — so no manual path input is needed; auto-discovery always works.
+- `[insight]` Opus main-loop sessions write to the 1h cache tier; subagents write to the 5m tier. Both tiers are explicitly named in the JSONL (`ephemeral_1h_input_tokens` / `ephemeral_5m_input_tokens`), so there is no ambiguity.
+- `[gotcha]` The 1h cache write rate for Opus 4 is $30/MTok (2× input), not $75 (which would be the output rate). Using the output rate inflates cost estimates by 2.5×.
+
+---
+
 ## v1.25.0 — bulk recompute phases (2026-04-20 21:19)
 
 **Review:** not yet

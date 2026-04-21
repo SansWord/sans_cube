@@ -50,6 +50,7 @@ When creating any new `docs/*.md` file, always add it to this list with a one-li
 - [`url-routes.md`](docs/url-routes.md) — all supported hash-based routes (`#debug`, `#solve-{id}`, `#shared-{id}`, `#trends?...`); update when routes change
 - [`cube-notation.md`](docs/cube-notation.md) — cube move notation, facelets string format, face index reference, M/E/S cycle indices, GAN BLE protocol semantics
 - [`data-backup.md`](docs/data-backup.md) — how to back up and restore localStorage and Firestore solve data before risky operations
+- [`cost-analysis.md`](docs/cost-analysis.md) — session cost script usage + rate card reference; **temporary** — remove once extended to a Claude skill
 
 ## Persistence
 
@@ -107,6 +108,40 @@ When SansWord says **"ship it"** (or equivalent like "let's ship", "ship this"),
 8. **Clean up** — `git branch -d <feature-branch>`.
 
 If any step fails (test failures, push rejected, etc.), stop and report — don't paper over the failure.
+
+## Session Cost
+
+**Script:** `scripts/cost_extract.py` — works for any single session, with or without a feature workflow.
+
+```bash
+python3 scripts/cost_extract.py \
+  --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
+  "my session name"
+```
+
+The first argument is the session name (your `/rename` label) or a path to the `.jsonl`. Name lookup reads the full file to handle sessions renamed mid-way. Subagents are discovered automatically from `<session-uuid>/subagents/*.jsonl` — no manual input needed. Use `--no-subagents` to exclude them.
+
+When SansWord asks **"what did this session cost?"** or **"how much did [session name] cost?"**, run the script with that session name and show the output.
+
+## Feature Cost Tracking
+
+After shipping any feature that went through the design → plan → implement (+ review) workflow, run the script once per phase and append a row to `articles/cost-tracking.md`.
+
+```bash
+python3 scripts/cost_extract.py \
+  --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
+  --label design "storage module design"
+
+python3 scripts/cost_extract.py \
+  --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
+  --label plan "storage module plan"
+
+# ... repeat for implement and review
+```
+
+Output: per-session token table (stable) + cost estimate (rate card–dependent) + a one-line summary row. Save results to `articles/cost-<feature-name>.md` (e.g. `articles/cost-storage-module.md`).
+
+Each feature gets its own cost file in `articles/`. The cross-feature comparison lives in `articles/cost-comparison-acubemy-vs-storage-module.md` — update it when a new data point adds something interesting to the design/implement ratio analysis.
 
 ## End of Session
 

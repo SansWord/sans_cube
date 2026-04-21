@@ -67,7 +67,13 @@
   - **Net impact**: per-second gyro storage stays roughly flat — shorter keys compensate for the doubled sample count. Measured projection: ~1.4 KB/s (matches acubemy exactly; today we're at ~0.82 KB/s with 10 Hz sampling + long names).
   - **Requires** a v2→v3 migration path on load, a key mapping table, migration tests, and a decision on whether `importedFrom` and other optional fields also get shortened. Design carefully.
 
+## Tooling
+
+- **Extend `scripts/cost_extract.py` into a Claude skill** — wrap the script as a skill so cost queries ("what did this session cost?", "show me the storage-module breakdown") work conversationally without manually constructing CLI args or knowing the project-dir path.
+
 ## Code Quality (Refactor Backlog)
+
+**Consider removing `src/hooks/useSolveStore.ts` wrapper** — The hook wraps `useSyncExternalStore(solveStore.subscribe, solveStore.getSnapshot)` plus re-exports CRUD methods. It's pure sugar; consumers could call `useSyncExternalStore` directly and import CRUD from the store module. Revisit once we see how often consumers actually use the wrapper vs. reach for specific pieces — if usage is thin, drop the indirection.
 
 **Effect deps: move guards to refs in URL write effects** — The "trigger vs. reader" principle: effect deps should only contain values whose changes should re-run the effect. Values used only as guards (`if (x) return`) belong in refs, not deps. Two guards are still in deps:
 - `sharedSolve` and `sharedSolveLoading` in the selectedSolve URL write effect
