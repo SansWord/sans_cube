@@ -27,6 +27,7 @@ import type { MethodMismatch } from './utils/detectMethod'
 import { SolveDetailModal } from './components/SolveDetailModal'
 import { AcubemyImportModal } from './components/AcubemyImportModal'
 import { RecomputePhasesPanel } from './components/RecomputePhasesPanel'
+import { ResequenceScopePanel } from './components/ResequenceScopePanel'
 import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
@@ -79,8 +80,7 @@ export default function App() {
     logCubeFirstMove(driverParam)
   }, driverVersion)
 
-  const [renumbering, setRenumbering] = useState<'idle' | 'running' | 'done'>('idle')
-  const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
+const [recalibrating, setRecalibrating] = useState<'idle' | 'done'>('idle')
   const [recalibratedCount, setRecalibratedCount] = useState(0)
   const [recalibratingCloud, setRecalibratingCloud] = useState<'idle' | 'running' | 'done'>('idle')
   const [recalibratedCloudCount, setRecalibratedCloudCount] = useState(0)
@@ -290,21 +290,6 @@ export default function App() {
                   Sign out
                 </button>
                 <button
-                  disabled={renumbering !== 'idle'}
-                  onClick={async () => {
-                    if (!cloudSync.user) return
-                    if (!confirm('Renumber all cloud solves 1..n by date? This cannot be undone.')) return
-                    setRenumbering('running')
-                    const nextSeq = await solveStore.runBulkOp(() => renumberSolvesInFirestore(cloudSync.user!.uid))
-                    localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
-                    setRenumbering('done')
-                    setTimeout(() => window.location.reload(), 1000)
-                  }}
-                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: renumbering !== 'idle' ? 'default' : 'pointer', background: '#222', color: renumbering === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${renumbering === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
-                >
-                  {renumbering === 'running' ? 'Renumbering...' : renumbering === 'done' ? 'Done! Reloading...' : 'Renumber solves (fix seq)'}
-                </button>
-                <button
                   disabled={!(cloudSync.enabled && cloudSync.user) || storeStatus !== 'idle'}
                   onClick={() => { void solveStore.reload() }}
                   style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
@@ -432,6 +417,18 @@ export default function App() {
               }
             }}
             onSolveClick={setSelectedDebugSolve}
+          />
+          <ResequenceScopePanel
+            disabled={!(cloudSync.enabled && cloudSync.user)}
+            loadSolves={() => solveStore.getSnapshot().solves}
+            commit={async (onProgress) => {
+              const result = await solveStore.runBulkOp(() =>
+                renumberSolvesInFirestore(cloudSync.user!.uid, onProgress)
+              )
+              localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(result.nextSeq))
+              await solveStore.reload()
+              return result.renumbered
+            }}
           />
           {methodMismatches !== null && (
             <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
