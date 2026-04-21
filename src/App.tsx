@@ -30,6 +30,7 @@ import { RecomputePhasesPanel } from './components/RecomputePhasesPanel'
 import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
+import { solveStore } from './stores/solveStore'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -54,6 +55,10 @@ export default function App() {
   const [battery, setBattery] = useState<number | null>(null)
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
+
+  useEffect(() => {
+    solveStore.configure(cloudConfig)
+  }, [cloudConfig.enabled, cloudConfig.user?.uid])
 
   const prevStatusRef = useRef<string>('')
   useEffect(() => {
