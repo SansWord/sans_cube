@@ -65,6 +65,7 @@ function loadDismissedExamples(): Set<number> {
 let lastConfigKey: string | null = null
 
 function configKey(config: CloudConfig): string {
+  // enabled:true + user:null collapses to the same key as enabled:false — both use local path.
   const enabled = !!(config.enabled && config.user)
   return `${enabled ? '1' : '0'}:${config.user?.uid ?? ''}`
 }
