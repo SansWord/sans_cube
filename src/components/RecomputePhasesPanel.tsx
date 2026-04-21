@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { recomputeAllPhases } from '../utils/recomputeAllPhases'
 import type { RecomputeResult, RecomputeChange } from '../utils/recomputeAllPhases'
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, PhaseRecord } from '../types/solve'
 
 export interface RecomputePhasesPanelProps {
   /** Human-readable label for where writes go, e.g. 'Firestore' or 'localStorage'. */
@@ -26,6 +26,15 @@ type PanelState =
   | { kind: 'committing'; results: RecomputeResult; progress: { batch: number; total: number } }
   | { kind: 'committed'; results: RecomputeResult; committedCount: number }
 
+/** Cumulative end-of-phase timestamps (ms from first move), formatted for display. */
+function phaseBoundariesMs(phases: PhaseRecord[]): string {
+  let cum = 0
+  return phases.map((p) => {
+    cum += p.recognitionMs + p.executionMs
+    return `${p.label} ${(cum / 1000).toFixed(1)}s`
+  }).join(' | ')
+}
+
 export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }: RecomputePhasesPanelProps) {
   void commitChanges // used in Task 7 commit flow
   const [state, setState] = useState<PanelState>({ kind: 'idle' })
@@ -45,11 +54,48 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges }:
         ⚠️ This rewrites every solve's <code>phases</code> array. Back up your data first
         (see the Backup button in the maintenance toolbar, or <code>docs/data-backup.md</code>).
       </div>
+
       {state.kind === 'idle' && (
         <button onClick={runScan} style={buttonStyle('#3498db')}>Scan (dry run)</button>
       )}
-      {state.kind === 'scanning' && (
-        <div style={{ color: '#888' }}>Scanning...</div>
+
+      {state.kind === 'scanning' && <div style={{ color: '#888' }}>Scanning...</div>}
+
+      {(state.kind === 'results' || state.kind === 'committing' || state.kind === 'committed') && (
+        <div>
+          <div style={{ color: '#888', marginBottom: 4 }}>
+            Total scanned: {state.results.unchanged.length + state.results.changed.length + state.results.failed.length + state.results.skipped.length}
+          </div>
+          <div style={{ marginBottom: 6 }}>
+            <span style={{ color: '#4c4' }}>Unchanged: {state.results.unchanged.length}</span>
+            {' · '}
+            <span style={{ color: '#e8a020' }}>Changed: {state.results.changed.length}</span>
+            {' · '}
+            <span style={{ color: '#e74c3c' }}>Failed: {state.results.failed.length}</span>
+            {' · '}
+            <span style={{ color: '#888' }}>Skipped: {state.results.skipped.length}</span>
+          </div>
+
+          {state.results.changed.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ color: '#888', marginBottom: 4 }}>Sample changed (first 5):</div>
+              {state.results.changed.slice(0, 5).map(({ solve, oldPhases, newPhases }) => (
+                <div key={solve.id} style={{ borderTop: '1px solid #222', padding: '3px 0' }}>
+                  <div>#{solve.id} <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
+                  <div style={{ color: '#e74c3c' }}>old: {phaseBoundariesMs(oldPhases)}</div>
+                  <div style={{ color: '#4c4' }}>new: {phaseBoundariesMs(newPhases)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {state.results.failed.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ color: '#888', marginBottom: 4 }}>Failed solve ids (excluded from commit):</div>
+              <div>{state.results.failed.map((s) => `#${s.id}`).join(', ')}</div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
