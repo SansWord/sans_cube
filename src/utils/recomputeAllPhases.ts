@@ -17,6 +17,17 @@ export interface RecomputeResult {
   skipped: SolveRecord[]
 }
 
-export function recomputeAllPhases(_solves: SolveRecord[]): RecomputeResult {
-  return { unchanged: [], changed: [], failed: [], skipped: [] }
+export function recomputeAllPhases(solves: SolveRecord[]): RecomputeResult {
+  const unchanged: SolveRecord[] = []
+  const changed: RecomputeChange[] = []
+  const failed: SolveRecord[] = []
+  const skipped: SolveRecord[] = []
+
+  for (const solve of solves) {
+    if (solve.isExample) { skipped.push(solve); continue }
+    if ((solve.method ?? 'cfop') === 'freeform') { skipped.push(solve); continue }
+    // recompute logic in Task 3
+  }
+
+  return { unchanged, changed, failed, skipped }
 }
