@@ -28,12 +28,36 @@ type PanelState =
   | { kind: 'committing'; results: RecomputeResult; progress: { batch: number; total: number } }
   | { kind: 'committed'; results: RecomputeResult; committedCount: number }
 
-/** Cumulative end-of-phase timestamps (ms from first move), formatted for display. */
-function phaseBoundariesMs(phases: PhaseRecord[]): string {
+/** Cumulative end-of-phase time (s) + per-phase turns, formatted for display. */
+function phaseRow(phases: PhaseRecord[]): string {
   let cum = 0
   return phases.map((p) => {
     cum += p.recognitionMs + p.executionMs
-    return `${p.label} ${(cum / 1000).toFixed(1)}s`
+    return `${p.label} ${(cum / 1000).toFixed(1)}s ${p.turns} steps`
+  }).join(' | ')
+}
+
+/**
+ * Same as `phaseRow`, but each segment is annotated with the delta vs the matching old
+ * phase (matched by index when labels agree). Example: "Cross 3.6s(-0.1s) 7 steps(-1)".
+ */
+function phaseRowWithDiff(newPhases: PhaseRecord[], oldPhases: PhaseRecord[]): string {
+  const fmtSec = (delta: number) => `${delta >= 0 ? '+' : ''}${(delta / 1000).toFixed(1)}s`
+  const fmtInt = (delta: number) => `${delta >= 0 ? '+' : ''}${delta}`
+  let newCum = 0
+  let oldCum = 0
+  return newPhases.map((p, i) => {
+    newCum += p.recognitionMs + p.executionMs
+    const old = oldPhases[i]
+    if (old && old.label === p.label) {
+      oldCum += old.recognitionMs + old.executionMs
+      const dt = newCum - oldCum
+      const dn = p.turns - old.turns
+      const dtPart = dt === 0 ? '' : `(${fmtSec(dt)})`
+      const dnPart = dn === 0 ? '' : `(${fmtInt(dn)})`
+      return `${p.label} ${(newCum / 1000).toFixed(1)}s${dtPart} ${p.turns} steps${dnPart}`
+    }
+    return `${p.label} ${(newCum / 1000).toFixed(1)}s ${p.turns} steps`
   }).join(' | ')
 }
 
@@ -104,8 +128,8 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
               {state.results.changed.slice(0, 5).map(({ solve, oldPhases, newPhases }) => (
                 <div key={solve.id} style={{ borderTop: '1px solid #222', padding: '3px 0' }}>
                   <div><SolveIdLink solve={solve} onClick={onSolveClick} /> <span style={{ color: '#888' }}>{solve.method ?? 'cfop'}</span></div>
-                  <div style={{ color: '#e74c3c' }}>old: {phaseBoundariesMs(oldPhases)}</div>
-                  <div style={{ color: '#4c4' }}>new: {phaseBoundariesMs(newPhases)}</div>
+                  <div style={{ color: '#e74c3c' }}>old: {phaseRow(oldPhases)}</div>
+                  <div style={{ color: '#4c4' }}>new: {phaseRowWithDiff(newPhases, oldPhases)}</div>
                 </div>
               ))}
             </div>
