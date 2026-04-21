@@ -72,6 +72,10 @@
 
 - **Extend `scripts/cost_extract.py` into a Claude skill** — wrap the script as a skill so cost queries ("what did this session cost?", "show me the storage-module breakdown") work conversationally without manually constructing CLI args or knowing the project-dir path.
 
+## UX
+
+- **Resequence: show scope before confirming** — the "Renumber all cloud solves" action currently uses a JS `confirm()` prompt with no preview. Before asking the user to confirm, show how many documents will be updated (e.g. "This will renumber 312 solves. Proceed?") so the scope is visible before committing.
+
 ## Code Quality (Refactor Backlog)
 
 **Consider removing `src/hooks/useSolveStore.ts` wrapper** — The hook wraps `useSyncExternalStore(solveStore.subscribe, solveStore.getSnapshot)` plus re-exports CRUD methods. It's pure sugar; consumers could call `useSyncExternalStore` directly and import CRUD from the store module. Revisit once we see how often consumers actually use the wrapper vs. reach for specific pieces — if usage is thin, drop the indirection.
