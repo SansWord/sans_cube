@@ -26,6 +26,8 @@ import { detectMethodMismatches } from './utils/detectMethod'
 import type { MethodMismatch } from './utils/detectMethod'
 import { SolveDetailModal } from './components/SolveDetailModal'
 import { AcubemyImportModal } from './components/AcubemyImportModal'
+import { RecomputePhasesPanel } from './components/RecomputePhasesPanel'
+import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
 
@@ -436,6 +438,17 @@ export default function App() {
               Import from acubemy
             </button>
           </div>
+          <RecomputePhasesPanel
+            targetLabel="localStorage"
+            loadSolves={() => loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])}
+            commitChanges={async (changes: RecomputeChange[], onProgress) => {
+              const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+              const byId = new Map(changes.map((c) => [c.solve.id, c.newPhases]))
+              const updated = solves.map((s) => byId.has(s.id) ? { ...s, phases: byId.get(s.id)! } : s)
+              saveToStorage(STORAGE_KEYS.SOLVES, updated)
+              onProgress(1, 1)
+            }}
+          />
           {methodMismatches !== null && (
             <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc', padding: '12px 16px', borderRadius: 6, marginTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
