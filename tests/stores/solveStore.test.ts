@@ -152,3 +152,99 @@ describe('solveStore — configure (local)', () => {
     expect(after.solves).toBe(before.solves)
   })
 })
+
+describe('solveStore — CRUD (local mode)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    __resetForTests()
+    vi.clearAllMocks()
+    solveStore.configure({ enabled: false, user: null })
+  })
+
+  it('addSolve appends and persists to localStorage', async () => {
+    await solveStore.addSolve(localSolve(1))
+    expect(solveStore.getSnapshot().solves.map(s => s.id)).toEqual([1])
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.SOLVES) ?? '[]') as SolveRecord[]
+    expect(raw.map(s => s.id)).toEqual([1])
+  })
+
+  it('updateSolve replaces by id', async () => {
+    await solveStore.addSolve({ ...localSolve(1), method: 'cfop' })
+    await solveStore.updateSolve({ ...localSolve(1), method: 'roux' })
+    expect(solveStore.getSnapshot().solves[0].method).toBe('roux')
+  })
+
+  it('deleteSolve removes by id', async () => {
+    await solveStore.addSolve(localSolve(1))
+    await solveStore.addSolve(localSolve(2))
+    await solveStore.deleteSolve(1)
+    expect(solveStore.getSnapshot().solves.map(s => s.id)).toEqual([2])
+  })
+
+  it('deleteSolve(-1) routes to dismissExample', async () => {
+    await solveStore.deleteSolve(-1)
+    expect(solveStore.getSnapshot().dismissedExamples.has(-1)).toBe(true)
+  })
+
+  it('addSolve({ isExample: true }) is a no-op', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await solveStore.addSolve({ ...localSolve(99), isExample: true })
+    expect(solveStore.getSnapshot().solves).toHaveLength(0)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('nextSolveIds increments seq and persists', () => {
+    const a = solveStore.nextSolveIds()
+    const b = solveStore.nextSolveIds()
+    expect(b.seq).toBe(a.seq + 1)
+    expect(localStorage.getItem(STORAGE_KEYS.NEXT_ID)).toBe(String(b.seq + 1))
+  })
+})
+
+describe('solveStore — CRUD (cloud mode, optimistic + rollback)', () => {
+  beforeEach(async () => {
+    localStorage.clear()
+    __resetForTests()
+    vi.clearAllMocks()
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([])
+    vi.mocked(firestoreMock.loadNextSeqFromFirestore).mockResolvedValue(1)
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+  })
+
+  it('addSolve success — record stays in state, Firestore add called', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockResolvedValue(undefined)
+    vi.mocked(firestoreMock.updateCounterInFirestore).mockResolvedValue(undefined)
+    await solveStore.addSolve(localSolve(1))
+    expect(solveStore.getSnapshot().solves.map(s => s.id)).toEqual([1])
+    expect(firestoreMock.addSolveToFirestore).toHaveBeenCalledWith('u1', expect.objectContaining({ id: 1 }))
+  })
+
+  it('addSolve failure — state rolled back, error set, original thrown', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockRejectedValue(new Error('boom'))
+    vi.mocked(firestoreMock.updateCounterInFirestore).mockResolvedValue(undefined)
+    await expect(solveStore.addSolve(localSolve(1))).rejects.toThrow('boom')
+    const s = solveStore.getSnapshot()
+    expect(s.solves).toEqual([])
+    expect(s.error).toMatch(/boom/)
+  })
+
+  it('updateSolve failure rolls back', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockResolvedValue(undefined)
+    vi.mocked(firestoreMock.updateCounterInFirestore).mockResolvedValue(undefined)
+    await solveStore.addSolve({ ...localSolve(1), method: 'cfop' })
+    vi.mocked(firestoreMock.updateSolveInFirestore).mockRejectedValue(new Error('write failed'))
+    await expect(solveStore.updateSolve({ ...localSolve(1), method: 'roux' })).rejects.toThrow('write failed')
+    expect(solveStore.getSnapshot().solves[0].method).toBe('cfop')
+  })
+
+  it('deleteSolve failure rolls back', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockResolvedValue(undefined)
+    vi.mocked(firestoreMock.updateCounterInFirestore).mockResolvedValue(undefined)
+    await solveStore.addSolve(localSolve(1))
+    vi.mocked(firestoreMock.deleteSolveFromFirestore).mockRejectedValue(new Error('nope'))
+    await expect(solveStore.deleteSolve(1)).rejects.toThrow('nope')
+    expect(solveStore.getSnapshot().solves.map(s => s.id)).toEqual([1])
+  })
+})

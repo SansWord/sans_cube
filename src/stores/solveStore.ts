@@ -7,7 +7,12 @@ import {
   loadSolvesFromFirestore,
   loadNextSeqFromFirestore,
   migrateLocalSolvesToFirestore,
+  addSolveToFirestore,
+  updateSolveInFirestore,
+  deleteSolveFromFirestore,
+  updateCounterInFirestore,
 } from '../services/firestoreSolves'
+import { updateSharedSolve } from '../services/firestoreSharing'
 
 export interface CloudConfig {
   enabled: boolean
@@ -102,6 +107,7 @@ async function doCloudLoad(uid: string, localSolves: SolveRecord[], token: numbe
 }
 
 let lastConfigKey: string | null = null
+let lastCloudConfig: CloudConfig | null = null
 
 function configKey(config: CloudConfig): string {
   // enabled:true + user:null collapses to the same key as enabled:false — both use local path.
@@ -118,6 +124,7 @@ export const solveStore = {
     return state
   },
   configure(config: CloudConfig): void {
+    lastCloudConfig = config
     const key = configKey(config)
     if (key === lastConfigKey) return
     lastConfigKey = key
@@ -145,12 +152,96 @@ export const solveStore = {
       setState({ status: 'error', error: String(e) })
     })
   },
+
+  nextSolveIds(): { id: number; seq: number } {
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    const seq = nextId
+    nextId = seq + 1
+    saveNextId(nextId)
+    return { id: useCloud ? Date.now() : seq, seq }
+  },
+
+  dismissExample(id: number): void {
+    const dismissedExamples = new Set(state.dismissedExamples)
+    dismissedExamples.add(id)
+    saveToStorage(STORAGE_KEYS.DISMISSED_EXAMPLES, [...dismissedExamples])
+    setState({ dismissedExamples })
+  },
+
+  async addSolve(solve: SolveRecord): Promise<void> {
+    if (solve.isExample) { console.warn('solveStore.addSolve called with example solve; ignored'); return }
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    const uid = lastCloudConfig?.user?.uid ?? null
+    const snapshot = state.solves
+    setState({ solves: [...snapshot, solve] })
+    try {
+      if (useCloud && uid) {
+        const nextSeq = (solve.seq ?? 0) + 1
+        await Promise.all([
+          addSolveToFirestore(uid, solve),
+          updateCounterInFirestore(uid, nextSeq),
+        ])
+      } else {
+        saveToStorage(STORAGE_KEYS.SOLVES, [...snapshot, solve])
+      }
+      if (state.error) setState({ error: null })
+    } catch (e) {
+      setState({ solves: snapshot, error: String(e) })
+      throw e
+    }
+  },
+
+  async updateSolve(updated: SolveRecord): Promise<void> {
+    if (updated.isExample) { console.warn('solveStore.updateSolve called with example solve; ignored'); return }
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    const uid = lastCloudConfig?.user?.uid ?? null
+    const snapshot = state.solves
+    const next = snapshot.map(s => s.id === updated.id ? updated : s)
+    setState({ solves: next })
+    try {
+      if (useCloud && uid) {
+        await updateSolveInFirestore(uid, updated)
+        if (updated.shareId) {
+          void updateSharedSolve(updated.shareId, updated)
+        }
+      } else {
+        saveToStorage(STORAGE_KEYS.SOLVES, next)
+      }
+      if (state.error) setState({ error: null })
+    } catch (e) {
+      setState({ solves: snapshot, error: String(e) })
+      throw e
+    }
+  },
+
+  async deleteSolve(id: number): Promise<void> {
+    if (id < 0) { this.dismissExample(id); return }
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    const uid = lastCloudConfig?.user?.uid ?? null
+    const snapshot = state.solves
+    const target = snapshot.find(s => s.id === id)
+    if (!target) return
+    const next = snapshot.filter(s => s.id !== id)
+    setState({ solves: next })
+    try {
+      if (useCloud && uid) {
+        await deleteSolveFromFirestore(uid, target)
+      } else {
+        saveToStorage(STORAGE_KEYS.SOLVES, next)
+      }
+      if (state.error) setState({ error: null })
+    } catch (e) {
+      setState({ solves: snapshot, error: String(e) })
+      throw e
+    }
+  },
 }
 
 export function __resetForTests(): void {
   state = initialState()
   listeners.clear()
   lastConfigKey = null
+  lastCloudConfig = null
   migratedUids.clear()
   nextId = 1
   activeLoadToken = 0
