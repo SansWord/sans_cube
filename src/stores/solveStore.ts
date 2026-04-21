@@ -62,7 +62,7 @@ function loadLocalSolves(): SolveRecord[] {
   const migrated = raw.map(s => {
     if ((s.schemaVersion ?? 1) < 2) {
       const result = migrateSolveV1toV2(s)
-      const { movesV1: _, ...toSave } = result
+      const { movesV1: _movesV1, ...toSave } = result
       return toSave
     }
     return s

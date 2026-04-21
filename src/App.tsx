@@ -384,6 +384,7 @@ export default function App() {
                 const recalibrated = recalibrateSolveTimes(solves)
                 const count = recalibrated.filter((s, i) => s.timeMs !== solves[i].timeMs).length
                 saveToStorage(STORAGE_KEYS.SOLVES, recalibrated)
+                solveStore.reloadLocal()
                 setRecalibratedCount(count)
                 setRecalibrating('done')
                 setTimeout(() => setRecalibrating('idle'), 3000)
