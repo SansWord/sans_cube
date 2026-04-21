@@ -113,3 +113,26 @@ export async function migrateSolvesToV2InFirestore(uid: string): Promise<{ migra
 
   return { migrated, failed }
 }
+
+/**
+ * Writes `solves` back to Firestore in chunks of 100 via Promise.all(setDoc).
+ * Invokes `onProgress(batchIndex, batchCount)` after each chunk completes (1-indexed).
+ *
+ * Chunks of 100 — not writeBatch(500) — because each solve is ~35 KB and 500 would
+ * exceed Firestore's 10 MB writeBatch payload limit. See spec doc for sizing details.
+ */
+export async function bulkUpdateSolvesInFirestore(
+  uid: string,
+  solves: SolveRecord[],
+  onProgress: (batchIndex: number, batchCount: number) => void = () => {},
+): Promise<void> {
+  const CHUNK_SIZE = 100
+  const chunks: SolveRecord[][] = []
+  for (let i = 0; i < solves.length; i += CHUNK_SIZE) {
+    chunks.push(solves.slice(i, i + CHUNK_SIZE))
+  }
+  for (let i = 0; i < chunks.length; i++) {
+    await Promise.all(chunks[i].map((s) => setDoc(solveDocRef(uid, s), sanitize(s))))
+    onProgress(i + 1, chunks.length)
+  }
+}
