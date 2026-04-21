@@ -32,6 +32,7 @@ When **signed in**:
 
 ### Maintenance buttons (bottom toolbar)
 
+- **Refresh solves** — re-reads solves from Firestore (cloud mode only). Button disabled when cloud sync is off or a refresh is already in-flight. Use this to pick up changes made from another tab or device.
 - **Clear recorded moves** — clears the in-memory move list shown in MoveHistory (does not affect saved solves)
 - **Clear localStorage** — wipes all local data (solves, settings, everything); reloads
 - **Restore example solves** — un-dismisses the built-in example solves; reloads

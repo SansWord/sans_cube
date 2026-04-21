@@ -37,6 +37,14 @@ main.tsx
 
 ---
 
+## Stores
+
+Module-level singletons held outside the React tree. Consumers subscribe via dedicated hooks.
+
+- `src/stores/solveStore.ts` — single source of truth for the signed-in user's solves. Owns `solves`, `dismissedExamples`, `status`, `error`, `cloudReady`. `App` drives `solveStore.configure(cloudConfig)` in an effect; every consumer reads via `useSolveStore()`. CRUD methods are optimistic with rollback on Firestore errors. `addMany()` chunks writes by 100 via `Promise.allSettled`. `runBulkOp()` wraps server-side maintenance ops and reloads afterward.
+
+---
+
 ## Hook Ownership
 
 Each hook is owned by a single component; data flows down as props.
@@ -57,16 +65,16 @@ Each hook is owned by a single component; data flows down as props.
 **Debug-mode solve editing state (App-level):**
 - `selectedDebugSolve: SolveRecord | null` — solve currently open in the debug-mode `SolveDetailModal` overlay
 - `methodMismatches: MethodMismatch[] | null` — results from the method mismatch detector; `null` means not yet run
-- `handleDebugUpdate` — writes updated solve to localStorage or Firestore directly (bypasses `useSolveHistory`); re-checks the updated solve against `methodMismatches` and removes or updates the entry
-- `handleDebugDelete` — deletes solve from storage, closes modal, removes entry from `methodMismatches`
+- `handleDebugUpdate` — delegates to `solveStore.updateSolve`; re-checks the updated solve against `methodMismatches` and removes or updates the entry
+- `handleDebugDelete` — delegates to `solveStore.deleteSolve`, closes modal, removes entry from `methodMismatches`
 
-Note: `TimerScreen` is unmounted while debug mode is active, so direct storage writes from `App` are picked up cleanly when timer mode is next opened.
+Note: because `solveStore` is a module-level singleton, updates made in debug mode are immediately visible when timer mode is next opened (no re-fetch needed).
 
 ### `TimerScreen` (`src/components/TimerScreen.tsx`)
 
 | Hook | Provides |
 |---|---|
-| `useSolveHistory` | `solves`, `addSolve`, `deleteSolve`, `updateSolve`, `nextSolveIds`, `cloudLoading` |
+| `useSolveStore` | `solves`, `addSolve`, `deleteSolve`, `updateSolve`, `nextSolveIds`, `cloudLoading` (derived from `status === 'loading'`) |
 | `useScramble` | `scramble`, `steps`, `regenerate`, `load` |
 | `useScrambleTracker` | `stepStates`, `trackingState`, `wrongSegments`, `reset` |
 | `useTimer` | `status`, `elapsedMs`, `phaseRecords`, `recordedMoves`, `quaternionSnapshots`, `reset` |
@@ -101,7 +109,7 @@ Rendered in three contexts: inside `TimerScreen` (timer mode, editable), directl
 
 ### `SolveHistorySidebar` (`src/components/SolveHistorySidebar.tsx`)
 
-No custom hooks. Calls `computeStats` and `filterSolves` (both exported from `useSolveHistory`) to derive statistics from the `solves` array it receives as a prop. Renders in two modes depending on whether `onClose` is provided: desktop sidebar or mobile full-screen overlay.
+No custom hooks. Calls `computeStats` and `filterSolves` (both exported from `src/utils/solveStats.ts`) to derive statistics from the `solves` array it receives as a prop. Renders in two modes depending on whether `onClose` is provided: desktop sidebar or mobile full-screen overlay.
 
 ---
 

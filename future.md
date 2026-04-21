@@ -4,7 +4,7 @@
 
 ## Investigate
 - **Save a shared solve into own history** — shared solve at `#shared-F8x2wwtsSuv3I5NEqdNA` needs to be importable into localStorage or Firestore. Currently shared solves are view-only with no way to copy them into your own solve list.
-- **Cache loaded Firestore solves across debug/timer toggles** — switching between debug and timer mode appears to re-fetch solves from Firestore each time. Verify this is happening, then decide whether to keep the loaded data in memory (e.g. lift the cache into a hook/context) so the round-trip only happens on first load and explicit refresh.
+- ~~**Cache loaded Firestore solves across debug/timer toggles** — switching between debug and timer mode appears to re-fetch solves from Firestore each time. Verify this is happening, then decide whether to keep the loaded data in memory (e.g. lift the cache into a hook/context) so the round-trip only happens on first load and explicit refresh.~~ — done in v1.26.0
 
 ## Known bugs
 - ~~cloud sync mode with url into solves or stats-trend~~ — fixed in v1.7
