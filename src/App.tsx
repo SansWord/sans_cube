@@ -361,32 +361,6 @@ export default function App() {
                       ? `Done — ${migrateV2Result.migrated} migrated${migrateV2Result.failed > 0 ? `, ${migrateV2Result.failed} failed` : ''}`
                       : 'Migrate solves to v2 (fix M/E/S labels)'}
                 </button>
-                <button
-                  disabled={detectingMismatches}
-                  onClick={async () => {
-                    if (!cloudSync.user) return
-                    setDetectingMismatches(true)
-                    const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
-                    setMethodMismatches(detectMethodMismatches(solves))
-                    setDetectingMismatches(false)
-                  }}
-                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: detectingMismatches ? 'default' : 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
-                >
-                  {detectingMismatches ? 'Detecting...' : 'Detect method mismatches'}
-                </button>
-                <RecomputePhasesPanel
-                  targetLabel="Firestore"
-                  loadSolves={async () => {
-                    if (!cloudSync.user) return []
-                    return await loadSolvesFromFirestore(cloudSync.user.uid)
-                  }}
-                  commitChanges={async (changes: RecomputeChange[], onProgress) => {
-                    if (!cloudSync.user) return
-                    const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
-                    await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
-                  }}
-                  onSolveClick={setSelectedDebugSolve}
-                />
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -429,13 +403,21 @@ export default function App() {
               {recalibrating === 'done' ? `Done — ${recalibratedCount} solve${recalibratedCount !== 1 ? 's' : ''} updated` : 'Recalibrate solve times (hw clock)'}
             </button>
             <button
-              onClick={() => {
-                const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-                setMethodMismatches(detectMethodMismatches(solves))
+              disabled={detectingMismatches}
+              onClick={async () => {
+                if (cloudSync.enabled && cloudSync.user) {
+                  setDetectingMismatches(true)
+                  const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
+                  setMethodMismatches(detectMethodMismatches(solves))
+                  setDetectingMismatches(false)
+                } else {
+                  const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                  setMethodMismatches(detectMethodMismatches(solves))
+                }
               }}
-              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
+              style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: detectingMismatches ? 'default' : 'pointer' }}
             >
-              Detect method mismatches
+              {detectingMismatches ? 'Detecting...' : `Detect method mismatches (${cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'})`}
             </button>
             <button
               onClick={async () => {
@@ -452,14 +434,24 @@ export default function App() {
             </button>
           </div>
           <RecomputePhasesPanel
-            targetLabel="localStorage"
-            loadSolves={() => loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])}
+            targetLabel={cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'}
+            loadSolves={async () => {
+              if (cloudSync.enabled && cloudSync.user) {
+                return await loadSolvesFromFirestore(cloudSync.user.uid)
+              }
+              return loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+            }}
             commitChanges={async (changes: RecomputeChange[], onProgress) => {
-              const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-              const byId = new Map(changes.map((c) => [c.solve.id, c.newPhases]))
-              const updated = solves.map((s) => byId.has(s.id) ? { ...s, phases: byId.get(s.id)! } : s)
-              saveToStorage(STORAGE_KEYS.SOLVES, updated)
-              onProgress(1, 1)
+              if (cloudSync.enabled && cloudSync.user) {
+                const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
+                await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
+              } else {
+                const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
+                const byId = new Map(changes.map((c) => [c.solve.id, c.newPhases]))
+                const updated = solves.map((s) => byId.has(s.id) ? { ...s, phases: byId.get(s.id)! } : s)
+                saveToStorage(STORAGE_KEYS.SOLVES, updated)
+                onProgress(1, 1)
+              }
             }}
             onSolveClick={setSelectedDebugSolve}
           />
