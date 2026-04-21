@@ -125,10 +125,17 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
             </div>
           )}
 
-          {state.kind === 'results' && state.results.changed.length > 0 && (
-            <button onClick={runCommit} style={buttonStyle('#e8a020')}>
-              Commit {state.results.changed.length} change{state.results.changed.length === 1 ? '' : 's'}
-            </button>
+          {state.kind === 'results' && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {state.results.changed.length > 0 && (
+                <button onClick={runCommit} style={buttonStyle('#e8a020')}>
+                  Commit {state.results.changed.length} change{state.results.changed.length === 1 ? '' : 's'}
+                </button>
+              )}
+              <button onClick={() => setState({ kind: 'idle' })} style={buttonStyle('#888')}>
+                Cancel
+              </button>
+            </div>
           )}
 
           {state.kind === 'committing' && (

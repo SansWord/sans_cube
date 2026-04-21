@@ -167,6 +167,44 @@ describe('RecomputePhasesPanel — commit', () => {
     expect(firstArg[0].solve.id).toBe(500)
   })
 
+  it('Cancel button after dry run returns the panel to idle (Scan visible)', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const changedSolve: SolveRecord = {
+      ...roux, id: 900,
+      phases: fresh.map((p, i) => i === 0 ? { ...p, turns: p.turns + 1 } : p),
+    }
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [changedSolve]}
+        commitChanges={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Changed: 1/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }))
+    expect(screen.queryByText(/Changed: 1/)).toBeNull()
+    expect(screen.getByRole('button', { name: /Scan/i })).toBeTruthy()
+  })
+
+  it('Cancel is also available when there are no changes', async () => {
+    const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
+    const fresh = recomputePhases(roux, ROUX)!
+    const unchangedSolve: SolveRecord = { ...roux, id: 901, phases: fresh }
+    render(
+      <RecomputePhasesPanel
+        targetLabel="localStorage"
+        loadSolves={async () => [unchangedSolve]}
+        commitChanges={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Scan/i }))
+    await waitFor(() => expect(screen.getByText(/Unchanged: 1/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }))
+    expect(screen.getByRole('button', { name: /Scan/i })).toBeTruthy()
+  })
+
   it('shows "batch X of Y" during commit', async () => {
     const roux = { ...ROUX_SOLVE_1, method: 'roux' as const, isExample: false }
     const fresh = recomputePhases(roux, ROUX)!
