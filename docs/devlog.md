@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.25.0](#v1250--bulk-recompute-phases-2026-04-20-2119) | Bulk recompute phases debug panel — dry-run scan + commit only changed solves; mounted twice (localStorage + Firestore) via injected callbacks; chunked `Promise.all(setDoc)` for cloud writes |
 | [v1.24.1](#v1241--roux-center-drift--rotation-invariance-2026-04-20-1517) | Roux isDone predicates tolerate M/E/S center drift and whole-cube rotations; extracted shared `cubeGeometry.ts`; rotation-invariance property tests; Sune-based CMLL false-positive guard |
 | [v1.24.0](#v1240--cfop-center-drift-tolerance-2026-04-20-1158) | CFOP isDone predicates (`isCrossDone`, `countCompletedF2LSlots`, `isEOLLDone`, `isOLLDone`, `isCPLLDone`) no longer assume Y on D / W on U — look up target color's current face and compare against live centers |
 | [v1.23.0](#v1230--acubemy-import-2026-04-18-2226) | Bulk import from acubemy JSON with dedup, preview, and warnings — new `AcubemyImportModal` in debug mode; `importedFrom` schema field; `ColorMoveTranslator.flush()` for batch slice pairing |
@@ -57,6 +58,29 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.25.0 — bulk recompute phases (2026-04-20 21:19)
+
+**Review:** not yet
+
+**Design docs:**
+- Bulk Recompute Phases: [Spec](superpowers/specs/2026-04-20-bulk-recompute-phases-design.md) [Plan](superpowers/plans/2026-04-20-bulk-recompute-phases.md)
+
+**What was built:**
+- `src/utils/recomputeAllPhases.ts` — pure scanner returning `{unchanged, changed, failed, skipped}`. Skips `isExample` and `method === 'freeform'`; bucketing relies on a `phasesEqual` deep compare across `label / group / recognitionMs / executionMs / turns`.
+- `src/components/RecomputePhasesPanel.tsx` — inline debug panel: dry-run scan → bucket counts → up to 5 sample changed rows (old vs new phase boundaries in seconds) + failed solve ids → commit only changed + successfully-recomputed solves. Self-contained `useState` FSM (`idle / scanning / results / committing / committed`), parent injects `loadSolves` and `commitChanges` callbacks so the same component drives both stores.
+- `src/services/firestoreSolves.ts` — `bulkUpdateSolvesInFirestore(uid, solves, onProgress)`; chunked `Promise.all(setDoc)` at 100 per chunk, with `onProgress(batchIndex, batchCount)` invoked after each chunk.
+- `src/App.tsx` — mounted the panel twice (once in Cloud Sync signed-in block, once in the maintenance toolbar), mirroring the v1.9 method-mismatch two-button split.
+- Docs: `debug-mode.md` updated with both panel entries.
+
+**Key technical learnings:**
+- `[note]` Firestore `writeBatch(500)` would exceed the 10 MB payload limit at our ~35 KB per solve; chunked `Promise.all(setDoc)` at 100 per chunk is the right pattern and matches existing bulk handlers in `firestoreSolves.ts` (`renumberSolvesInFirestore`, `recalibrateSolvesInFirestore`, `migrateSolvesToV2InFirestore`).
+- `[insight]` Failed recomputes (moves don't replay to solved) are surfaced but excluded from commit — writing anything back on a solve whose own moves don't replay would compound bad data. The dry-run UI shows failed ids so the user can investigate them individually instead.
+
+**Process learnings:**
+- `[note]` Extracting the panel out of `App.tsx` (unlike the v1.9 mismatch scanner which is inlined) kept `App.tsx` from growing further — pattern to prefer for new debug panels. Injecting `loadSolves` / `commitChanges` callbacks let one component cover both storage backends without branching internally.
 
 ---
 
