@@ -31,6 +31,7 @@ import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
 import { solveStore } from './stores/solveStore'
+import { useSolveStore } from './hooks/useSolveStore'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -53,6 +54,7 @@ export default function App() {
     setMode(currentRoute.type === 'debug' ? 'debug' : 'timer')
   }, [currentRoute])
   const [battery, setBattery] = useState<number | null>(null)
+  const storeStatus = useSolveStore().status
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
 
@@ -301,6 +303,13 @@ export default function App() {
                   style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: renumbering !== 'idle' ? 'default' : 'pointer', background: '#222', color: renumbering === 'done' ? '#4c4' : '#e8a020', border: `1px solid ${renumbering === 'done' ? '#4c4' : '#e8a020'}`, borderRadius: 3, fontSize: 11 }}
                 >
                   {renumbering === 'running' ? 'Renumbering...' : renumbering === 'done' ? 'Done! Reloading...' : 'Renumber solves (fix seq)'}
+                </button>
+                <button
+                  disabled={!(cloudSync.enabled && cloudSync.user) || storeStatus !== 'idle'}
+                  onClick={() => { void solveStore.reload() }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
+                >
+                  Refresh solves
                 </button>
                 <button
                   disabled={recalibratingCloud !== 'idle'}
