@@ -19,7 +19,7 @@ import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
@@ -374,6 +374,18 @@ export default function App() {
                 >
                   {detectingMismatches ? 'Detecting...' : 'Detect method mismatches'}
                 </button>
+                <RecomputePhasesPanel
+                  targetLabel="Firestore"
+                  loadSolves={async () => {
+                    if (!cloudSync.user) return []
+                    return await loadSolvesFromFirestore(cloudSync.user.uid)
+                  }}
+                  commitChanges={async (changes: RecomputeChange[], onProgress) => {
+                    if (!cloudSync.user) return
+                    const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
+                    await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
+                  }}
+                />
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
