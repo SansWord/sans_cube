@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.27.0](#v1270--resequence-scope-panel-2026-04-21-1248) | Resequence scope panel in debug mode — previews total count, first-mismatch cursor, renumber count before committing; tail-only semantics; `<DebugPanel>` shell extracted from `<RecomputePhasesPanel>` |
 | [v1.26.0](#v1260--shared-solve-store-2026-04-21) | Module-level `solveStore` singleton replaces `useSolveHistory`; zero Firestore re-reads on timer/debug toggles; chunked `addMany`; `Refresh solves` button |
 | [v1.25.0](#v1250--bulk-recompute-phases-2026-04-20-2119) | Bulk recompute phases debug panel — dry-run scan + commit only changed solves; single mount that branches on cloud-sync state; chunked `Promise.all(setDoc)` for cloud writes; clickable solve ids, sample filtered to turn-count diffs, batch-0 progress, optimized renumber |
 | [v1.24.1](#v1241--roux-center-drift--rotation-invariance-2026-04-20-1517) | Roux isDone predicates tolerate M/E/S center drift and whole-cube rotations; extracted shared `cubeGeometry.ts`; rotation-invariance property tests; Sune-based CMLL false-positive guard |
@@ -59,6 +60,29 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.27.0 — Resequence scope panel (2026-04-21 12:48)
+
+**Review:** not yet
+**Design docs:**
+- Resequence Scope Panel: [Spec](superpowers/specs/2026-04-21-resequence-scope-preview-design.md) [Plan](superpowers/plans/2026-04-21-resequence-scope-panel.md)
+
+**What was built:**
+- New `<ResequenceScopePanel>` in debug mode — replaces the bare `confirm()` renumber button with a panel that previews scope (total count, first-mismatch cursor, renumber count) before the user commits
+- State machine: `idle → ready → committing → committed`, auto-resets to idle after 3 s
+- New pure helper `previewRenumberScope` — synchronous in-memory scan; shares the same sort + filter logic as `renumberSolvesInFirestore` so preview count and commit count agree by construction
+- `renumberSolvesInFirestore` updated to tail-only semantics: preserves earlier solves before the first `seq` mismatch; only renumbers the tail slice; counter update runs after all writes (crash-safety)
+- New `<DebugPanel>` shell component — shared box/title/warning chrome extracted from `<RecomputePhasesPanel>`; disabled path dims children with `opacity: 0.5, pointerEvents: none` and shows a hint
+- `<RecomputePhasesPanel>` refactored onto `<DebugPanel>` with no behavior change
+- Panel is disabled (with hint) when cloud sync is off
+
+**Key technical learnings:**
+- `[insight]` Tail-only semantics are safer than full-list renumber for users with imported solves: find the first mismatch index, then only touch the tail — earlier rows with non-1..n seq are preserved
+- `[insight]` Crash-safety ordering: counter update runs after `bulkUpdateSolvesInFirestore` resolves (not in a `Promise.all`) — if writes reject partway, the counter isn't advanced past writes that didn't happen
+- `[note]` `seq?: number` is optional, so `s.seq !== i + 1` is `true` when `seq` is `undefined` — old imported solves without a seq get correctly renumbered; the behavior is implicit so worth a test or comment if this path is real-world
+- `[note]` `previewRenumberScope` is pure with no I/O, making it trivially testable; the shared sort + filter logic with `renumberSolvesInFirestore` means preview count and commit count agree for the same snapshot
 
 ---
 
