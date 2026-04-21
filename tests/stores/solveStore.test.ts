@@ -14,7 +14,7 @@ vi.mock('../../src/services/firestoreSolves', () => ({
   migrateSolvesToV2InFirestore: vi.fn(),
 }))
 
-import { solveStore, __resetForTests } from '../../src/stores/solveStore'
+import { solveStore, __resetForTests, _internal } from '../../src/stores/solveStore'
 
 describe('solveStore — initial snapshot', () => {
   beforeEach(() => {
@@ -33,10 +33,12 @@ describe('solveStore — initial snapshot', () => {
     expect(s.cloudReady).toBe(false)
   })
 
-  it('subscribe returns an unsubscribe function', () => {
+  it('subscribe returns an unsubscribe function that removes the listener', () => {
     const listener = vi.fn()
     const unsub = solveStore.subscribe(listener)
     expect(typeof unsub).toBe('function')
     unsub()
+    _internal.setState({ error: 'test' })
+    expect(listener).not.toHaveBeenCalled()
   })
 })
