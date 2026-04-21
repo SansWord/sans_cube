@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Claude Opus 4.7: same model, two feature sizes</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --border: #30363d;
+    --mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-feature-settings: "calt" 0;
+  }
+  .card {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px 80px 50px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 500;
+    margin: 0 0 12px;
+    letter-spacing: 0.2px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 18px;
+    margin: 0 0 44px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 18px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 14px 20px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    font-weight: 500;
+    color: var(--fg);
+    background: transparent;
+  }
+  td:first-child {
+    color: var(--muted);
+    width: 22%;
+  }
+  td .unit {
+    color: var(--muted);
+    margin-left: 6px;
+    font-size: 16px;
+  }
+  td.delta {
+    font-weight: 500;
+  }
+  td.delta .tag {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 6px;
+    font-size: 16px;
+  }
+  .footnotes {
+    margin-top: 28px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .footnotes .note {
+    padding-left: 8px;
+  }
+  .footnotes .fineprint {
+    margin-top: 10px;
+    text-align: center;
+    color: var(--muted);
+    opacity: 0.85;
+  }
+  sup {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Claude Opus 4.7: same model, two feature sizes</h1>
+    <p class="subtitle">How API dollars and engaged attention scale with feature size &middot; two-task anecdote, not a benchmark</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Freeform-method feature</th>
+          <th>Acubemy-import feature</th>
+          <th>Per-point ratio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Story points</td>
+          <td>5 pts</td>
+          <td>16 pts</td>
+          <td class="delta">3.2&times;<span class="tag">feature size</span></td>
+        </tr>
+        <tr>
+          <td>API cost<sup> 1</sup></td>
+          <td>$73.06 <span class="unit">($14.6 / pt)</span></td>
+          <td>$246.90 <span class="unit">($15.4 / pt)</span></td>
+          <td class="delta">1.06&times;<span class="tag">flat</span></td>
+        </tr>
+        <tr>
+          <td>Engaged time<sup> 2</sup></td>
+          <td>33m 33s <span class="unit">(6.7 min / pt)</span></td>
+          <td>5h 16m <span class="unit">(19.8 min / pt)</span></td>
+          <td class="delta">2.95&times;<span class="tag">super-linear</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="footnotes">
+      <div class="note"><sup>1</sup> Total API spend across all phases (brainstorm + plan + execute) including subagents.</div>
+      <div class="note"><sup>2</sup> Sum of inter-event deltas where gap &le; 10 min &mdash; excludes multi-hour idle pauses.</div>
+      <div class="fineprint">Same model (Opus 4.7), same author, same repo, three clean-context sessions per feature &middot; API pricing as of Apr 2026</div>
+    </div>
+  </div>
+</body>
+</html>
