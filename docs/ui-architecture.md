@@ -70,6 +70,11 @@ Each hook is owned by a single component; data flows down as props.
 
 Note: because `solveStore` is a module-level singleton, updates made in debug mode are immediately visible when timer mode is next opened (no re-fetch needed).
 
+**Debug panels (`App`-level):**
+- **`DebugPanel`** — presentational shell for debug panels: box/title/warning chrome, disabled dimming with hint. Exports `buttonStyle` helper. No state.
+- **`RecomputePhasesPanel`** — debug panel for scanning and committing phase recomputation. Props: `targetLabel`, `loadSolves`, `commitChanges`, `onSolveClick`. State machine: `idle → scanning → results → committing → committed`.
+- **`ResequenceScopePanel`** — debug panel for previewing and committing Firestore `seq` renumber. Props: `disabled`, `loadSolves`, `commit`. State machine: `idle → ready → committing → committed`. Uses `DebugPanel`, `previewRenumberScope`, `buttonStyle`.
+
 ### `TimerScreen` (`src/components/TimerScreen.tsx`)
 
 | Hook | Provides |

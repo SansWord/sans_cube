@@ -26,7 +26,6 @@ When **signed in**:
 - Signed-in email display
 - **Enable cloud sync** checkbox — toggles Firestore sync on/off (persisted to localStorage)
 - **Sign out**
-- **Renumber solves (fix seq)** — reassigns sequential `seq` numbers 1..n to all Firestore solves ordered by date. Destructive, requires confirmation. Reloads the page after.
 - **Recalibrate solve times (hw clock)** — fixes `timeMs` inflation in cloud solves caused by BLE delivery delay. Uses `moves[last].cubeTimestamp - moves[0].cubeTimestamp` as the true elapsed time. Only corrects (never inflates). Shows count of updated solves.
 - **Migrate solves to v2 (fix M/E/S labels)** — migrates all Firestore solves with `schemaVersion < 2` to v2. Shows pending count before confirmation. Solves that pass the phase invariant get `movesV1` written for user review via the solve detail modal. Shows migrated/failed counts on completion.
 
@@ -40,6 +39,7 @@ When **signed in**:
 - **Detect method mismatches (Firestore | localStorage)** — scans solves and flags ones where the stored method likely disagrees with the actual solving technique used. Targets Firestore when cloud sync is enabled and signed in, otherwise localStorage. Label updates dynamically. See below.
 - **Import from acubemy** — opens the `AcubemyImportModal` to bulk-import acubemy JSON exports. See `docs/import-data.md` for the full flow.
 - **Recompute phases (Firestore | localStorage)** — inline `<RecomputePhasesPanel>` that scans all solves from the active store, recomputes `phases` using the current `isDone` predicates, shows a dry-run summary (unchanged / changed / failed / skipped counts + a small inline legend explaining each bucket, up to 5 sample changed rows filtered to those with a turn-count diff, failed ids — both sample-row and failed ids are clickable to open the solve detail modal), and commits only the changed, successfully-recomputed solves. Cancel returns to idle from the dry-run. Targets Firestore (chunked `Promise.all(setDoc)`, 100 per chunk, with `batch X of Y` progress starting at `0 of N`) when cloud sync is enabled and signed in, otherwise localStorage (single `saveToStorage` write). Label updates dynamically. See `src/utils/recomputeAllPhases.ts` and spec `docs/superpowers/specs/2026-04-20-bulk-recompute-phases-design.md`.
+- **Resequence solves (Firestore)** (`ResequenceScopePanel`): Previews the scope of a `seq` renumber operation — shows total solve count, first-mismatch cursor (`#id`, date, stored seq vs. target seq), and how many rows will be renumbered. Cloud-only panel; shows disabled hint when cloud sync is off. Commit uses `bulkUpdateSolvesInFirestore` (chunks of 100) with batch progress. After commit: updates `NEXT_ID` in `localStorage`, calls `solveStore.reload()` (no page reload).
 
 ### Method mismatch detector
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DebugPanel, buttonStyle } from './DebugPanel'
 import { recomputeAllPhases } from '../utils/recomputeAllPhases'
 import type { RecomputeResult, RecomputeChange } from '../utils/recomputeAllPhases'
 import type { SolveRecord, PhaseRecord } from '../types/solve'
@@ -93,14 +94,11 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
   }
 
   return (
-    <div style={boxStyle}>
-      <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#aaa' }}>
-        Recompute phases ({targetLabel})
-      </div>
-      <div style={{ color: '#e8a020', marginBottom: 8 }}>
-        ⚠️ This rewrites every solve's <code>phases</code> array. Back up your data first
-        (see the Backup button in the maintenance toolbar, or <code>docs/data-backup.md</code>).
-      </div>
+    <DebugPanel
+      title={`Recompute phases (${targetLabel})`}
+      warning={<>⚠️ This rewrites every solve's <code>phases</code> array. Back up your data first
+        (see the Backup button in the maintenance toolbar, or <code>docs/data-backup.md</code>).</>}
+    >
 
       {(state.kind === 'idle' || state.kind === 'scanning') && (
         <button
@@ -190,19 +188,6 @@ export function RecomputePhasesPanel({ targetLabel, loadSolves, commitChanges, o
           )}
         </div>
       )}
-    </div>
+    </DebugPanel>
   )
-}
-
-const boxStyle: React.CSSProperties = {
-  fontFamily: 'monospace', fontSize: 11, background: '#111', color: '#ccc',
-  padding: '12px 16px', borderRadius: 6, marginTop: 8,
-}
-
-function buttonStyle(color: string, disabled = false): React.CSSProperties {
-  return {
-    alignSelf: 'flex-start', padding: '3px 10px', cursor: disabled ? 'default' : 'pointer',
-    background: '#222', color, border: `1px solid ${color}`, borderRadius: 3, fontSize: 11,
-    opacity: disabled ? 0.6 : 1,
-  }
 }
