@@ -270,30 +270,52 @@ def main():
 
     label = args.label or args.session
 
-    # Aggregate tokens across main + subagents
-    all_tokens = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0))
-    all_timestamps = []
+    # Parse main loop separately, then each subagent
+    main_tokens = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0))
+    main_timestamps = []
     all_unknowns = set()
 
-    for path in [main_jsonl] + sub_jsonls:
-        events = parse_jsonl(path)
-        tbm, ts, unk = extract_tokens(events)
-        all_timestamps.extend(ts)
-        all_unknowns |= unk
-        for model, t in tbm.items():
-            for k in ("inp", "out", "cr", "cw5", "cw1h", "turns"):
-                all_tokens[model][k] += t[k]
+    main_events = parse_jsonl(main_jsonl)
+    main_tbm, main_ts, unk = extract_tokens(main_events)
+    main_timestamps.extend(main_ts)
+    all_unknowns |= unk
+    for model_key, t in main_tbm.items():
+        for k in ("inp", "out", "cr", "cw5", "cw1h", "turns"):
+            main_tokens[model_key][k] += t[k]
+    main_tokens = dict(main_tokens)
 
+    # Subagents: aggregate by model, track file count per model
+    sub_tokens  = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0, files=0))
+    for sf in sub_jsonls:
+        events = parse_jsonl(sf)
+        tbm, _, unk = extract_tokens(events)
+        all_unknowns |= unk
+        # Determine the primary model for this file (most output tokens)
+        file_primary = primary_model(tbm) if tbm else "unknown"
+        sub_tokens[file_primary]["files"] += 1
+        for model_key, t in tbm.items():
+            # Accumulate into the file's primary model bucket for clarity
+            for k in ("inp", "out", "cr", "cw5", "cw1h", "turns"):
+                sub_tokens[file_primary][k] += t[k]
+    sub_tokens = dict(sub_tokens)
+
+    # Combined view
+    all_tokens = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0))
+    for src in (main_tokens, sub_tokens):
+        for model_key, t in src.items():
+            for k in ("inp", "out", "cr", "cw5", "cw1h", "turns"):
+                all_tokens[model_key][k] += t[k]
     all_tokens = dict(all_tokens)
+
     model   = primary_model(all_tokens)
     cost    = compute_cost(all_tokens)
-    engaged = engaged_seconds(all_timestamps)
+    engaged = engaged_seconds(main_timestamps)  # engaged = main loop only
 
-    def agg(field):
-        return sum(t[field] for t in all_tokens.values())
+    def agg(d, field):
+        return sum(t[field] for t in d.values())
 
-    total_tok = agg("inp") + agg("out") + agg("cr") + agg("cw5") + agg("cw1h")
-    turns     = agg("turns")
+    total_tok = agg(all_tokens, "inp") + agg(all_tokens, "out") + agg(all_tokens, "cr") + agg(all_tokens, "cw5") + agg(all_tokens, "cw1h")
+    turns     = agg(all_tokens, "turns")
     flag      = " ⚠️" if all_unknowns else ""
 
     # ---- Token breakdown ----
@@ -301,14 +323,34 @@ def main():
     print(f"**Model:** {model}{flag}  |  **Engaged:** {fmt_time(engaged)}  |  **Subagents:** {len(sub_jsonls)}\n")
     print("| Token type  | Count |")
     print("|-------------|-------|")
-    print(f"| Input       | {fmt_tok(agg('inp'))} |")
-    print(f"| Output      | {fmt_tok(agg('out'))} |")
-    print(f"| Cache read  | {fmt_tok(agg('cr'))} |")
-    print(f"| Cache write 5m  | {fmt_tok(agg('cw5'))} |")
-    print(f"| Cache write 1h  | {fmt_tok(agg('cw1h'))} |")
-    print(f"| **Total**   | **{fmt_tok(total_tok)}** |")
-    print(f"| Turns       | {turns} |")
+    for field, name in (("inp","Input"), ("out","Output"), ("cr","Cache read"), ("cw5","Cache write 5m"), ("cw1h","Cache write 1h")):
+        print(f"| {name:<17} | {fmt_tok(agg(all_tokens, field))} |")
+    print(f"| **Total**        | **{fmt_tok(total_tok)}** |")
+    print(f"| Turns           | {turns} |")
     print()
+
+    # ---- Subagent breakdown by model (only if subagents exist) ----
+    if sub_tokens:
+        main_model = primary_model(main_tokens)
+        main_cost  = compute_cost(main_tokens)
+        sub_cost   = compute_cost(sub_tokens)
+        main_tok   = agg(main_tokens, "inp") + agg(main_tokens, "out") + agg(main_tokens, "cr") + agg(main_tokens, "cw5") + agg(main_tokens, "cw1h")
+
+        print("**Main loop vs subagents:**\n")
+        print("| | Model | Files | Turns | Total Tokens | Output | CW 5m | CW 1h | Cost |")
+        print("|---|-------|-------|-------|-------------|--------|-------|-------|------|")
+        print(f"| main | {main_model} | 1 | {agg(main_tokens,'turns')}"
+              f" | {fmt_tok(main_tok)} | {fmt_tok(agg(main_tokens,'out'))}"
+              f" | {fmt_tok(agg(main_tokens,'cw5'))} | {fmt_tok(agg(main_tokens,'cw1h'))}"
+              f" | ${main_cost:.2f} |")
+        for m, t in sorted(sub_tokens.items(), key=lambda x: -x[1]["out"]):
+            sub_tok = t["inp"] + t["out"] + t["cr"] + t["cw5"] + t["cw1h"]
+            m_cost = compute_cost({m: t})
+            print(f"| subs | {m} | {t['files']} | {t['turns']}"
+                  f" | {fmt_tok(sub_tok)} | {fmt_tok(t['out'])}"
+                  f" | {fmt_tok(t['cw5'])} | {fmt_tok(t['cw1h'])}"
+                  f" | ${m_cost:.2f} |")
+        print()
 
     # ---- Cost estimate ----
     print(f"**Cost estimate:** ${cost:.2f}  *(rate card: scripts/cost_extract.py, Anthropic April 2026)*")
@@ -321,8 +363,8 @@ def main():
     print("| label | model | total tok | input | output | cache read | cw 1h | turns | engaged | cost $ |")
     print("|-------|-------|-----------|-------|--------|------------|-------|-------|---------|--------|")
     print(f"| {label} | {model} | {fmt_tok(total_tok)}"
-          f" | {fmt_tok(agg('inp'))} | {fmt_tok(agg('out'))}"
-          f" | {fmt_tok(agg('cr'))} | {fmt_tok(agg('cw1h'))}"
+          f" | {fmt_tok(agg(all_tokens,'inp'))} | {fmt_tok(agg(all_tokens,'out'))}"
+          f" | {fmt_tok(agg(all_tokens,'cr'))} | {fmt_tok(agg(all_tokens,'cw1h'))}"
           f" | {turns} | {fmt_time(engaged)} | ${cost:.2f} |")
     print()
 
@@ -337,9 +379,10 @@ def main():
             cost_usd=round(cost, 4),
             unknown_models=list(all_unknowns),
             tokens=dict(
-                inp=agg("inp"), out=agg("out"), cr=agg("cr"),
-                cw5=agg("cw5"), cw1h=agg("cw1h"), total=total_tok, turns=turns,
+                inp=agg(all_tokens,"inp"), out=agg(all_tokens,"out"), cr=agg(all_tokens,"cr"),
+                cw5=agg(all_tokens,"cw5"), cw1h=agg(all_tokens,"cw1h"), total=total_tok, turns=turns,
             ),
+            subagent_breakdown={m: {k: v for k, v in t.items()} for m, t in sub_tokens.items()},
         )
         print("```json")
         print(_json.dumps(out, indent=2))
