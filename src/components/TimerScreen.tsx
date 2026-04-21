@@ -9,8 +9,8 @@ import { useScramble } from '../hooks/useScramble'
 import { useScrambleTracker } from '../hooks/useScrambleTracker'
 import type { TrackingState } from '../hooks/useScrambleTracker'
 import { useTimer } from '../hooks/useTimer'
-import { useSolveHistory } from '../hooks/useSolveHistory'
-import type { CloudConfig } from '../hooks/useSolveHistory'
+import { useSolveStore } from '../hooks/useSolveStore'
+import type { CloudConfig } from '../stores/solveStore'
 import { useMethod } from '../hooks/useMethod'
 import { MethodSelector } from './MethodSelector'
 import { CubeCanvas } from './CubeCanvas'
@@ -71,7 +71,7 @@ export function TimerScreen({
 }: Props) {
   const rendererRef = useRef<CubeRenderer | null>(null)
   const resetOrientationRef = useRef<(() => void) | null>(null)
-  const { solves, addSolve, deleteSolve, updateSolve, nextSolveIds, cloudLoading } = useSolveHistory(cloudConfig)
+  const { solves, addSolve, deleteSolve, updateSolve, nextSolveIds, cloudLoading } = useSolveStore()
 
   useCubeDriverEvent(driver, 'move', (m) => rendererRef.current?.animateMove(m.face, m.direction, 150), driverVersion)
 

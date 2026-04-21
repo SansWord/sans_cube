@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { SolveRecord, SolveFilter } from '../types/solve'
 import { formatSeconds } from '../utils/formatting'
 import { getMethod } from '../methods/index'
-import { computeStats, filterSolves, type StatEntry, type SolveStats } from '../hooks/useSolveHistory'
+import { computeStats, filterSolves, type StatEntry, type SolveStats } from '../utils/solveStats'
 import { buildCopySolveList } from '../utils/copySolveList'
 
 function migrationColor(s: SolveRecord): string | undefined {

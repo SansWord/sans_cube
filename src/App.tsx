@@ -19,7 +19,7 @@ import type { PositionMove, Face, RotationFace, Direction } from './types/cube'
 import { MouseDriver } from './drivers/MouseDriver'
 import { useCloudSync } from './hooks/useCloudSync'
 import { logCubeConnected, logCubeFirstMove } from './services/analytics'
-import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, loadSolvesFromFirestore, updateSolveInFirestore, deleteSolveFromFirestore, migrateSolvesToV2InFirestore, addSolveToFirestore, loadNextSeqFromFirestore, updateCounterInFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
+import { renumberSolvesInFirestore, recalibrateSolvesInFirestore, migrateSolvesToV2InFirestore, loadNextSeqFromFirestore, bulkUpdateSolvesInFirestore } from './services/firestoreSolves'
 import { recalibrateSolveTimes } from './utils/recalibrate'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import { detectMethodMismatches } from './utils/detectMethod'
@@ -30,6 +30,8 @@ import { RecomputePhasesPanel } from './components/RecomputePhasesPanel'
 import type { RecomputeChange } from './utils/recomputeAllPhases'
 import type { SolveRecord } from './types/solve'
 import { useHashRouter } from './hooks/useHashRouter'
+import { solveStore } from './stores/solveStore'
+import { useSolveStore } from './hooks/useSolveStore'
 
 export default function App() {
   const { driver, connect, disconnect, status, driverType, switchDriver, driverVersion } = useCubeDriver()
@@ -52,8 +54,13 @@ export default function App() {
     setMode(currentRoute.type === 'debug' ? 'debug' : 'timer')
   }, [currentRoute])
   const [battery, setBattery] = useState<number | null>(null)
+  const storeStatus = useSolveStore().status
   const cloudSync = useCloudSync()
   const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
+
+  useEffect(() => {
+    solveStore.configure(cloudConfig)
+  }, [cloudConfig.enabled, cloudConfig.user?.uid])
 
   const prevStatusRef = useRef<string>('')
   useEffect(() => {
@@ -86,12 +93,7 @@ export default function App() {
   const [existingSolvesForImport, setExistingSolvesForImport] = useState<SolveRecord[] | null>(null)
 
   const handleDebugUpdate = async (updated: SolveRecord): Promise<void> => {
-    if (cloudSync.enabled && cloudSync.user) {
-      await updateSolveInFirestore(cloudSync.user.uid, updated)
-    } else {
-      const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-      saveToStorage(STORAGE_KEYS.SOLVES, solves.map((s) => s.id === updated.id ? updated : s))
-    }
+    await solveStore.updateSolve(updated)
     setSelectedDebugSolve(updated)
     // Re-check just this solve — remove from list if fixed, update in place if still mismatched
     setMethodMismatches((prev) => {
@@ -103,54 +105,35 @@ export default function App() {
   }
 
   const handleDebugDelete = (id: number): void => {
-    if (cloudSync.enabled && cloudSync.user) {
-      const solve = selectedDebugSolve
-      if (solve) void deleteSolveFromFirestore(cloudSync.user.uid, solve)
-    } else {
-      const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-      saveToStorage(STORAGE_KEYS.SOLVES, solves.filter((s) => s.id !== id))
-    }
+    void solveStore.deleteSolve(id)
     setSelectedDebugSolve(null)
     setMethodMismatches((prev) => prev ? prev.filter((m) => m.solve.id !== id) : prev)
   }
 
-  // Commit imported acubemy drafts using the same primitives as handleDebugUpdate.
-  // We don't route through useSolveHistory because that hook lives in TimerScreen,
-  // which isn't mounted in debug mode. We re-read state inside the handler to
-  // guard against cloud-target changes between modal open and commit.
   const handleAcubemyCommit = async (drafts: SolveRecord[]): Promise<void> => {
+    const current = solveStore.getSnapshot().solves
     const useCloudNow = !!(cloudSync.enabled && cloudSync.user)
     const uid = cloudSync.user?.uid ?? null
 
-    if (useCloudNow && uid) {
-      const existing = await loadSolvesFromFirestore(uid)
-      const usedDates = new Set(existing.map(s => s.date))
-      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
-      const counter = await loadNextSeqFromFirestore(uid)
-      let nextSeq = Math.max(maxSeq + 1, counter)
+    const usedDates = new Set(current.map(s => s.date))
+    const maxSeqLocal = Math.max(0, ...current.map(s => s.seq ?? 0))
+    const storedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NEXT_ID) ?? '1', 10) || 1
+    const cloudCounter = useCloudNow && uid ? await loadNextSeqFromFirestore(uid) : 0
+    let nextSeq = Math.max(maxSeqLocal + 1, storedCounter, cloudCounter)
 
-      for (const draft of drafts) {
-        let date = draft.date
-        while (usedDates.has(date)) date += 1
-        usedDates.add(date)
-        const record: SolveRecord = { ...draft, date, id: date, seq: nextSeq }
-        nextSeq++
-        await addSolveToFirestore(uid, record)
-      }
-      await updateCounterInFirestore(uid, nextSeq)
-    } else {
-      const existing = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-      const maxSeq = Math.max(0, ...existing.map(s => s.seq ?? 0))
-      const storedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.NEXT_ID) ?? '1', 10) || 1
-      let nextSeq = Math.max(maxSeq + 1, storedCounter)
-      let nextId = nextSeq
-      const toWrite: SolveRecord[] = drafts.map(draft => {
-        const record: SolveRecord = { ...draft, id: nextId, seq: nextSeq }
-        nextId++; nextSeq++
-        return record
-      })
-      saveToStorage(STORAGE_KEYS.SOLVES, [...existing, ...toWrite])
-      localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
+    const prepared: SolveRecord[] = drafts.map(draft => {
+      let date = draft.date
+      while (usedDates.has(date)) date += 1
+      usedDates.add(date)
+      const id = useCloudNow ? date : nextSeq
+      const record: SolveRecord = { ...draft, date, id, seq: nextSeq }
+      nextSeq++
+      return record
+    })
+
+    const { failed } = await solveStore.addMany(prepared)
+    if (failed.length > 0) {
+      throw new Error(`${failed.length} of ${prepared.length} failed to import`)
     }
   }
 
@@ -312,7 +295,7 @@ export default function App() {
                     if (!cloudSync.user) return
                     if (!confirm('Renumber all cloud solves 1..n by date? This cannot be undone.')) return
                     setRenumbering('running')
-                    const nextSeq = await renumberSolvesInFirestore(cloudSync.user.uid)
+                    const nextSeq = await solveStore.runBulkOp(() => renumberSolvesInFirestore(cloudSync.user!.uid))
                     localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(nextSeq))
                     setRenumbering('done')
                     setTimeout(() => window.location.reload(), 1000)
@@ -322,11 +305,18 @@ export default function App() {
                   {renumbering === 'running' ? 'Renumbering...' : renumbering === 'done' ? 'Done! Reloading...' : 'Renumber solves (fix seq)'}
                 </button>
                 <button
+                  disabled={!(cloudSync.enabled && cloudSync.user) || storeStatus !== 'idle'}
+                  onClick={() => { void solveStore.reload() }}
+                  style={{ alignSelf: 'flex-start', padding: '3px 10px', cursor: 'pointer', background: '#222', color: '#3498db', border: '1px solid #3498db', borderRadius: 3, fontSize: 11 }}
+                >
+                  Refresh solves
+                </button>
+                <button
                   disabled={recalibratingCloud !== 'idle'}
                   onClick={async () => {
                     if (!cloudSync.user) return
                     setRecalibratingCloud('running')
-                    const count = await recalibrateSolvesInFirestore(cloudSync.user.uid)
+                    const count = await solveStore.runBulkOp(() => recalibrateSolvesInFirestore(cloudSync.user!.uid))
                     setRecalibratedCloudCount(count)
                     setRecalibratingCloud('done')
                     setTimeout(() => setRecalibratingCloud('idle'), 3000)
@@ -339,7 +329,7 @@ export default function App() {
                   disabled={migratingV2 !== 'idle'}
                   onClick={async () => {
                     if (!cloudSync.user) return
-                    const pending = (await loadSolvesFromFirestore(cloudSync.user.uid)).filter(s => (s.schemaVersion ?? 1) < 2).length
+                    const pending = solveStore.getSnapshot().solves.filter(s => (s.schemaVersion ?? 1) < 2).length
                     if (pending === 0) {
                       setMigrateV2Result({ migrated: 0, failed: 0 })
                       setMigratingV2('done')
@@ -348,7 +338,7 @@ export default function App() {
                     }
                     if (!confirm(`Migrate ${pending} solve${pending !== 1 ? 's' : ''} to v2 (correct M/E/S face labels)?`)) return
                     setMigratingV2('running')
-                    const result = await migrateSolvesToV2InFirestore(cloudSync.user.uid)
+                    const result = await solveStore.runBulkOp(() => migrateSolvesToV2InFirestore(cloudSync.user!.uid))
                     setMigrateV2Result(result)
                     setMigratingV2('done')
                     setTimeout(() => { setMigratingV2('idle'); setMigrateV2Result(null) }, 5000)
@@ -394,6 +384,7 @@ export default function App() {
                 const recalibrated = recalibrateSolveTimes(solves)
                 const count = recalibrated.filter((s, i) => s.timeMs !== solves[i].timeMs).length
                 saveToStorage(STORAGE_KEYS.SOLVES, recalibrated)
+                solveStore.reloadLocal()
                 setRecalibratedCount(count)
                 setRecalibrating('done')
                 setTimeout(() => setRecalibrating('idle'), 3000)
@@ -404,28 +395,19 @@ export default function App() {
             </button>
             <button
               disabled={detectingMismatches}
-              onClick={async () => {
-                if (cloudSync.enabled && cloudSync.user) {
-                  setDetectingMismatches(true)
-                  const solves = await loadSolvesFromFirestore(cloudSync.user.uid)
-                  setMethodMismatches(detectMethodMismatches(solves))
-                  setDetectingMismatches(false)
-                } else {
-                  const solves = loadFromStorage<import('./types/solve').SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-                  setMethodMismatches(detectMethodMismatches(solves))
-                }
+              onClick={() => {
+                const scope = solveStore.getSnapshot().solves
+                setDetectingMismatches(true)
+                setMethodMismatches(detectMethodMismatches(scope))
+                setDetectingMismatches(false)
               }}
               style={{ padding: '6px 14px', color: '#3498db', border: '1px solid #3498db', background: 'transparent', borderRadius: 4, cursor: detectingMismatches ? 'default' : 'pointer' }}
             >
               {detectingMismatches ? 'Detecting...' : `Detect method mismatches (${cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'})`}
             </button>
             <button
-              onClick={async () => {
-                if (cloudSync.enabled && cloudSync.user) {
-                  setExistingSolvesForImport(await loadSolvesFromFirestore(cloudSync.user.uid))
-                } else {
-                  setExistingSolvesForImport(loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, []))
-                }
+              onClick={() => {
+                setExistingSolvesForImport(solveStore.getSnapshot().solves)
                 setShowAcubemyImport(true)
               }}
               style={{ padding: '6px 14px', color: '#9b59b6', border: '1px solid #9b59b6', background: 'transparent', borderRadius: 4, cursor: 'pointer' }}
@@ -435,22 +417,18 @@ export default function App() {
           </div>
           <RecomputePhasesPanel
             targetLabel={cloudSync.enabled && cloudSync.user ? 'Firestore' : 'localStorage'}
-            loadSolves={async () => {
-              if (cloudSync.enabled && cloudSync.user) {
-                return await loadSolvesFromFirestore(cloudSync.user.uid)
-              }
-              return loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
-            }}
+            loadSolves={() => solveStore.getSnapshot().solves}
             commitChanges={async (changes: RecomputeChange[], onProgress) => {
               if (cloudSync.enabled && cloudSync.user) {
                 const updated = changes.map((c) => ({ ...c.solve, phases: c.newPhases }))
-                await bulkUpdateSolvesInFirestore(cloudSync.user.uid, updated, onProgress)
+                await solveStore.runBulkOp(() => bulkUpdateSolvesInFirestore(cloudSync.user!.uid, updated, onProgress))
               } else {
                 const solves = loadFromStorage<SolveRecord[]>(STORAGE_KEYS.SOLVES, [])
                 const byId = new Map(changes.map((c) => [c.solve.id, c.newPhases]))
                 const updated = solves.map((s) => byId.has(s.id) ? { ...s, phases: byId.get(s.id)! } : s)
                 saveToStorage(STORAGE_KEYS.SOLVES, updated)
                 onProgress(1, 1)
+                solveStore.reloadLocal()
               }
             }}
             onSolveClick={setSelectedDebugSolve}

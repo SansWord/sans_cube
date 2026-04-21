@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.26.0](#v1260--shared-solve-store-2026-04-21) | Module-level `solveStore` singleton replaces `useSolveHistory`; zero Firestore re-reads on timer/debug toggles; chunked `addMany`; `Refresh solves` button |
 | [v1.25.0](#v1250--bulk-recompute-phases-2026-04-20-2119) | Bulk recompute phases debug panel — dry-run scan + commit only changed solves; single mount that branches on cloud-sync state; chunked `Promise.all(setDoc)` for cloud writes; clickable solve ids, sample filtered to turn-count diffs, batch-0 progress, optimized renumber |
 | [v1.24.1](#v1241--roux-center-drift--rotation-invariance-2026-04-20-1517) | Roux isDone predicates tolerate M/E/S center drift and whole-cube rotations; extracted shared `cubeGeometry.ts`; rotation-invariance property tests; Sune-based CMLL false-positive guard |
 | [v1.24.0](#v1240--cfop-center-drift-tolerance-2026-04-20-1158) | CFOP isDone predicates (`isCrossDone`, `countCompletedF2LSlots`, `isEOLLDone`, `isOLLDone`, `isCPLLDone`) no longer assume Y on D / W on U — look up target color's current face and compare against live centers |
@@ -58,6 +59,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.26.0 — Shared solve store (2026-04-21)
+
+**Review:** not yet
+**Design docs:**
+- Solve Store: [Spec](superpowers/specs/2026-04-20-cache-solves-across-toggles-design.md) [Plan](superpowers/plans/2026-04-20-cache-solves-across-toggles.md)
+
+**What was built:**
+- New module-level `solveStore` with `useSyncExternalStore`; replaces `useSolveHistory`
+- `TimerScreen`, `AcubemyImportModal`, `RecomputePhasesPanel`, debug-mode handlers all read from the store
+- Debug-mode "Refresh solves" button backed by `solveStore.reload()`
+- `addMany` chunk-of-100 `Promise.allSettled` bulk insert with optimistic rollback on failure
+- `runBulkOp` helper wraps server-side maintenance operations and reloads the store afterward
+- Pure `computeAo` / `computeStats` / `filterSolves` moved to `src/utils/solveStats.ts`
+- First use of `vi.mock` for `firestoreSolves` in the project
+
+**Key technical learnings:**
+- `[insight]` Module-level state + `useSyncExternalStore` cuts ~100 lines of state management out of `TimerScreen` and eliminates all debug-mode duplicate Firestore reads, without pulling in a state library.
+- `[note]` `Promise.allSettled` per chunk (vs `Promise.all`) was necessary to keep partial-failure reporting aligned with the existing `migrateSolvesToV2InFirestore` pattern.
+- `[gotcha]` `configure()` must be idempotent by `(enabled, uid)` tuple — otherwise StrictMode's double-invoke re-migrates on mount.
 
 ---
 

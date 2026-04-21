@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AcubemyImportModal } from '../../src/components/AcubemyImportModal'
 import type { User } from 'firebase/auth'
-import type { CloudConfig } from '../../src/hooks/useSolveHistory'
+import type { CloudConfig } from '../../src/stores/solveStore'
 import type { SolveRecord } from '../../src/types/solve'
 
 const noop = () => {}

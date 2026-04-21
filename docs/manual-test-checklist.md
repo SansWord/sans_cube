@@ -225,3 +225,17 @@
 - [ ] **Recalibrate solve times (hw clock)** (cloud, if signed in) → same, for Firestore solves
 - [ ] **Clear localStorage** → confirmation; on confirm, all local data wiped and page reloads
 - [ ] **Restore example solves** → example solves reappear in sidebar after reload
+
+---
+
+## 16. Solve Store — cache and refresh
+
+- [ ] With cloud sync ON, open DevTools Network tab filtered to `firestore.googleapis.com`.
+- [ ] Reload the page → observe exactly **one** `loadSolves`-style read on boot.
+- [ ] Toggle `[timer]` → `[debug]` → `[timer]` → **zero** additional reads.
+- [ ] In debug mode, click **Detect method mismatches** → **zero** additional reads.
+- [ ] In debug mode, click **Import from acubemy** → modal opens; **zero** additional reads to populate `existingSolves`.
+- [ ] Import 250 solves via acubemy → progress indicator runs; 3 chunked rounds of writes; state updates to reflect new rows.
+- [ ] Run **Recompute phases** → debug panel shows updated phase labels without a manual refresh.
+- [ ] Click **Refresh solves** in debug → one additional `loadSolves` read; button briefly disabled.
+- [ ] Sign out mid-session → `solves` list reverts to the localStorage view.
