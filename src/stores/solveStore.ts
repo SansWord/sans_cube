@@ -3,6 +3,11 @@ import type { SolveRecord } from '../types/solve'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
 import { STORAGE_KEYS } from '../utils/storageKeys'
 import { migrateSolveV1toV2 } from '../utils/migrateSolveV1toV2'
+import {
+  loadSolvesFromFirestore,
+  loadNextSeqFromFirestore,
+  migrateLocalSolvesToFirestore,
+} from '../services/firestoreSolves'
 
 export interface CloudConfig {
   enabled: boolean
@@ -62,6 +67,40 @@ function loadDismissedExamples(): Set<number> {
   return new Set(loadFromStorage<number[]>(STORAGE_KEYS.DISMISSED_EXAMPLES, []))
 }
 
+const migratedUids = new Set<string>()
+let nextId: number = 1
+let activeLoadToken = 0
+
+function loadNextId(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.NEXT_ID)
+    return raw ? Math.max(1, parseInt(raw, 10)) : 1
+  } catch {
+    return 1
+  }
+}
+
+function saveNextId(id: number): void {
+  localStorage.setItem(STORAGE_KEYS.NEXT_ID, String(id))
+}
+
+async function doCloudLoad(uid: string, localSolves: SolveRecord[], token: number): Promise<void> {
+  if (!migratedUids.has(uid) && localSolves.length > 0) {
+    migratedUids.add(uid)
+    await migrateLocalSolvesToFirestore(uid, localSolves)
+  }
+  const [solves, nextSeq] = await Promise.all([
+    loadSolvesFromFirestore(uid),
+    loadNextSeqFromFirestore(uid),
+  ])
+  if (token !== activeLoadToken) return
+  if (nextSeq > nextId) {
+    nextId = nextSeq
+    saveNextId(nextId)
+  }
+  setState({ solves, status: 'idle', cloudReady: true, error: null })
+}
+
 let lastConfigKey: string | null = null
 
 function configKey(config: CloudConfig): string {
@@ -84,16 +123,27 @@ export const solveStore = {
     lastConfigKey = key
 
     const useCloud = !!(config.enabled && config.user)
-    const solves = loadLocalSolves()
+    const localSolves = loadLocalSolves()
     const dismissedExamples = loadDismissedExamples()
+    nextId = Math.max(
+      loadNextId(),
+      localSolves.length > 0 ? Math.max(...localSolves.map(s => s.id)) + 1 : 1,
+    )
 
     if (!useCloud) {
-      setState({ solves, dismissedExamples, status: 'idle', error: null, cloudReady: false })
+      activeLoadToken++
+      setState({ solves: localSolves, dismissedExamples, status: 'idle', error: null, cloudReady: false })
       return
     }
 
-    // Cloud path — implemented in the next task.
-    setState({ solves, dismissedExamples, status: 'loading', error: null, cloudReady: false })
+    const uid = config.user!.uid
+    activeLoadToken++
+    const token = activeLoadToken
+    setState({ solves: localSolves, dismissedExamples, status: 'loading', error: null, cloudReady: false })
+    doCloudLoad(uid, localSolves, token).catch((e) => {
+      if (token !== activeLoadToken) return
+      setState({ status: 'error', error: String(e) })
+    })
   },
 }
 
@@ -101,6 +151,9 @@ export function __resetForTests(): void {
   state = initialState()
   listeners.clear()
   lastConfigKey = null
+  migratedUids.clear()
+  nextId = 1
+  activeLoadToken = 0
 }
 
 // HMR: when this module hot-reloads, wipe state so stale closures don't stick around.

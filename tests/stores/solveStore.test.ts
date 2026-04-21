@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { STORAGE_KEYS } from '../../src/utils/storageKeys'
 import type { SolveRecord } from '../../src/types/solve'
+import * as firestoreMock from '../../src/services/firestoreSolves'
+import type { User } from 'firebase/auth'
+
+const U1 = { uid: 'u1', email: 'u1@x.co' } as unknown as User
+const U2 = { uid: 'u2', email: 'u2@x.co' } as unknown as User
 
 function localSolve(id: number): SolveRecord {
   return { id, seq: id, scramble: '', timeMs: 1000 * id, moves: [], phases: [], date: id, schemaVersion: 2 }
@@ -46,6 +51,65 @@ describe('solveStore — initial snapshot', () => {
     unsub()
     _internal.setState({ error: 'test' })
     expect(listener).not.toHaveBeenCalled()
+  })
+})
+
+describe('solveStore — configure (cloud)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    __resetForTests()
+    vi.clearAllMocks()
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([])
+    vi.mocked(firestoreMock.loadNextSeqFromFirestore).mockResolvedValue(1)
+    vi.mocked(firestoreMock.migrateLocalSolvesToFirestore).mockResolvedValue(undefined)
+  })
+
+  it('cloud-enabled first call enters loading, then idle + cloudReady after fetch', async () => {
+    const remote = [localSolve(10), localSolve(11)]
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue(remote)
+    solveStore.configure({ enabled: true, user: U1 })
+    expect(solveStore.getSnapshot().status).toBe('loading')
+    await vi.waitFor(() => expect(solveStore.getSnapshot().status).toBe('idle'))
+    const s = solveStore.getSnapshot()
+    expect(s.cloudReady).toBe(true)
+    expect(s.solves.map(x => x.id).sort()).toEqual([10, 11])
+  })
+
+  it('runs one-time localStorage→Firestore migration when local solves exist', async () => {
+    localStorage.setItem(STORAGE_KEYS.SOLVES, JSON.stringify([localSolve(1)]))
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().status).toBe('idle'))
+    expect(firestoreMock.migrateLocalSolvesToFirestore).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not re-run migration for the same uid on repeat configure()', async () => {
+    localStorage.setItem(STORAGE_KEYS.SOLVES, JSON.stringify([localSolve(1)]))
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().status).toBe('idle'))
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().status).toBe('idle'))
+    expect(firestoreMock.migrateLocalSolvesToFirestore).toHaveBeenCalledTimes(1)
+  })
+
+  it('uid change re-fetches', async () => {
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockClear()
+    solveStore.configure({ enabled: true, user: U2 })
+    expect(solveStore.getSnapshot().cloudReady).toBe(false)
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    expect(firestoreMock.loadSolvesFromFirestore).toHaveBeenCalledWith('u2')
+  })
+
+  it('cloud-on → cloud-off reverts to localStorage view with status=idle', async () => {
+    localStorage.setItem(STORAGE_KEYS.SOLVES, JSON.stringify([localSolve(5)]))
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    solveStore.configure({ enabled: false, user: null })
+    const s = solveStore.getSnapshot()
+    expect(s.status).toBe('idle')
+    expect(s.cloudReady).toBe(false)
+    expect(s.solves.map(x => x.id)).toEqual([5])
   })
 })
 
