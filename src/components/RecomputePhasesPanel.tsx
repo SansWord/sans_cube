@@ -39,25 +39,29 @@ function phaseRow(phases: PhaseRecord[]): string {
 
 /**
  * Same as `phaseRow`, but each segment is annotated with the delta vs the matching old
- * phase (matched by index when labels agree). Example: "Cross 3.6s(-0.1s) 7 steps(-1)".
+ * phase (matched by index when labels agree). Deltas are computed from the rounded
+ * displayed values so they always match what the user sees (no "-0.0s" surprises).
+ * Example: "Cross 3.6s(-0.1s) 7 steps(-1)".
  */
 function phaseRowWithDiff(newPhases: PhaseRecord[], oldPhases: PhaseRecord[]): string {
-  const fmtSec = (delta: number) => `${delta >= 0 ? '+' : ''}${(delta / 1000).toFixed(1)}s`
+  const fmtSec = (delta: number) => `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}s`
   const fmtInt = (delta: number) => `${delta >= 0 ? '+' : ''}${delta}`
   let newCum = 0
   let oldCum = 0
   return newPhases.map((p, i) => {
     newCum += p.recognitionMs + p.executionMs
+    const newCumDisplay = Number((newCum / 1000).toFixed(1))
     const old = oldPhases[i]
     if (old && old.label === p.label) {
       oldCum += old.recognitionMs + old.executionMs
-      const dt = newCum - oldCum
+      const oldCumDisplay = Number((oldCum / 1000).toFixed(1))
+      const dt = Number((newCumDisplay - oldCumDisplay).toFixed(1))
       const dn = p.turns - old.turns
       const dtPart = dt === 0 ? '' : `(${fmtSec(dt)})`
       const dnPart = dn === 0 ? '' : `(${fmtInt(dn)})`
-      return `${p.label} ${(newCum / 1000).toFixed(1)}s${dtPart} ${p.turns} steps${dnPart}`
+      return `${p.label} ${newCumDisplay.toFixed(1)}s${dtPart} ${p.turns} steps${dnPart}`
     }
-    return `${p.label} ${(newCum / 1000).toFixed(1)}s ${p.turns} steps`
+    return `${p.label} ${newCumDisplay.toFixed(1)}s ${p.turns} steps`
   }).join(' | ')
 }
 
