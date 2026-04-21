@@ -28,6 +28,10 @@ export function useCloudSync(): CloudSyncState {
       setUser(u)
       setAuthLoading(false)
       setAnalyticsUser(u ? u.uid : null)
+      if (!u) {
+        setEnabled(false)
+        saveToStorage(STORAGE_KEYS.CLOUD_SYNC_ENABLED, false)
+      }
     })
     return unsub
   }, [])
