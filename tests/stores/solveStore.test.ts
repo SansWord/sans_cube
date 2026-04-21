@@ -256,3 +256,74 @@ describe('solveStore — CRUD (cloud mode, optimistic + rollback)', () => {
     expect(solveStore.getSnapshot().solves.map(s => s.id)).toEqual([1])
   })
 })
+
+describe('solveStore — addMany', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    __resetForTests()
+    vi.clearAllMocks()
+    vi.mocked(firestoreMock.loadSolvesFromFirestore).mockResolvedValue([])
+    vi.mocked(firestoreMock.loadNextSeqFromFirestore).mockResolvedValue(1)
+    vi.mocked(firestoreMock.updateCounterInFirestore).mockResolvedValue(undefined)
+  })
+
+  it('local mode: appends synchronously, persists once', async () => {
+    solveStore.configure({ enabled: false, user: null })
+    const drafts = [localSolve(1), localSolve(2), localSolve(3)]
+    const result = await solveStore.addMany(drafts)
+    expect(result.committed).toHaveLength(3)
+    expect(result.failed).toEqual([])
+    expect(solveStore.getSnapshot().solves).toHaveLength(3)
+    expect(firestoreMock.addSolveToFirestore).not.toHaveBeenCalled()
+  })
+
+  it('cloud mode: 1 chunk all success', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockResolvedValue(undefined)
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    const drafts = Array.from({ length: 50 }, (_, i) => localSolve(100 + i))
+    const result = await solveStore.addMany(drafts)
+    expect(result.committed).toHaveLength(50)
+    expect(result.failed).toEqual([])
+  })
+
+  it('cloud mode: 250 drafts → 3 chunks with progress ticks', async () => {
+    vi.mocked(firestoreMock.addSolveToFirestore).mockResolvedValue(undefined)
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    const drafts = Array.from({ length: 250 }, (_, i) => localSolve(100 + i))
+    const onProgress = vi.fn()
+    const result = await solveStore.addMany(drafts, onProgress)
+    expect(result.committed).toHaveLength(250)
+    // onProgress fires once per chunk completion: (1,3) (2,3) (3,3)
+    expect(onProgress).toHaveBeenCalledTimes(3)
+    expect(onProgress).toHaveBeenLastCalledWith(3, 3)
+  })
+
+  it('cloud mode: partial failures are collected and rolled back', async () => {
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.addSolveToFirestore).mockImplementation(async (_uid, s) => {
+      if (s.id === 102 || s.id === 105) throw new Error(`fail-${s.id}`)
+    })
+    const drafts = Array.from({ length: 10 }, (_, i) => localSolve(100 + i))
+    const result = await solveStore.addMany(drafts)
+    expect(result.committed.map(s => s.id).sort()).toEqual([100, 101, 103, 104, 106, 107, 108, 109])
+    expect(result.failed.map(f => f.draft.id).sort()).toEqual([102, 105])
+    expect(solveStore.getSnapshot().solves.map(s => s.id).sort()).toEqual(
+      [100, 101, 103, 104, 106, 107, 108, 109]
+    )
+  })
+
+  it('cloud mode: subsequent chunks keep running after earlier-chunk failures', async () => {
+    solveStore.configure({ enabled: true, user: U1 })
+    await vi.waitFor(() => expect(solveStore.getSnapshot().cloudReady).toBe(true))
+    vi.mocked(firestoreMock.addSolveToFirestore).mockImplementation(async (_uid, s) => {
+      if (s.id < 110) throw new Error('first-chunk-fail')
+    })
+    const drafts = Array.from({ length: 150 }, (_, i) => localSolve(100 + i))
+    const result = await solveStore.addMany(drafts)
+    expect(result.committed.some(s => s.id === 149)).toBe(true)
+    expect(result.failed).toHaveLength(10)
+  })
+})

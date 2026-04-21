@@ -20,6 +20,11 @@ export interface CloudConfig {
   authLoading?: boolean
 }
 
+export interface AddManyResult {
+  committed: SolveRecord[]
+  failed: Array<{ draft: SolveRecord; error: Error }>
+}
+
 export type Status = 'idle' | 'loading' | 'refreshing' | 'error'
 
 export interface StoreState {
@@ -212,6 +217,68 @@ export const solveStore = {
       setState({ solves: snapshot, error: String(e) })
       throw e
     }
+  },
+
+  async addMany(
+    drafts: SolveRecord[],
+    onProgress: (chunkDone: number, chunkTotal: number) => void = () => {},
+  ): Promise<AddManyResult> {
+    const useCloud = !!(lastCloudConfig?.enabled && lastCloudConfig?.user)
+    const uid = lastCloudConfig?.user?.uid ?? null
+
+    if (!useCloud || !uid) {
+      const next = [...state.solves, ...drafts]
+      setState({ solves: next })
+      saveToStorage(STORAGE_KEYS.SOLVES, next)
+      const maxSeq = Math.max(0, ...drafts.map(d => d.seq ?? 0))
+      if (maxSeq + 1 > nextId) {
+        nextId = maxSeq + 1
+        saveNextId(nextId)
+      }
+      onProgress(1, 1)
+      return { committed: [...drafts], failed: [] }
+    }
+
+    // Cloud path — optimistic append all, then chunk through setDoc with allSettled.
+    setState({ solves: [...state.solves, ...drafts] })
+
+    const CHUNK = 100
+    const chunks: SolveRecord[][] = []
+    for (let i = 0; i < drafts.length; i += CHUNK) chunks.push(drafts.slice(i, i + CHUNK))
+
+    const failed: Array<{ draft: SolveRecord; error: Error }> = []
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i]
+      const results = await Promise.allSettled(
+        chunk.map(d => addSolveToFirestore(uid, d))
+      )
+      for (let j = 0; j < results.length; j++) {
+        const r = results[j]
+        if (r.status === 'rejected') {
+          failed.push({ draft: chunk[j], error: r.reason instanceof Error ? r.reason : new Error(String(r.reason)) })
+        }
+      }
+      onProgress(i + 1, chunks.length)
+    }
+
+    // Update counter to the max seq we intended to commit.
+    const maxSeq = Math.max(0, ...drafts.map(d => d.seq ?? 0))
+    try {
+      await updateCounterInFirestore(uid, maxSeq + 1)
+    } catch {
+      // Counter write is best-effort; per-solve writes already reflect reality.
+    }
+
+    // Roll back failed drafts in a single state update.
+    if (failed.length > 0) {
+      const failedIds = new Set(failed.map(f => f.draft.id))
+      setState({ solves: state.solves.filter(s => !failedIds.has(s.id)) })
+    }
+
+    const committedIds = new Set(drafts.map(d => d.id))
+    for (const f of failed) committedIds.delete(f.draft.id)
+    const committed = drafts.filter(d => committedIds.has(d.id))
+    return { committed, failed }
   },
 
   async deleteSolve(id: number): Promise<void> {
