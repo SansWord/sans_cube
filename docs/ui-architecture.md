@@ -135,7 +135,9 @@ These components are purely presentational — they receive data as props and fi
 | `MoveHistory` | `moves` | — |
 | `FaceletDebug` | `facelets` | — |
 | `SolveHistorySidebar` | `solves`, `width`, `cloudLoading`, `solveFilter`, `updateSolveFilter`, `onOpenTrends` | `onSelectSolve`, `onWidthChange`, `onClose` |
-| `TrendsModal` | `solves`, `solveFilter`, `updateSolveFilter`, `onSelectSolve`, `onClose` | — |
+| `TrendsModal` | `solves`, `solveFilter`, `updateSolveFilter`, `onSelectSolve`, `onClose`, `initialParams` | — |
+
+**TrendsModal local state:** `sortMode` (URL-synced via `initialParams.sortMode`, controls solve display order by sequence or completion date)
 
 ---
 

@@ -38,7 +38,7 @@ describe('parseHash', () => {
   })
 
   it('parses #trends with all params', () => {
-    const route = parseHash('#trends?tab=phases&window=50&group=split&ttotal=exec,recog&tphase=total&method=cfop&driver=cube')
+    const route = parseHash('#trends?tab=phases&window=50&group=split&ttotal=exec,recog&tphase=total&method=cfop&driver=cube&sort=date')
     expect(route.type).toBe('trends')
     if (route.type !== 'trends') return
     expect(route.params.tab).toBe('phases')
@@ -48,6 +48,28 @@ describe('parseHash', () => {
     expect(route.params.phaseToggle).toEqual({ exec: false, recog: false, total: true })
     expect(route.params.method).toBe('cfop')
     expect(route.params.driver).toBe('cube')
+    expect(route.params.sortMode).toBe('date')
+  })
+
+  it('parses sort=date as sortMode date', () => {
+    const route = parseHash('#trends?sort=date')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.sortMode).toBe('date')
+  })
+
+  it('defaults sortMode to seq when sort param is missing', () => {
+    const route = parseHash('#trends')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.sortMode).toBe('seq')
+  })
+
+  it('defaults sortMode to seq for unrecognized sort values', () => {
+    const route = parseHash('#trends?sort=random')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.sortMode).toBe('seq')
   })
 
   it('falls back totalToggle to total:true when all false', () => {

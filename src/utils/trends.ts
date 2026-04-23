@@ -1,7 +1,9 @@
 import type { SolveRecord } from '../types/solve'
 
+export type SortMode = 'seq' | 'date'
+
 export interface TotalDataPoint {
-  seq: number
+  xIndex: number
   exec: number
   recog: number
   total: number
@@ -15,7 +17,7 @@ export interface TotalDataPoint {
 }
 
 export interface PhaseDataPoint {
-  seq: number
+  xIndex: number
   [phaseLabel: string]: number | null
   solveId: number
 }
@@ -29,22 +31,26 @@ function rollingAo(values: number[], index: number, n: number): number | null {
   return trimmed.reduce((a, b) => a + b, 0) / trimmed.length
 }
 
-function sliceWindow(solves: SolveRecord[], window: number | 'all'): SolveRecord[] {
-  const real = solves.filter(s => !s.isExample).sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))
-  if (window === 'all') return real
-  return real.slice(-window)
-}
-
-export function buildTotalData(
+export function sortAndSliceWindow(
   solves: SolveRecord[],
   window: number | 'all',
-): TotalDataPoint[] {
-  const windowed = sliceWindow(solves, window)
+  sortMode: SortMode,
+): SolveRecord[] {
+  const real = solves.filter(s => !s.isExample)
+  const cmp = sortMode === 'date'
+    ? (a: SolveRecord, b: SolveRecord) => a.date - b.date
+    : (a: SolveRecord, b: SolveRecord) => (a.seq ?? 0) - (b.seq ?? 0)
+  const sorted = [...real].sort(cmp)
+  if (window === 'all') return sorted
+  return sorted.slice(-window)
+}
+
+export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
   const execs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.executionMs, 0))
   const recogs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.recognitionMs, 0))
   const totals = execs.map((e, i) => e + recogs[i])
   return windowed.map((s, i) => ({
-    seq: i + 1,
+    xIndex: i + 1,
     exec: execs[i],
     recog: recogs[i],
     total: totals[i],
@@ -59,14 +65,12 @@ export function buildTotalData(
 }
 
 export function buildPhaseData(
-  solves: SolveRecord[],
-  window: number | 'all',
+  windowed: SolveRecord[],
   timeType: 'exec' | 'recog' | 'total',
   grouped: boolean,
 ): PhaseDataPoint[] {
-  const windowed = sliceWindow(solves, window)
   return windowed.map((s, i) => {
-    const point: PhaseDataPoint = { seq: i + 1, solveId: s.id }
+    const point: PhaseDataPoint = { xIndex: i + 1, solveId: s.id }
     for (const phase of s.phases) {
       const key = grouped && phase.group ? phase.group : phase.label
       const ms = timeType === 'exec' ? phase.executionMs
