@@ -79,12 +79,12 @@ export function windowStats(
   return indexed.slice(-windowSize)
 }
 
-export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
-  const execs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.executionMs, 0))
-  const recogs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.recognitionMs, 0))
+export function buildTotalData(windowed: StatsSolvePoint[]): TotalDataPoint[] {
+  const execs = windowed.map(p => p.phases.reduce((sum, ph) => sum + ph.executionMs, 0))
+  const recogs = windowed.map(p => p.phases.reduce((sum, ph) => sum + ph.recognitionMs, 0))
   const totals = execs.map((e, i) => e + recogs[i])
-  return windowed.map((s, i) => ({
-    xIndex: i + 1,
+  return windowed.map((p, i) => ({
+    xIndex: p.xIndex,
     exec: execs[i],
     recog: recogs[i],
     total: totals[i],
@@ -94,7 +94,7 @@ export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
     recogAo12: rollingAo(recogs, i, 12),
     totalAo5: rollingAo(totals, i, 5),
     totalAo12: rollingAo(totals, i, 12),
-    solveId: s.id,
+    solveId: p.id,
   }))
 }
 
