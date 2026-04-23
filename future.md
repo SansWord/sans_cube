@@ -82,6 +82,13 @@
 
 **Consider removing `src/hooks/useSolveStore.ts` wrapper** — The hook wraps `useSyncExternalStore(solveStore.subscribe, solveStore.getSnapshot)` plus re-exports CRUD methods. It's pure sugar; consumers could call `useSyncExternalStore` directly and import CRUD from the store module. Revisit once we see how often consumers actually use the wrapper vs. reach for specific pieces — if usage is thin, drop the indirection.
 
+**Make `method` and `driver` non-optional on `SolveRecord`** — both fields are currently `string | undefined` in `src/types/solve.ts`. The optionality forces `?? 'cfop'` / `?? 'cube'` fallbacks throughout the filter and stats pipeline (`filterSolves`, `filterStats`, the new `StatsSolvePoint` projection, etc.), and the same pattern silently miscategorizes legacy records (e.g. 20 pre-method-field records bucket into CFOP via the fallback — see v1.29.1 diagnostic). Plan:
+1. Backfill existing records in localStorage and Firestore: scan for `method === undefined` / `driver === undefined` and stamp a sensible default (`'cfop'` / `'cube'`), or surface a debug UI that lets the user explicitly assign. Include example solves and shared-solve registry docs so every persisted solve has both fields.
+2. Tighten the type: change to `method: 'cfop' | 'roux' | 'freeform'` and `driver: 'cube' | 'mouse' | 'button'` (or appropriate union).
+3. Remove all `?? 'cfop'` / `?? 'cube'` fallbacks in filters and downstream code.
+4. StatsSolvePoint also drops the optionality.
+Once done, the filter code becomes `p.method === filter.method` with no silent-bucket behavior.
+
 **Effect deps: move guards to refs in URL write effects** — The "trigger vs. reader" principle: effect deps should only contain values whose changes should re-run the effect. Values used only as guards (`if (x) return`) belong in refs, not deps. Two guards are still in deps:
 - `sharedSolve` and `sharedSolveLoading` in the selectedSolve URL write effect
 - `showTrends` in the sharedSolve URL write effect (already using `showTrendsRef` in the selectedSolve effect — apply same pattern here)
