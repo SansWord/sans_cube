@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildTotalData, buildPhaseData, sortAndSliceWindow } from '../../src/utils/trends'
+import { buildTotalData, buildPhaseData, sortAndSliceWindow, buildStatsData } from '../../src/utils/trends'
 import type { SolveRecord, PhaseRecord } from '../../src/types/solve'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -30,6 +30,68 @@ function makeSolve(
     isExample: opts.isExample,
   }
 }
+
+// ─── buildStatsData ──────────────────────────────────────────────────────────
+
+describe('buildStatsData', () => {
+  it('seq mode: assigns xIndex in seq order', () => {
+    const solves = [
+      makeSolve(3, [makePhase('A', 500, 0)]),
+      makeSolve(1, [makePhase('A', 1000, 0)]),
+      makeSolve(2, [makePhase('A', 750, 0)]),
+    ]
+    const result = buildStatsData(solves, 'seq')
+    expect(result).toHaveLength(3)
+    expect(result[0].xIndex).toBe(1)
+    expect(result[0].id).toBe(1)   // seq=1 → first
+    expect(result[1].xIndex).toBe(2)
+    expect(result[1].id).toBe(2)
+    expect(result[2].xIndex).toBe(3)
+    expect(result[2].id).toBe(3)
+  })
+
+  it('date mode: assigns xIndex in date order', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)], { date: 3000 }),
+      makeSolve(2, [makePhase('A', 750, 0)],  { date: 2000 }),
+      makeSolve(3, [makePhase('A', 500, 0)],  { date: 1000 }),
+    ]
+    const result = buildStatsData(solves, 'date')
+    expect(result[0].xIndex).toBe(1)
+    expect(result[0].id).toBe(3)   // date=1000 → oldest → xIndex 1
+    expect(result[2].xIndex).toBe(3)
+    expect(result[2].id).toBe(1)   // date=3000 → newest → xIndex 3
+  })
+
+  it('strips example solves from output', () => {
+    const solves = [
+      makeSolve(1, [makePhase('A', 1000, 0)], { isExample: true }),
+      makeSolve(2, [makePhase('A', 2000, 0)]),
+    ]
+    const result = buildStatsData(solves, 'seq')
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe(2)
+    expect(result[0].xIndex).toBe(1)
+  })
+
+  it('output points do not contain moves, scramble, or seq', () => {
+    const solves = [makeSolve(1, [makePhase('A', 1000, 0)])]
+    const result = buildStatsData(solves, 'seq')
+    expect('moves' in result[0]).toBe(false)
+    expect('scramble' in result[0]).toBe(false)
+    expect('seq' in result[0]).toBe(false)
+  })
+
+  it('applies cfop/cube defaults for missing method/driver', () => {
+    const solve: SolveRecord = {
+      id: 1, scramble: '', timeMs: 5000, moves: [], phases: [], date: 0,
+      // method and driver intentionally absent
+    }
+    const result = buildStatsData([solve], 'seq')
+    expect(result[0].method).toBe('cfop')
+    expect(result[0].driver).toBe('cube')
+  })
+})
 
 // ─── buildTotalData ──────────────────────────────────────────────────────────
 
