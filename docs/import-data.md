@@ -32,7 +32,7 @@ The importer reads an acubemy JSON export and produces `SolveRecord` entries wit
 ### Known caveats
 
 - Imported solves land at the end of the `seq` counter even though their dates are historical. This causes a backward time-jump in the Trends chart (shown by date ascending). Sort-by-seq is unaffected.
-- The v1 UI does not badge imported solves visually — they look like native solves in the history list. A badge is planned (see `future.md`).
+- Imported solves show an **"Imported from {source}"** pill next to the title in the detail modal (including the shared-solve read-only view). The history sidebar does not badge them — they still look like native solves in the list.
 - Re-importing the same export skips duplicates. There is no "update existing" flow in v1 (see `future.md`).
 
 ### Manual smoke-test files
