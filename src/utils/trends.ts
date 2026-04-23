@@ -1,6 +1,16 @@
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, PhaseRecord } from '../types/solve'
 
 export type SortMode = 'seq' | 'date'
+
+export interface StatsSolvePoint {
+  id: number
+  date: number
+  timeMs: number
+  phases: PhaseRecord[]
+  method: string
+  driver: string
+  xIndex: number
+}
 
 export interface TotalDataPoint {
   xIndex: number
@@ -43,6 +53,22 @@ export function sortAndSliceWindow(
   const sorted = [...real].sort(cmp)
   if (window === 'all') return sorted
   return sorted.slice(-window)
+}
+
+export function buildStatsData(solves: SolveRecord[], sortMode: SortMode): StatsSolvePoint[] {
+  const real = solves.filter(s => !s.isExample)
+  const sorted = sortMode === 'date'
+    ? [...real].sort((a, b) => a.date - b.date)
+    : [...real].sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))
+  return sorted.map((s, i) => ({
+    id: s.id,
+    date: s.date,
+    timeMs: s.timeMs,
+    phases: s.phases,
+    method: s.method ?? 'cfop',
+    driver: s.driver ?? 'cube',
+    xIndex: i + 1,
+  }))
 }
 
 export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
