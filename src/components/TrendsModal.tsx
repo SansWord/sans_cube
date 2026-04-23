@@ -319,7 +319,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   const [tab, setTab] = useState<Tab>(initialParams.tab)
   const [windowSize, setWindowSize] = useState<WindowSize>(initialParams.windowSize ?? (isMobile ? 25 : 'all'))
   const [grouped, setGrouped] = useState(initialParams.grouped)
-  const [totalToggle, setTotalToggle] = useState<TimeToggle>({ exec: false, recog: false, total: true })
+  const [totalToggle, setTotalToggle] = useState<TimeToggle>(initialParams.totalToggle)
   const [phaseToggle, setPhaseToggle] = useState<TimeToggle>(initialParams.phaseToggle)
   const [hiddenPhases, setHiddenPhases] = useState<Set<string>>(new Set())
   const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
