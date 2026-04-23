@@ -14,10 +14,10 @@ import {
 } from 'recharts'
 import type { SolveRecord, SolveFilter } from '../types/solve'
 import { getMethod, CFOP, ROUX, FREEFORM } from '../methods/index'
-import { buildTotalData, buildPhaseData, sortAndSliceWindow } from '../utils/trends'
-import type { TotalDataPoint, PhaseDataPoint, SortMode } from '../utils/trends'
+import { buildTotalData, buildPhaseData, buildStatsData, windowStats } from '../utils/trends'
+import type { TotalDataPoint, PhaseDataPoint, SortMode, StatsSolvePoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
-import { filterSolves } from '../utils/solveStats'
+import { filterStats } from '../utils/solveStats'
 import { serializeZoomStack, type TrendsHashParams } from '../hooks/useHashRouter'
 
 type Tab = 'total' | 'phases'
@@ -146,7 +146,7 @@ function buildColorMap(
 }
 
 function buildMergedPhaseData(
-  windowed: SolveRecord[],
+  windowed: StatsSolvePoint[],
   phaseToggle: TimeToggle,
   grouped: boolean,
 ): PhaseDataPoint[] {
@@ -262,7 +262,7 @@ function TotalTooltip({
   }
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? '?'}</div>
+      <div>#{d.xIndex}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {rows.map(r => (
         <div key={r.label} style={{ color: r.color }}>{r.label}: {formatSeconds(r.value)}s</div>
@@ -293,7 +293,7 @@ function PhaseTooltip({
   const solve = solveMap.get(pt.solveId as number)
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? '?'}</div>
+      <div>#{pt.xIndex}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {payload.map(p => (
         <div key={p.name} style={{ color: p.color }}>
@@ -328,13 +328,14 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   const [zoomStack, setZoomStack] = useState<Array<[number, number]>>(initialParams.zoom ?? [])
   const [sortMode, setSortMode] = useState<SortMode>(initialParams.sortMode)
 
-  const filtered = filterSolves(solves, solveFilter)
   const method = getMethod(solveFilter.method === 'all' ? 'cfop' : solveFilter.method)
   const hasGroups = method.phases.some(p => p.group)
 
   const currentDomain: [number, number] | null = zoomStack.length > 0 ? zoomStack[zoomStack.length - 1] : null
 
-  const windowed = sortAndSliceWindow(filtered, windowSize, sortMode)
+  const indexed = buildStatsData(solves, sortMode)
+  const filteredStats = filterStats(indexed, solveFilter)
+  const windowed = windowStats(filteredStats, windowSize)
   const totalData = buildTotalData(windowed)
   const phaseData = buildMergedPhaseData(windowed, phaseToggle, grouped)
 
@@ -495,10 +496,14 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     })
   }
 
+  const xAxisDomain: [number, number] = currentDomain
+    ? [currentDomain[0] - 0.5, currentDomain[1] + 0.5]
+    : [firstVisIndex - 0.5, lastVisIndex + 0.5]
+
   const xAxisProps = {
     dataKey: 'xIndex' as const,
     type: 'number' as const,
-    domain: [firstVisIndex - 0.5, lastVisIndex + 0.5] as [number, number],
+    domain: xAxisDomain,
     allowDecimals: false,
     stroke: '#555',
     tick: { fill: '#555', fontSize: 11 },
