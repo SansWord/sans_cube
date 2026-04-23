@@ -41,20 +41,6 @@ function rollingAo(values: number[], index: number, n: number): number | null {
   return trimmed.reduce((a, b) => a + b, 0) / trimmed.length
 }
 
-export function sortAndSliceWindow(
-  solves: SolveRecord[],
-  window: number | 'all',
-  sortMode: SortMode,
-): SolveRecord[] {
-  const real = solves.filter(s => !s.isExample)
-  const cmp = sortMode === 'date'
-    ? (a: SolveRecord, b: SolveRecord) => a.date - b.date
-    : (a: SolveRecord, b: SolveRecord) => (a.seq ?? 0) - (b.seq ?? 0)
-  const sorted = [...real].sort(cmp)
-  if (window === 'all') return sorted
-  return sorted.slice(-window)
-}
-
 export function buildStatsData(solves: SolveRecord[], sortMode: SortMode): StatsSolvePoint[] {
   const real = solves.filter(s => !s.isExample)
   const sorted = sortMode === 'date'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildTotalData, buildPhaseData, sortAndSliceWindow, buildStatsData, windowStats } from '../../src/utils/trends'
+import { buildTotalData, buildPhaseData, buildStatsData, windowStats } from '../../src/utils/trends'
 import type { SolveRecord, PhaseRecord } from '../../src/types/solve'
 import type { StatsSolvePoint, SortMode } from '../../src/utils/trends'
 
@@ -402,60 +402,5 @@ describe('buildPhaseData', () => {
     expect(result[0].solveId).toBe(3)  // seq=3 but date=1000 (oldest) → xIndex=1
     expect(result[2].xIndex).toBe(3)
     expect(result[2].solveId).toBe(1)  // seq=1 but date=3000 (newest) → xIndex=3
-  })
-})
-
-// ─── sortAndSliceWindow ──────────────────────────────────────────────────────
-
-describe('sortAndSliceWindow', () => {
-  it('seq mode: returns solves ordered by solve seq', () => {
-    const solves = [
-      makeSolve(3, [makePhase('A', 1000, 0)], { date: 1000 }),
-      makeSolve(1, [makePhase('A', 2000, 0)], { date: 3000 }),
-      makeSolve(2, [makePhase('A', 3000, 0)], { date: 2000 }),
-    ]
-    const result = sortAndSliceWindow(solves, 'all', 'seq')
-    expect(result.map(s => s.seq)).toEqual([1, 2, 3])
-  })
-
-  it('date mode: returns solves ordered by date even when seq disagrees', () => {
-    const solves = [
-      makeSolve(3, [makePhase('A', 1000, 0)], { date: 1000 }),
-      makeSolve(1, [makePhase('A', 2000, 0)], { date: 3000 }),
-      makeSolve(2, [makePhase('A', 3000, 0)], { date: 2000 }),
-    ]
-    const result = sortAndSliceWindow(solves, 'all', 'date')
-    expect(result.map(s => s.date)).toEqual([1000, 2000, 3000])
-  })
-
-  it('excludes example solves in both modes', () => {
-    const solves = [
-      makeSolve(1, [makePhase('A', 1000, 0)], { isExample: true }),
-      makeSolve(2, [makePhase('A', 2000, 0)]),
-    ]
-    expect(sortAndSliceWindow(solves, 'all', 'seq')).toHaveLength(1)
-    expect(sortAndSliceWindow(solves, 'all', 'date')).toHaveLength(1)
-  })
-
-  it('seq mode: window slices the last N after sorting by seq', () => {
-    const solves = [
-      makeSolve(1, [makePhase('A', 1000, 0)]),
-      makeSolve(2, [makePhase('A', 2000, 0)]),
-      makeSolve(3, [makePhase('A', 3000, 0)]),
-    ]
-    const result = sortAndSliceWindow(solves, 2, 'seq')
-    expect(result).toHaveLength(2)
-    expect(result.map(s => s.seq)).toEqual([2, 3])
-  })
-
-  it('date mode: window slices the last N after sorting by date', () => {
-    const solves = [
-      makeSolve(3, [makePhase('A', 1000, 0)], { date: 1000 }),
-      makeSolve(1, [makePhase('A', 2000, 0)], { date: 3000 }),
-      makeSolve(2, [makePhase('A', 3000, 0)], { date: 2000 }),
-    ]
-    const result = sortAndSliceWindow(solves, 2, 'date')
-    expect(result).toHaveLength(2)
-    expect(result.map(s => s.date)).toEqual([2000, 3000])
   })
 })
