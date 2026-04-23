@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.29.1](#v1291--trends-zoom-url-persistence--dev-handle-2026-04-23-1015) | Trends chart zoom survives ESC-from-solve, reload, and URL paste — encoded as `zoom=a,b\|c,d` in the `#trends` hash; reset moved from effect to user-action handlers to avoid StrictMode double-mount wipe; `window.__solves` dev handle |
 | [v1.29.0](#v1290--trends-sort-by-timestamp-toggle-2026-04-23-0748) | Sort dropdown (Seq/Date) in Trends fixes backward day labels after import; `sortAndSliceWindow` computes windowed array once per render; `seq→xIndex` rename on data-point interfaces |
 | [v1.28.0](#v1280--import-source-badge-2026-04-22-1701) | "Imported from {source}" pill in `SolveDetailModal` header — conditional render gated on `importedFrom`; static provenance label (no link / tooltip); two component tests with `CubeCanvas` stubbed; docs + manual QA updated |
 | [v1.27.0](#v1270--resequence-scope-panel-2026-04-21-1248) | Resequence scope panel in debug mode — previews total count, first-mismatch cursor, renumber count before committing; tail-only semantics; `<DebugPanel>` shell extracted from `<RecomputePhasesPanel>` |
@@ -62,6 +63,29 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.29.1 — Trends zoom URL persistence + dev handle (2026-04-23 10:15)
+
+**Review:** not yet
+
+**What was built:**
+- Chart zoom persists across modal-close, tab-reload, and fresh-tab URL paste. Encoded as `zoom=a,b|c,d|...` in the `#trends` hash (pipe-separated drill-down stack).
+- `TrendsHashParams.zoom: Array<[number, number]>` with `parseZoomStack` and `serializeZoomStack` helpers in `useHashRouter.ts`. Malformed / reversed ranges are silently dropped. Round-trip tested.
+- `zoomStack` initializes from `initialParams.zoom`; URL-sync effect serializes it back (param omitted when stack is empty).
+- Zoom reset moved from `useEffect([windowSize, sortMode])` to `changeWindowSize` / `changeSortMode` callbacks — the effect path fired on StrictMode's simulated unmount-remount and wiped URL-hydrated zoom on first render.
+- `window.__solves` + `window.__solveState` exposed via `useSolveStore` in dev mode (gated on `import.meta.env.DEV`). Documented in `docs/debug-mode.md`.
+- `future.md` bug: zoom uses positional `xIndex`, so switching method/driver filter while zoomed makes the chart look empty. Deferred — desired semantics is zoom survives method/driver changes, still resets on sort/window change.
+- 8 new `useHashRouter` tests (parse empty / single / stack / malformed; serialize empty / single / stack; round-trip).
+
+**Key technical learnings:**
+- `[insight]` Effect-based "reset on dep change" is structurally incompatible with hydrating state from props (URL, localStorage, etc.) under React 19 StrictMode. The first mount's effect fires, the ref guard flips, then StrictMode simulates an unmount/remount — refs persist, so the guard is already tripped and the effect wipes the hydrated state. The robust pattern is to move the reset to the user-action handler, tying the side-effect to intent rather than to a React lifecycle event.
+- `[gotcha]` The console-log pass confirmed this with line-by-line output: `MOUNT → reset skipped (firstMount=true) → URL-sync writes zoom → UNMOUNT → MOUNT → reset CLEARS (firstMount=false) → URL-sync writes without zoom`. Without the logs the failure looked like "URL just doesn't persist," which mis-points toward the router/history stack.
+- `[note]` `window.__solves` sidesteps React DevTools Fiber traversal (which broke on this Vite 19 build — `__reactContainer$` / `__reactFiber$` keys were missing from `document.body`). A single-line dev handle in a React hook beats a generic "find the component via fiber" script for repeat inspection.
+
+**Process learnings:**
+- `[insight]` When the user's symptom description and the code both look consistent with the "fix" in place, add tracer logs before changing more code. The URL hash looked right on zoom, the test passed, type-check was clean — the bug was in a dep array I hadn't reconsidered. Logs made the StrictMode double-mount visible in five seconds.
 
 ---
 
