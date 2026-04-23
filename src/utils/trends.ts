@@ -1,5 +1,7 @@
 import type { SolveRecord } from '../types/solve'
 
+export type SortMode = 'seq' | 'date'
+
 export interface TotalDataPoint {
   seq: number
   exec: number
@@ -27,6 +29,20 @@ function rollingAo(values: number[], index: number, n: number): number | null {
   const sorted = [...slice].sort((a, b) => a - b)
   const trimmed = sorted.slice(1, -1)
   return trimmed.reduce((a, b) => a + b, 0) / trimmed.length
+}
+
+export function sortAndSliceWindow(
+  solves: SolveRecord[],
+  window: number | 'all',
+  sortMode: SortMode,
+): SolveRecord[] {
+  const real = solves.filter(s => !s.isExample)
+  const cmp = sortMode === 'date'
+    ? (a: SolveRecord, b: SolveRecord) => a.date - b.date
+    : (a: SolveRecord, b: SolveRecord) => (a.seq ?? 0) - (b.seq ?? 0)
+  const sorted = [...real].sort(cmp)
+  if (window === 'all') return sorted
+  return sorted.slice(-window)
 }
 
 function sliceWindow(solves: SolveRecord[], window: number | 'all'): SolveRecord[] {
