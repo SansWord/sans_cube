@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.29.0](#v1290--trends-sort-by-timestamp-toggle-2026-04-23-0748) | Sort dropdown (Seq/Date) in Trends fixes backward day labels after import; `sortAndSliceWindow` computes windowed array once per render; `seq→xIndex` rename on data-point interfaces |
 | [v1.28.0](#v1280--import-source-badge-2026-04-22-1701) | "Imported from {source}" pill in `SolveDetailModal` header — conditional render gated on `importedFrom`; static provenance label (no link / tooltip); two component tests with `CubeCanvas` stubbed; docs + manual QA updated |
 | [v1.27.0](#v1270--resequence-scope-panel-2026-04-21-1248) | Resequence scope panel in debug mode — previews total count, first-mismatch cursor, renumber count before committing; tail-only semantics; `<DebugPanel>` shell extracted from `<RecomputePhasesPanel>` |
 | [v1.26.0](#v1260--shared-solve-store-2026-04-21) | Module-level `solveStore` singleton replaces `useSolveHistory`; zero Firestore re-reads on timer/debug toggles; chunked `addMany`; `Refresh solves` button |
@@ -61,6 +62,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.29.0 — Trends sort-by-timestamp toggle (2026-04-23 07:48)
+
+**Review:** complete
+**Design docs:**
+- Sort-by-timestamp: [Spec](superpowers/specs/2026-04-23-sort-by-timestamp-design.md) [Plan](superpowers/plans/2026-04-23-sort-by-timestamp.md)
+
+**What was built:**
+- Sort dropdown (Seq / Date) in the TrendsModal header — toggles whether chart data is ordered by solve sequence number or by completion date
+- `sortAndSliceWindow(solves, window, sortMode)` in `trends.ts` — single entry point that filters examples, sorts by the chosen mode, and slices to the rolling window
+- `buildTotalData` / `buildPhaseData` refactored to accept a pre-windowed `SolveRecord[]` (no longer sort/filter internally)
+- `seq` renamed to `xIndex` on `TotalDataPoint` / `PhaseDataPoint` interfaces — positional chart index, not the solve's human-readable seq number
+- `sortMode: SortMode` added to `TrendsHashParams` and `parseTrendsParams` — deep-linkable via `sort=seq|date`
+- `sortMode` state in `TrendsModal` initialized from URL, synced back to hash, zoom resets on toggle
+- Unit tests: 5 new `sortAndSliceWindow` tests; 2 new `buildTotalData` date-sort tests; 1 new `buildPhaseData` date-sort test; 4 new `useHashRouter` sortMode tests
+
+**Key technical learnings:**
+- `[insight]` Computing the windowed array once per render (in `sortAndSliceWindow`) instead of inside each build function eliminated up to 4 redundant sort+slice passes per render — the refactored API makes the single-pass invariant structurally enforced rather than a convention
+- `[gotcha]` Renaming `seq` on data-point interfaces to `xIndex` was necessary to avoid a semantic collision: `SolveRecord.seq` is the human-readable solve number (shown in the sidebar, stable across sorts), while the chart position index changes with sort mode — using the same name would have caused subtle display bugs in tooltips
+- `[note]` `sortAndSliceWindow` decouples sort order from data transform: `buildTotalData`/`buildPhaseData` assign `xIndex: i + 1` starting at 1 over whatever order they receive, so Ao5/Ao12 rolling averages correctly reflect the chosen sort order
 
 ---
 

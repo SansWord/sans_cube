@@ -45,7 +45,8 @@
 - ao5, ao12 for phases?
 - ~~filter by driver~~ — done in v1.15.0 (driver filter in sidebar + Trends, persisted and URL-honoring)
 - TrendsModal.tsx refactor (786 lines) — god component: chart data transform + color math + tooltips + controls + all state. Consider when actively working on trends features.
-- **Sort-by-timestamp toggle in Trends** — normalize the backward time-jump in the chart after an import by offering a sort mode that orders by cubeTimestamp instead of solve seq.
+- ~~**Sort-by-timestamp toggle in Trends**~~ — done in v1.29.0 (Sort dropdown Seq/Date; `sortAndSliceWindow`; `xIndex` rename on data points)
+- **`totalToggle` not restored from URL deep-link** — `TrendsModal` hardcodes initial `totalToggle` to `{ exec: false, recog: false, total: true }` instead of reading from `initialParams`. Pasting a `#trends?ttotal=exec,recog` URL doesn't restore the toggle. (Spotted during v1.29.0 review.)
 
 
 ## Import
