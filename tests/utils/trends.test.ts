@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildTotalData, buildPhaseData, sortAndSliceWindow, buildStatsData } from '../../src/utils/trends'
+import { buildTotalData, buildPhaseData, sortAndSliceWindow, buildStatsData, windowStats } from '../../src/utils/trends'
 import type { SolveRecord, PhaseRecord } from '../../src/types/solve'
+import type { StatsSolvePoint } from '../../src/utils/trends'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,33 @@ describe('buildStatsData', () => {
     const result = buildStatsData([solve], 'seq')
     expect(result[0].method).toBe('cfop')
     expect(result[0].driver).toBe('cube')
+  })
+})
+
+// ─── windowStats ─────────────────────────────────────────────────────────────
+
+describe('windowStats', () => {
+  it('last-N: returns the last N entries with original xIndex values preserved', () => {
+    const points: StatsSolvePoint[] = [
+      { id: 1, date: 0, timeMs: 0, phases: [], method: 'cfop', driver: 'cube', xIndex: 10 },
+      { id: 2, date: 0, timeMs: 0, phases: [], method: 'cfop', driver: 'cube', xIndex: 20 },
+      { id: 3, date: 0, timeMs: 0, phases: [], method: 'cfop', driver: 'cube', xIndex: 30 },
+    ]
+    const result = windowStats(points, 2)
+    expect(result).toHaveLength(2)
+    expect(result[0].xIndex).toBe(20)   // not renumbered
+    expect(result[1].xIndex).toBe(30)
+  })
+
+  it('returns all entries unchanged when windowSize is all', () => {
+    const points: StatsSolvePoint[] = [
+      { id: 1, date: 0, timeMs: 0, phases: [], method: 'cfop', driver: 'cube', xIndex: 5 },
+      { id: 2, date: 0, timeMs: 0, phases: [], method: 'cfop', driver: 'cube', xIndex: 10 },
+    ]
+    const result = windowStats(points, 'all')
+    expect(result).toHaveLength(2)
+    expect(result[0].xIndex).toBe(5)
+    expect(result[1].xIndex).toBe(10)
   })
 })
 
