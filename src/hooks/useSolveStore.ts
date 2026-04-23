@@ -14,6 +14,11 @@ export function useSolveStore() {
   const solves = getAllSolves(state)
   const cloudLoading = state.status === 'loading'
 
+  if (import.meta.env.DEV) {
+    (window as unknown as { __solves: SolveRecord[]; __solveState: StoreState }).__solves = solves
+    ;(window as unknown as { __solves: SolveRecord[]; __solveState: StoreState }).__solveState = state
+  }
+
   return {
     solves,
     addSolve:       solveStore.addSolve.bind(solveStore),

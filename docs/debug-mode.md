@@ -59,6 +59,15 @@ Triggered by **Detect method mismatches (Firestore | localStorage)** in the main
 - **Cross** — CFOP cross turn count (highlighted red if > 20)
 - **FB** — Roux FB turn count (highlighted red if > 20)
 
+### Dev-only console handles
+
+When running in dev mode (`npm run dev` / `import.meta.env.DEV`), `useSolveStore` exposes two globals for ad-hoc debugging in the browser DevTools console:
+
+- **`window.__solves`** — the live `SolveRecord[]` passed to components (user solves + visible examples). Kept in sync on every store snapshot.
+- **`window.__solveState`** — the full store snapshot: `{ solves, status, cloudReady, dismissedExamples, error }`. Useful for checking cloud-sync status and the raw (example-free) solve list.
+
+Set in `src/hooks/useSolveStore.ts`, gated on `import.meta.env.DEV`, so these globals are stripped from production builds by Vite. Use them for quick inspection like `window.__solves.filter(s => s.method === undefined)` without adding UI scaffolding.
+
 ## When to update this document
 
 Update `docs/debug-mode.md` whenever you:
