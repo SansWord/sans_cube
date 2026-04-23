@@ -107,7 +107,7 @@ export function TimerScreen({
     tab: 'total', windowSize: null, grouped: true,
     totalToggle: { exec: false, recog: false, total: true },
     phaseToggle: { exec: false, recog: false, total: true },
-    method: null, driver: null, sortMode: 'seq',
+    method: null, driver: null, sortMode: 'seq', zoom: [],
   }
   const trendParams = currentRoute.type === 'trends' ? currentRoute.params : defaultTrendsParams
   const { sharedSolve, sharedSolveLoading, sharedSolveNotFound, clearSharedSolve } = useSharedSolve(currentRoute)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseHash, decideSelectedSolveUrlAction, decideSharedSolveUrlAction } from '../../src/hooks/useHashRouter'
+import { parseHash, decideSelectedSolveUrlAction, decideSharedSolveUrlAction, serializeZoomStack } from '../../src/hooks/useHashRouter'
 
 describe('parseHash', () => {
   it('parses #debug', () => {
@@ -99,6 +99,57 @@ describe('parseHash', () => {
 
   it('returns none for unknown hash', () => {
     expect(parseHash('#unknown')).toEqual({ type: 'none' })
+  })
+
+  it('parses #trends with no zoom param as empty stack', () => {
+    const route = parseHash('#trends')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.zoom).toEqual([])
+  })
+
+  it('parses #trends with a single zoom range', () => {
+    const route = parseHash('#trends?zoom=100,200')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.zoom).toEqual([[100, 200]])
+  })
+
+  it('parses #trends with a zoom stack (pipe-separated)', () => {
+    const route = parseHash('#trends?zoom=100,500|150,400|200,300')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.zoom).toEqual([[100, 500], [150, 400], [200, 300]])
+  })
+
+  it('drops malformed zoom ranges (NaN, reversed)', () => {
+    const route = parseHash('#trends?zoom=abc,200|300,100|50,75')
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.zoom).toEqual([[50, 75]])
+  })
+})
+
+describe('serializeZoomStack', () => {
+  it('returns empty string for empty stack', () => {
+    expect(serializeZoomStack([])).toBe('')
+  })
+
+  it('serializes a single range as "a,b"', () => {
+    expect(serializeZoomStack([[100, 200]])).toBe('100,200')
+  })
+
+  it('serializes a stack as pipe-separated pairs', () => {
+    expect(serializeZoomStack([[100, 500], [150, 400]])).toBe('100,500|150,400')
+  })
+
+  it('round-trips through parseHash', () => {
+    const stack: Array<[number, number]> = [[10, 100], [25, 75]]
+    const hash = `#trends?zoom=${serializeZoomStack(stack)}`
+    const route = parseHash(hash)
+    expect(route.type).toBe('trends')
+    if (route.type !== 'trends') return
+    expect(route.params.zoom).toEqual(stack)
   })
 })
 

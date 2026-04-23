@@ -10,6 +10,7 @@ export interface TrendsHashParams {
   method: 'all' | 'cfop' | 'roux' | 'freeform' | null
   driver: 'all' | 'cube' | 'mouse' | null
   sortMode: SortMode
+  zoom: Array<[number, number]>
 }
 
 export type Route =
@@ -24,6 +25,16 @@ function parseTimeToggle(raw: string | null): { exec: boolean; recog: boolean; t
   const t = { exec: set.has('exec'), recog: set.has('recog'), total: set.has('total') }
   if (!t.exec && !t.recog && !t.total) t.total = true
   return t
+}
+
+function parseZoomStack(raw: string | null): Array<[number, number]> {
+  if (!raw) return []
+  const stack: Array<[number, number]> = []
+  for (const pair of raw.split('|')) {
+    const [a, b] = pair.split(',').map(Number)
+    if (Number.isFinite(a) && Number.isFinite(b) && a <= b) stack.push([a, b])
+  }
+  return stack
 }
 
 function parseTrendsParams(hash: string): TrendsHashParams {
@@ -48,7 +59,12 @@ function parseTrendsParams(hash: string): TrendsHashParams {
     ? (driverRaw as 'all' | 'cube' | 'mouse')
     : null
   const sortMode: SortMode = params.get('sort') === 'date' ? 'date' : 'seq'
-  return { tab, windowSize, grouped, totalToggle, phaseToggle, method, driver, sortMode }
+  const zoom = parseZoomStack(params.get('zoom'))
+  return { tab, windowSize, grouped, totalToggle, phaseToggle, method, driver, sortMode, zoom }
+}
+
+export function serializeZoomStack(stack: Array<[number, number]>): string {
+  return stack.map(([a, b]) => `${a},${b}`).join('|')
 }
 
 export function parseHash(hash: string): Route {
