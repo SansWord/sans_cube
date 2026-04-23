@@ -14,8 +14,8 @@ import {
 } from 'recharts'
 import type { SolveRecord, SolveFilter } from '../types/solve'
 import { getMethod, CFOP, ROUX, FREEFORM } from '../methods/index'
-import { buildTotalData, buildPhaseData } from '../utils/trends'
-import type { TotalDataPoint, PhaseDataPoint } from '../utils/trends'
+import { buildTotalData, buildPhaseData, sortAndSliceWindow } from '../utils/trends'
+import type { TotalDataPoint, PhaseDataPoint, SortMode } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
 import { filterSolves } from '../utils/solveStats'
 import type { TrendsHashParams } from '../hooks/useHashRouter'
@@ -146,20 +146,19 @@ function buildColorMap(
 }
 
 function buildMergedPhaseData(
-  solves: SolveRecord[],
-  windowSize: number | 'all',
+  windowed: SolveRecord[],
   phaseToggle: TimeToggle,
   grouped: boolean,
 ): PhaseDataPoint[] {
   const activeTypes = (Object.keys(phaseToggle) as TimeKey[]).filter(k => phaseToggle[k])
   if (activeTypes.length === 0) return []
-  const datasets = activeTypes.map(type => buildPhaseData(solves, windowSize, type, grouped))
+  const datasets = activeTypes.map(type => buildPhaseData(windowed, type, grouped))
   return datasets[0].map((pt, i) => {
-    const merged: PhaseDataPoint = { seq: pt.seq, solveId: pt.solveId }
+    const merged: PhaseDataPoint = { xIndex: pt.xIndex, solveId: pt.solveId }
     activeTypes.forEach((type, j) => {
       const typePt = datasets[j][i]
       Object.entries(typePt).forEach(([key, val]) => {
-        if (key === 'seq' || key === 'solveId') return
+        if (key === 'xIndex' || key === 'solveId') return
         merged[`${key}_${type}`] = val as number
       })
     })
@@ -182,7 +181,7 @@ function formatMonthDay(ts: number): string {
 
 /** Returns reference line positions for day boundaries in the visible data. */
 function buildDayLines(
-  visibleData: Array<{ seq: number; solveId: number }>,
+  visibleData: Array<{ xIndex: number; solveId: number }>,
   solveMap: Map<number, SolveRecord>,
 ): Array<{ x: number; label: string }> {
   if (visibleData.length === 0) return []
@@ -196,17 +195,15 @@ function buildDayLines(
   const firstSolve = solveMap.get(visibleData[0].solveId)
   if (!firstSolve) return []
 
-  // Start boundary: labeled with the day of the first solve
-  lines.push({ x: visibleData[0].seq - 0.5, label: formatMonthDay(firstSolve.date) })
+  lines.push({ x: visibleData[0].xIndex - 0.5, label: formatMonthDay(firstSolve.date) })
 
-  // Day-change boundaries
   let prevDay = startOfDay(firstSolve.date)
   for (let i = 1; i < visibleData.length; i++) {
     const solve = solveMap.get(visibleData[i].solveId)
     if (!solve) continue
     const day = startOfDay(solve.date)
     if (day !== prevDay) {
-      lines.push({ x: visibleData[i].seq - 0.5, label: formatMonthDay(solve.date) })
+      lines.push({ x: visibleData[i].xIndex - 0.5, label: formatMonthDay(solve.date) })
       prevDay = day
     }
   }
@@ -265,7 +262,7 @@ function TotalTooltip({
   }
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? d.seq}</div>
+      <div>Solve #{solve?.seq ?? '?'}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {rows.map(r => (
         <div key={r.label} style={{ color: r.color }}>{r.label}: {formatSeconds(r.value)}s</div>
@@ -296,7 +293,7 @@ function PhaseTooltip({
   const solve = solveMap.get(pt.solveId as number)
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? pt.seq}</div>
+      <div>Solve #{solve?.seq ?? '?'}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {payload.map(p => (
         <div key={p.name} style={{ color: p.color }}>
@@ -329,6 +326,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
   const refAreaRightRef = useRef<number | null>(null)
   const [zoomStack, setZoomStack] = useState<Array<[number, number]>>([])
+  const [sortMode, setSortMode] = useState<SortMode>(initialParams.sortMode)
 
   const filtered = filterSolves(solves, solveFilter)
   const method = getMethod(solveFilter.method === 'all' ? 'cfop' : solveFilter.method)
@@ -336,30 +334,31 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
 
   const currentDomain: [number, number] | null = zoomStack.length > 0 ? zoomStack[zoomStack.length - 1] : null
 
-  const totalData = buildTotalData(filtered, windowSize)
-  const phaseData = buildMergedPhaseData(filtered, windowSize, phaseToggle, grouped)
+  const windowed = sortAndSliceWindow(filtered, windowSize, sortMode)
+  const totalData = buildTotalData(windowed)
+  const phaseData = buildMergedPhaseData(windowed, phaseToggle, grouped)
 
   const visibleTotalData = currentDomain
-    ? totalData.filter(pt => pt.seq >= currentDomain[0] && pt.seq <= currentDomain[1])
+    ? totalData.filter(pt => pt.xIndex >= currentDomain[0] && pt.xIndex <= currentDomain[1])
     : totalData
   const visiblePhaseData = currentDomain
-    ? phaseData.filter(pt => (pt.seq as number) >= currentDomain[0] && (pt.seq as number) <= currentDomain[1])
+    ? phaseData.filter(pt => (pt.xIndex as number) >= currentDomain[0] && (pt.xIndex as number) <= currentDomain[1])
     : phaseData
 
   const solveMap = new Map(solves.map(s => [s.id, s]))
 
   const visibleSeqData = tab === 'total'
     ? visibleTotalData
-    : visiblePhaseData.map(pt => ({ seq: pt.seq as number, solveId: pt.solveId as number }))
+    : visiblePhaseData.map(pt => ({ xIndex: pt.xIndex as number, solveId: pt.solveId as number }))
   const dayLines = buildDayLines(visibleSeqData, solveMap)
 
-  const firstVisSeq = visibleSeqData[0]?.seq ?? 1
-  const lastVisSeq = visibleSeqData[visibleSeqData.length - 1]?.seq ?? firstVisSeq
+  const firstVisIndex = visibleSeqData[0]?.xIndex ?? 1
+  const lastVisIndex = visibleSeqData[visibleSeqData.length - 1]?.xIndex ?? firstVisIndex
   const colorMap = buildColorMap(solveFilter.method, grouped)
 
   const phaseKeys = Array.from(
     phaseData.reduce((set, pt) => {
-      Object.keys(pt).forEach(k => { if (k !== 'seq' && k !== 'solveId') set.add(k) })
+      Object.keys(pt).forEach(k => { if (k !== 'xIndex' && k !== 'solveId') set.add(k) })
       return set
     }, new Set<string>())
   )
@@ -369,7 +368,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     setZoomStack([])
     setRefAreaLeft(null)
     setRefAreaRight(null)
-  }, [windowSize])
+  }, [windowSize, sortMode])
 
   // Sync URL hash
   useEffect(() => {
@@ -381,6 +380,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
       driver: solveFilter.driver,
       tab,
       window: String(windowSize),
+      sort: sortMode,
       group: grouped ? 'grouped' : 'split',
       ttotal: activeTotalTypes,
       tphase: activePhaseTypes,
@@ -392,7 +392,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     } else {
       history.replaceState(null, '', url)
     }
-  }, [solveFilter.method, solveFilter.driver, tab, windowSize, grouped, totalToggle, phaseToggle, detailOpen])
+  }, [solveFilter.method, solveFilter.driver, tab, windowSize, sortMode, grouped, totalToggle, phaseToggle, detailOpen])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
@@ -477,9 +477,9 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   }
 
   const xAxisProps = {
-    dataKey: 'seq' as const,
+    dataKey: 'xIndex' as const,
     type: 'number' as const,
-    domain: [firstVisSeq - 0.5, lastVisSeq + 0.5] as [number, number],
+    domain: [firstVisIndex - 0.5, lastVisIndex + 0.5] as [number, number],
     allowDecimals: false,
     stroke: '#555',
     tick: { fill: '#555', fontSize: 11 },
@@ -558,6 +558,25 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
               <option value="all">All</option>
               <option value="cube">Cube</option>
               <option value="mouse">Mouse</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ color: '#555', fontSize: 11 }}>Sort</span>
+            <select
+              value={sortMode}
+              onChange={e => setSortMode(e.target.value as SortMode)}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#888',
+                fontSize: 12,
+                padding: '1px 4px',
+                borderRadius: 3,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="seq">Seq</option>
+              <option value="date">Date</option>
             </select>
           </div>
         </div>
