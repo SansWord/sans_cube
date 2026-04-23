@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import type { SortMode } from '../utils/trends'
 
 export interface TrendsHashParams {
   tab: 'total' | 'phases'
@@ -8,6 +9,7 @@ export interface TrendsHashParams {
   phaseToggle: { exec: boolean; recog: boolean; total: boolean }
   method: 'all' | 'cfop' | 'roux' | 'freeform' | null
   driver: 'all' | 'cube' | 'mouse' | null
+  sortMode: SortMode
 }
 
 export type Route =
@@ -45,7 +47,8 @@ function parseTrendsParams(hash: string): TrendsHashParams {
   const driver = (['all', 'cube', 'mouse'] as const).includes(driverRaw as 'all')
     ? (driverRaw as 'all' | 'cube' | 'mouse')
     : null
-  return { tab, windowSize, grouped, totalToggle, phaseToggle, method, driver }
+  const sortMode: SortMode = params.get('sort') === 'date' ? 'date' : 'seq'
+  return { tab, windowSize, grouped, totalToggle, phaseToggle, method, driver, sortMode }
 }
 
 export function parseHash(hash: string): Route {
