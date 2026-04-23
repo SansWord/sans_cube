@@ -25,6 +25,13 @@ Usage:
   --no-subagents
       Skip subagent files even if they exist.
 
+  --until TIMESTAMP
+      Restrict analysis to events at or before TIMESTAMP (ISO 8601, e.g.
+      "2026-04-19T05:32:20Z"). Main-loop events after the cutoff are dropped,
+      and subagent files whose first event is after the cutoff are excluded
+      entirely. Useful for scoping to a specific work window when the same
+      session was reused afterwards.
+
   --json
       Also emit a raw JSON block of all numbers (for scripting).
 
@@ -132,13 +139,16 @@ def parse_jsonl(path):
                 pass
     return events
 
-def extract_tokens(events):
+def extract_tokens(events, until=None):
     """
     Returns (tokens_by_model, timestamps, unknown_models).
 
     Reads cache write tiers from cache_creation.ephemeral_Xh_input_tokens only.
     cache_creation_input_tokens (plain int) is the total — skipped to avoid
     double-counting. Deduplicates events by UUID.
+
+    If `until` (datetime) is provided, events with a timestamp after it are
+    skipped. Events without a timestamp are kept.
     """
     tokens_by_model = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0))
     timestamps = []
@@ -147,11 +157,17 @@ def extract_tokens(events):
 
     for ev in events:
         ts_str = ev.get("timestamp")
+        ev_ts = None
         if ts_str:
             try:
-                timestamps.append(datetime.fromisoformat(ts_str.replace("Z", "+00:00")))
+                ev_ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
             except Exception:
                 pass
+
+        if until is not None and ev_ts is not None and ev_ts > until:
+            continue
+        if ev_ts is not None:
+            timestamps.append(ev_ts)
 
         uid = ev.get("uuid")
         msg = ev.get("message", {})
@@ -237,13 +253,44 @@ def fmt_tok(n):
 # CLI
 # ---------------------------------------------------------------------------
 
-def find_subagents(main_jsonl_path):
-    """Return all subagent JSONLs in <session-uuid>/subagents/ next to the main file."""
+def find_subagents(main_jsonl_path, until=None):
+    """Return all subagent JSONLs in <session-uuid>/subagents/ next to the main file.
+
+    If `until` is provided, exclude subagent files whose first event timestamp
+    is after the cutoff (they belong to a later work window).
+    """
     main = Path(main_jsonl_path)
     sub_dir = main.parent / main.stem / "subagents"
     if not sub_dir.is_dir():
         return []
-    return sorted(sub_dir.glob("*.jsonl"))
+    files = sorted(sub_dir.glob("*.jsonl"))
+    if until is None:
+        return files
+    kept = []
+    for f in files:
+        first_ts = None
+        try:
+            with open(f) as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        ev = json.loads(line)
+                    except Exception:
+                        continue
+                    ts_str = ev.get("timestamp")
+                    if ts_str:
+                        try:
+                            first_ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                            break
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+        if first_ts is None or first_ts <= until:
+            kept.append(f)
+    return kept
 
 def build_parser():
     p = argparse.ArgumentParser(
@@ -258,15 +305,26 @@ def build_parser():
                    help="~/.claude/projects/<id>/ (auto-detected from .git if omitted)")
     p.add_argument("--no-subagents", action="store_true",
                    help="Exclude subagent files even if they exist")
+    p.add_argument("--until", default=None,
+                   help="ISO 8601 cutoff timestamp (e.g. 2026-04-19T05:32:20Z); "
+                        "events after this are excluded from main and subagent files")
     p.add_argument("--json", action="store_true", help="Also emit raw JSON block")
     return p
 
 def main():
     args = build_parser().parse_args()
 
+    until = None
+    if args.until:
+        try:
+            until = datetime.fromisoformat(args.until.replace("Z", "+00:00"))
+        except Exception:
+            print(f"ERROR: --until value '{args.until}' is not a valid ISO 8601 timestamp", file=sys.stderr)
+            sys.exit(1)
+
     project_dir = args.project_dir or find_project_dir()
     main_jsonl  = resolve_session(args.session, project_dir)
-    sub_jsonls  = [] if args.no_subagents else find_subagents(main_jsonl)
+    sub_jsonls  = [] if args.no_subagents else find_subagents(main_jsonl, until=until)
 
     label = args.label or args.session
 
@@ -276,7 +334,7 @@ def main():
     all_unknowns = set()
 
     main_events = parse_jsonl(main_jsonl)
-    main_tbm, main_ts, unk = extract_tokens(main_events)
+    main_tbm, main_ts, unk = extract_tokens(main_events, until=until)
     main_timestamps.extend(main_ts)
     all_unknowns |= unk
     for model_key, t in main_tbm.items():
@@ -288,7 +346,7 @@ def main():
     sub_tokens  = defaultdict(lambda: dict(inp=0, out=0, cr=0, cw5=0, cw1h=0, turns=0, files=0))
     for sf in sub_jsonls:
         events = parse_jsonl(sf)
-        tbm, _, unk = extract_tokens(events)
+        tbm, _, unk = extract_tokens(events, until=until)
         all_unknowns |= unk
         # Determine the primary model for this file (most output tokens)
         file_primary = primary_model(tbm) if tbm else "unknown"
