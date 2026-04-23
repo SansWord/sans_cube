@@ -64,11 +64,13 @@ export interface StatsSolvePoint {
   date: number            // for day-line rendering and tooltips
   timeMs: number          // for total plot
   phases: PhaseRecord[]   // for exec/recog/phase breakdown
-  method?: string         // for method filter
-  driver?: string         // for driver filter
+  method: string          // for method filter (non-optional; default applied in buildStatsData)
+  driver: string          // for driver filter (non-optional; default applied in buildStatsData)
   xIndex: number          // 1-based position in full-sorted real-solves set
 }
 ```
+
+`method` and `driver` are **non-optional on `StatsSolvePoint`** even though they remain optional on `SolveRecord`. `buildStatsData` applies defaults (`'cfop'` for method, `'cube'` for driver) when copying from the source record. This scopes the fallback to a single place (the projection boundary) so downstream code — filter, Ao5, chart builders — can treat both fields as always-present and use exact comparisons. A planned SolveRecord-level migration (see `future.md` Code Quality) will eventually make the fallback unnecessary; until then, the projection contains it.
 
 Fields intentionally stripped from the source `SolveRecord`:
 - `moves[]` — largest field, not needed for stats
@@ -90,16 +92,18 @@ export function buildStatsData(solves: SolveRecord[], sortMode: SortMode): Stats
     date: s.date,
     timeMs: s.timeMs,
     phases: s.phases,
-    method: s.method,
-    driver: s.driver,
+    method: s.method ?? 'cfop',
+    driver: s.driver ?? 'cube',
     xIndex: i + 1,
   }))
 }
 ```
 
+Defaults are applied exactly once, here. The rest of the pipeline treats `method` and `driver` as always-present.
+
 ### filterStats
 
-Simpler than `filterSolves` because examples are already gone:
+Simpler than `filterSolves` because examples are already gone AND `method` / `driver` are guaranteed present on the projection — exact comparisons, no null coalescing:
 
 ```ts
 export function filterStats(
@@ -107,13 +111,13 @@ export function filterStats(
   filter: SolveFilter,
 ): StatsSolvePoint[] {
   let result = indexed
-  if (filter.method !== 'all') result = result.filter(p => (p.method ?? 'cfop') === filter.method)
-  if (filter.driver !== 'all') result = result.filter(p => (p.driver ?? 'cube') === filter.driver)
+  if (filter.method !== 'all') result = result.filter(p => p.method === filter.method)
+  if (filter.driver !== 'all') result = result.filter(p => p.driver === filter.driver)
   return result
 }
 ```
 
-`filterSolves` (in `src/utils/solveStats.ts`) stays as-is because the sidebar / history list still needs the `isExample ||` bypass.
+`filterSolves` (in `src/utils/solveStats.ts`) stays as-is because the sidebar / history list still needs the `isExample ||` bypass and operates on `SolveRecord` (where both fields are still optional).
 
 ### windowStats
 
@@ -212,10 +216,12 @@ Remove `seq` from the tooltip. Add the solve's position as `#N` where `N = xInde
 2. `buildStatsData` — date-mode sort: mixed seq, known dates → xIndex matches date order.
 3. `buildStatsData` — strips examples: examples in input do not appear in output.
 4. `buildStatsData` — narrows the source: output points contain no `moves` / `quaternionSnapshots` / `scramble` / `seq` / other non-stats fields.
-5. `filterStats` — preserves xIndex: filter by method keeps matching entries' original xIndex (no renumber).
-6. `windowStats` — last-N: returns last N entries with their original xIndex values.
-7. `buildTotalData` — reads xIndex from input (input xIndex = 100, 200, 350 → output xIndex = 100, 200, 350).
-8. `buildPhaseData` — reads xIndex from input (same assertion).
+5. `buildStatsData` — applies defaults: a source solve with `method: undefined` and `driver: undefined` produces a point with `method: 'cfop'` and `driver: 'cube'`.
+6. `filterStats` — preserves xIndex: filter by method keeps matching entries' original xIndex (no renumber).
+7. `filterStats` — matches defaulted values: after `buildStatsData` defaults a legacy record to `method: 'cfop'`, `filterStats` with `method: 'cfop'` includes it; `method: 'roux'` excludes it.
+8. `windowStats` — last-N: returns last N entries with their original xIndex values.
+9. `buildTotalData` — reads xIndex from input (input xIndex = 100, 200, 350 → output xIndex = 100, 200, 350).
+10. `buildPhaseData` — reads xIndex from input (same assertion).
 
 ### Regression guard
 
