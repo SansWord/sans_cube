@@ -1,4 +1,5 @@
 import type { SolveRecord, SolveFilter } from '../types/solve'
+import type { StatsSolvePoint } from './trends'
 
 export interface StatEntry {
   current: number | null
@@ -44,6 +45,16 @@ export function computeStats(solves: SolveRecord[]): SolveStats {
     ao12:  { current: computeAo(solves, 12),  best: bestAo(solves, 12) },
     ao100: { current: computeAo(solves, 100), best: bestAo(solves, 100) },
   }
+}
+
+export function filterStats(
+  indexed: StatsSolvePoint[],
+  filter: SolveFilter,
+): StatsSolvePoint[] {
+  let result = indexed
+  if (filter.method !== 'all') result = result.filter(p => p.method === filter.method)
+  if (filter.driver !== 'all') result = result.filter(p => p.driver === filter.driver)
+  return result
 }
 
 export function filterSolves(solves: SolveRecord[], filter: SolveFilter): SolveRecord[] {
