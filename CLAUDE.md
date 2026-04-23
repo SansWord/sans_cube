@@ -125,23 +125,43 @@ When SansWord asks **"what did this session cost?"** or **"how much did [session
 
 ## Feature Cost Tracking
 
-After shipping any feature that went through the design → plan → implement (+ review) workflow, run the script once per phase and append a row to `articles/cost-tracking.md`.
+All cost articles are indexed in [`articles/cost-analysis-index.md`](articles/cost-analysis-index.md). The living recommendation + accumulated data points live in [`articles/cost-comparison-model-strategy.md`](articles/cost-comparison-model-strategy.md).
 
-```bash
-python3 scripts/cost_extract.py \
-  --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
-  --label design "storage module design"
+### "Add cost analysis of this feature" shortcut
 
-python3 scripts/cost_extract.py \
-  --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
-  --label plan "storage module plan"
+When SansWord says **"add cost analysis of this feature"** (or equivalent like "add cost analysis for {feature}"), he has just finished 4 sessions named:
 
-# ... repeat for implement and review
+```
+{FEATURE_NAME} - design
+{FEATURE_NAME} - plan
+{FEATURE_NAME} - implement
+{FEATURE_NAME} - review
 ```
 
-Output: per-session token table (stable) + cost estimate (rate card–dependent) + a one-line summary row. Save results to `articles/cost-<feature-name>.md` (e.g. `articles/cost-storage-module.md`).
+Run the full cost-analysis flow:
 
-Each feature gets its own cost file in `articles/`. The cross-feature comparison lives in `articles/cost-comparison-acubemy-vs-storage-module.md` — update it when a new data point adds something interesting to the design/implement ratio analysis.
+1. **Extract per-phase cost** — run `scripts/cost_extract.py` four times, once per phase, using the session names above:
+
+   ```bash
+   python3 scripts/cost_extract.py \
+     --project-dir ~/.claude/projects/-Users-sansword-Source-github-sans-cube \
+     --label design "{FEATURE_NAME} - design"
+   # ... repeat with --label plan / implement / review
+   ```
+
+2. **Create per-feature file** — `articles/cost-{feature-slug}.md`. Use the same format as existing files (e.g. `cost-display-import-source.md`): title, `**Shipped:** YYYY-MM-DD (vX.Y.Z)` line, one section per phase with its token table + cost, main-loop-vs-subagents split where applicable, summary table, and a short Notes section.
+
+3. **Update the index** — add a row at the top of the **Per-feature breakdowns** table in `articles/cost-analysis-index.md` (newest first).
+
+4. **Append a data point** — add a new dated entry under the **Data points** section of `articles/cost-comparison-model-strategy.md`. The entry must state:
+   - Strategy used (which model per phase)
+   - Per-phase cost table
+   - **What changed** — claims the new data point refines or contradicts
+   - **What didn't change** — claims the new data point confirms
+
+5. **Re-check the recommendation** — if the new evidence shifts the recommended model strategy, update the **"Current Recommendation"** block at the top of `cost-comparison-model-strategy.md` (bump date and N). If it doesn't shift, say so explicitly in the data-point entry.
+
+Each feature gets its own cost file in `articles/`. The older cross-feature comparison [`cost-comparison-acubemy-vs-storage-module.md`](articles/cost-comparison-acubemy-vs-storage-module.md) is kept as a two-feature deep dive but is no longer the place to append new data points — use `cost-comparison-model-strategy.md` for that.
 
 ## End of Session
 
