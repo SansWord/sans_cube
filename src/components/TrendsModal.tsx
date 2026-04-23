@@ -262,7 +262,7 @@ function TotalTooltip({
   }
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? '?'}</div>
+      <div>#{d.xIndex}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {rows.map(r => (
         <div key={r.label} style={{ color: r.color }}>{r.label}: {formatSeconds(r.value)}s</div>
@@ -293,7 +293,7 @@ function PhaseTooltip({
   const solve = solveMap.get(pt.solveId as number)
   return (
     <div style={{ background: '#111', border: '1px solid #333', padding: '6px 10px', fontSize: 12, color: '#ccc' }}>
-      <div>Solve #{solve?.seq ?? '?'}</div>
+      <div>#{pt.xIndex}</div>
       {solve && <div style={{ color: '#666', fontSize: 11 }}>{formatDateTime(solve.date)}</div>}
       {payload.map(p => (
         <div key={p.name} style={{ color: p.color }}>
