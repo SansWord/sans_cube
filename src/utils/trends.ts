@@ -1,6 +1,16 @@
-import type { SolveRecord } from '../types/solve'
+import type { SolveRecord, PhaseRecord } from '../types/solve'
 
 export type SortMode = 'seq' | 'date'
+
+export interface StatsSolvePoint {
+  id: number
+  date: number
+  timeMs: number
+  phases: PhaseRecord[]
+  method: string
+  driver: string
+  xIndex: number
+}
 
 export interface TotalDataPoint {
   xIndex: number
@@ -31,26 +41,36 @@ function rollingAo(values: number[], index: number, n: number): number | null {
   return trimmed.reduce((a, b) => a + b, 0) / trimmed.length
 }
 
-export function sortAndSliceWindow(
-  solves: SolveRecord[],
-  window: number | 'all',
-  sortMode: SortMode,
-): SolveRecord[] {
+export function buildStatsData(solves: SolveRecord[], sortMode: SortMode): StatsSolvePoint[] {
   const real = solves.filter(s => !s.isExample)
-  const cmp = sortMode === 'date'
-    ? (a: SolveRecord, b: SolveRecord) => a.date - b.date
-    : (a: SolveRecord, b: SolveRecord) => (a.seq ?? 0) - (b.seq ?? 0)
-  const sorted = [...real].sort(cmp)
-  if (window === 'all') return sorted
-  return sorted.slice(-window)
+  const sorted = sortMode === 'date'
+    ? [...real].sort((a, b) => a.date - b.date)
+    : [...real].sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))
+  return sorted.map((s, i) => ({
+    id: s.id,
+    date: s.date,
+    timeMs: s.timeMs,
+    phases: s.phases,
+    method: s.method ?? 'cfop',
+    driver: s.driver ?? 'cube',
+    xIndex: i + 1,
+  }))
 }
 
-export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
-  const execs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.executionMs, 0))
-  const recogs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.recognitionMs, 0))
+export function windowStats(
+  indexed: StatsSolvePoint[],
+  windowSize: number | 'all',
+): StatsSolvePoint[] {
+  if (windowSize === 'all') return indexed
+  return indexed.slice(-windowSize)
+}
+
+export function buildTotalData(windowed: StatsSolvePoint[]): TotalDataPoint[] {
+  const execs = windowed.map(p => p.phases.reduce((sum, ph) => sum + ph.executionMs, 0))
+  const recogs = windowed.map(p => p.phases.reduce((sum, ph) => sum + ph.recognitionMs, 0))
   const totals = execs.map((e, i) => e + recogs[i])
-  return windowed.map((s, i) => ({
-    xIndex: i + 1,
+  return windowed.map((p, i) => ({
+    xIndex: p.xIndex,
     exec: execs[i],
     recog: recogs[i],
     total: totals[i],
@@ -60,18 +80,18 @@ export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
     recogAo12: rollingAo(recogs, i, 12),
     totalAo5: rollingAo(totals, i, 5),
     totalAo12: rollingAo(totals, i, 12),
-    solveId: s.id,
+    solveId: p.id,
   }))
 }
 
 export function buildPhaseData(
-  windowed: SolveRecord[],
+  windowed: StatsSolvePoint[],
   timeType: 'exec' | 'recog' | 'total',
   grouped: boolean,
 ): PhaseDataPoint[] {
-  return windowed.map((s, i) => {
-    const point: PhaseDataPoint = { xIndex: i + 1, solveId: s.id }
-    for (const phase of s.phases) {
+  return windowed.map(p => {
+    const point: PhaseDataPoint = { xIndex: p.xIndex, solveId: p.id }
+    for (const phase of p.phases) {
       const key = grouped && phase.group ? phase.group : phase.label
       const ms = timeType === 'exec' ? phase.executionMs
                : timeType === 'recog' ? phase.recognitionMs
