@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildTotalData, buildPhaseData, sortAndSliceWindow, buildStatsData, windowStats } from '../../src/utils/trends'
 import type { SolveRecord, PhaseRecord } from '../../src/types/solve'
-import type { StatsSolvePoint } from '../../src/utils/trends'
+import type { StatsSolvePoint, SortMode } from '../../src/utils/trends'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,11 @@ function makeSolve(
     method: opts.method ?? 'cfop',
     isExample: opts.isExample,
   }
+}
+
+/** Shortcut: build a StatsSolvePoint[] from SolveRecord[] via the new pipeline. */
+function statsOf(solves: SolveRecord[], sortMode: SortMode = 'seq', window: number | 'all' = 'all'): StatsSolvePoint[] {
+  return windowStats(buildStatsData(solves, sortMode), window)
 }
 
 // ─── buildStatsData ──────────────────────────────────────────────────────────
@@ -129,7 +134,7 @@ describe('buildTotalData', () => {
       makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
       makeSolve(2, [makePhase('Cross', 1200, 600), makePhase('F2L', 2800, 300)]),
     ]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result).toHaveLength(2)
     expect(result[0].exec).toBe(4000)  // 1000 + 3000
     expect(result[1].exec).toBe(4000)  // 1200 + 2800
@@ -139,7 +144,7 @@ describe('buildTotalData', () => {
     const solves = [
       makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
     ]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result[0].recog).toBe(900)  // 500 + 400
   })
 
@@ -147,20 +152,27 @@ describe('buildTotalData', () => {
     const solves = [
       makeSolve(1, [makePhase('Cross', 1000, 500), makePhase('F2L', 3000, 400)]),
     ]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result[0].total).toBe(4900)  // 4000 + 900
   })
 
-  it('assigns sequential xIndex numbers starting from 1', () => {
-    const solves = [makeSolve(10, [makePhase('A', 1000, 0)]), makeSolve(11, [makePhase('A', 1000, 0)])]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
-    expect(result[0].xIndex).toBe(1)
-    expect(result[1].xIndex).toBe(2)
+  it('xIndex comes from input StatsSolvePoint, not position', () => {
+    // Directly construct StatsSolvePoint[] with non-sequential xIndex values.
+    // buildTotalData must pass them through unchanged.
+    const points: StatsSolvePoint[] = [
+      { id: 1, date: 0, timeMs: 0, phases: [makePhase('A', 1000, 0)], method: 'cfop', driver: 'cube', xIndex: 100 },
+      { id: 2, date: 0, timeMs: 0, phases: [makePhase('A', 2000, 0)], method: 'cfop', driver: 'cube', xIndex: 200 },
+      { id: 3, date: 0, timeMs: 0, phases: [makePhase('A', 3000, 0)], method: 'cfop', driver: 'cube', xIndex: 350 },
+    ]
+    const result = buildTotalData(points)
+    expect(result[0].xIndex).toBe(100)
+    expect(result[1].xIndex).toBe(200)
+    expect(result[2].xIndex).toBe(350)
   })
 
   it('stores the solve id in solveId', () => {
     const solves = [makeSolve(42, [makePhase('A', 1000, 0)])]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result[0].solveId).toBe(42)
   })
 
@@ -170,7 +182,7 @@ describe('buildTotalData', () => {
       makeSolve(2, [makePhase('A', 2000, 0)]),
       makeSolve(3, [makePhase('A', 3000, 0)]),
     ]
-    const result = buildTotalData(sortAndSliceWindow(solves, 2, 'seq'))
+    const result = buildTotalData(statsOf(solves, 'seq', 2))
     expect(result).toHaveLength(2)
     expect(result[0].exec).toBe(2000)
     expect(result[1].exec).toBe(3000)
@@ -182,7 +194,7 @@ describe('buildTotalData', () => {
       makeSolve(2, [makePhase('A', 2000, 0)]),
       makeSolve(3, [makePhase('A', 3000, 0)]),
     ]
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result).toHaveLength(2)
     expect(result[0].exec).toBe(2000)
   })
@@ -195,7 +207,7 @@ describe('buildTotalData', () => {
       makeSolve(4, [makePhase('A', 4000, 0)]),
     ]
     // 3 real solves (1, 3, 4), window=2 → last 2 real = solves 3 and 4
-    const result = buildTotalData(sortAndSliceWindow(solves, 2, 'seq'))
+    const result = buildTotalData(statsOf(solves, 'seq', 2))
     expect(result).toHaveLength(2)
     expect(result[0].exec).toBe(3000)
     expect(result[1].exec).toBe(4000)
@@ -205,7 +217,7 @@ describe('buildTotalData', () => {
     const solves = Array.from({ length: 4 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000, 0)])
     )
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result.every(p => p.execAo5 === null)).toBe(true)
   })
 
@@ -213,7 +225,7 @@ describe('buildTotalData', () => {
     // exec values: 1000, 2000, 3000, 4000, 5000 → trim 1000 and 5000 → mean(2000,3000,4000) = 3000
     const values = [1000, 2000, 3000, 4000, 5000]
     const solves = values.map((v, i) => makeSolve(i + 1, [makePhase('A', v, 0)]))
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result[4].execAo5).toBeCloseTo(3000)
   })
 
@@ -221,7 +233,7 @@ describe('buildTotalData', () => {
     const solves = Array.from({ length: 11 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000, 0)])
     )
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result.every(p => p.execAo12 === null)).toBe(true)
   })
 
@@ -229,7 +241,7 @@ describe('buildTotalData', () => {
     const solves = Array.from({ length: 12 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 1000 * (i + 1), 0)])
     )
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     expect(result[11].execAo12).not.toBeNull()
   })
 
@@ -238,7 +250,7 @@ describe('buildTotalData', () => {
     const solves = Array.from({ length: 5 }, (_, i) =>
       makeSolve(i + 1, [makePhase('A', 2000, 9999)])
     )
-    const result = buildTotalData(sortAndSliceWindow(solves, 'all', 'seq'))
+    const result = buildTotalData(statsOf(solves))
     // execAo5 of five 2000s → 2000
     expect(result[4].execAo5).toBeCloseTo(2000)
     // recogAo5 of five 9999s → 9999
@@ -248,14 +260,12 @@ describe('buildTotalData', () => {
   })
 
   it('date-sorted input: xIndex reflects position in date order, not seq order', () => {
-    // Imported solve: high seq (3), old date (1000ms). Native solves: seq 1 and 2, newer dates.
     const solves = [
       makeSolve(3, [makePhase('A', 500, 0)],  { date: 1000 }),  // oldest by date
       makeSolve(1, [makePhase('A', 1000, 0)], { date: 3000 }),  // newest by date
       makeSolve(2, [makePhase('A', 750, 0)],  { date: 2000 }),
     ]
-    const windowed = sortAndSliceWindow(solves, 'all', 'date')
-    const result = buildTotalData(windowed)
+    const result = buildTotalData(statsOf(solves, 'date'))
     // Should be ordered: seq3(date1000), seq2(date2000), seq1(date3000)
     expect(result[0].xIndex).toBe(1)
     expect(result[0].solveId).toBe(3)
@@ -267,7 +277,6 @@ describe('buildTotalData', () => {
 
   it('date-sorted input: Ao5 reflects date-ordered rolling window', () => {
     // 5 solves with known exec times in date order: 1000, 2000, 3000, 4000, 5000
-    // Assign reverse seq order so seq-sort would give a different result
     const solves = [
       makeSolve(5, [makePhase('A', 1000, 0)], { date: 100 }),
       makeSolve(4, [makePhase('A', 2000, 0)], { date: 200 }),
@@ -275,8 +284,7 @@ describe('buildTotalData', () => {
       makeSolve(2, [makePhase('A', 4000, 0)], { date: 400 }),
       makeSolve(1, [makePhase('A', 5000, 0)], { date: 500 }),
     ]
-    const windowed = sortAndSliceWindow(solves, 'all', 'date')
-    const result = buildTotalData(windowed)
+    const result = buildTotalData(statsOf(solves, 'date'))
     // Date-ordered execs: [1000, 2000, 3000, 4000, 5000]
     // Ao5 at index 4 = trimmed mean([1000,2000,3000,4000,5000]) = mean(2000,3000,4000) = 3000
     expect(result[4].execAo5).toBeCloseTo(3000)
