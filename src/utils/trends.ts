@@ -99,13 +99,13 @@ export function buildTotalData(windowed: StatsSolvePoint[]): TotalDataPoint[] {
 }
 
 export function buildPhaseData(
-  windowed: SolveRecord[],
+  windowed: StatsSolvePoint[],
   timeType: 'exec' | 'recog' | 'total',
   grouped: boolean,
 ): PhaseDataPoint[] {
-  return windowed.map((s, i) => {
-    const point: PhaseDataPoint = { xIndex: i + 1, solveId: s.id }
-    for (const phase of s.phases) {
+  return windowed.map(p => {
+    const point: PhaseDataPoint = { xIndex: p.xIndex, solveId: p.id }
+    for (const phase of p.phases) {
       const key = grouped && phase.group ? phase.group : phase.label
       const ms = timeType === 'exec' ? phase.executionMs
                : timeType === 'recog' ? phase.recognitionMs
