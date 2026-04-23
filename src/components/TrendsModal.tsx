@@ -496,10 +496,14 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     })
   }
 
+  const xAxisDomain: [number, number] = currentDomain
+    ? [currentDomain[0] - 0.5, currentDomain[1] + 0.5]
+    : [firstVisIndex - 0.5, lastVisIndex + 0.5]
+
   const xAxisProps = {
     dataKey: 'xIndex' as const,
     type: 'number' as const,
-    domain: [firstVisIndex - 0.5, lastVisIndex + 0.5] as [number, number],
+    domain: xAxisDomain,
     allowDecimals: false,
     stroke: '#555',
     tick: { fill: '#555', fontSize: 11 },
