@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.30.1](#v1301--totaltoggle-url-restore-fix-2026-04-23-1208) | Fix: `TrendsModal` restores `totalToggle` from `#trends?ttotal=…` URL — one-line wiring gap at `TrendsModal.tsx:322` (was hardcoded `{exec:false,recog:false,total:true}`); spotted during v1.29.0 review; filed `## Testing` backlog for a `TrendsModal` URL round-trip test scaffold |
 | [v1.30.0](#v1300--trends-zoom-cross-filter-persistence-2026-04-23-1152) | Zoom survives method/driver filter changes — four-step pipeline (`buildStatsData→filterStats→windowStats→build*`) assigns stable xIndex before filtering; x-axis domain locks to zoom range; tooltip shows `#N` (xIndex position) |
 | [v1.29.1](#v1291--trends-zoom-url-persistence--dev-handle-2026-04-23-1015) | Trends chart zoom survives ESC-from-solve, reload, and URL paste — encoded as `zoom=a,b\|c,d` in the `#trends` hash; reset moved from effect to user-action handlers to avoid StrictMode double-mount wipe; `window.__solves` dev handle |
 | [v1.29.0](#v1290--trends-sort-by-timestamp-toggle-2026-04-23-0748) | Sort dropdown (Seq/Date) in Trends fixes backward day labels after import; `sortAndSliceWindow` computes windowed array once per render; `seq→xIndex` rename on data-point interfaces |
@@ -64,6 +65,23 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.30.1 — totalToggle URL restore fix (2026-04-23 12:08)
+
+**Review:** not yet
+
+**What was built:**
+- Fix: `TrendsModal` now restores the Total/Exec/Recog time-type toggle from the `#trends?ttotal=…` URL parameter. One-line change at `src/components/TrendsModal.tsx:322` — the `useState` initializer was hardcoded to `{ exec: false, recog: false, total: true }` instead of reading `initialParams.totalToggle` (the line immediately below it already wired `initialParams.phaseToggle` correctly). The hash parser and its tests (`tests/hooks/useHashRouter.test.ts:47,75`) were already correct; the gap was purely in the component. Bug originally filed in `future.md` during the v1.29.0 review.
+- Filed a new `## Testing` section in `future.md`: plan a tiny-but-extendable `tests/components/TrendsModal.test.tsx` whose first test is a URL round-trip (initialParams → rendered state, user interaction → written URL) for `totalToggle`, with one `it(...)` added per dimension (`tab`, `windowSize`, `grouped`, `sortMode`, `method`, `driver`, `phaseToggle`, `zoom`) over time. Each row added removes one manual-QA click. Defer level-2 chart-interaction tests until the scaffold earns its keep.
+
+**Key technical learnings:**
+- `[insight]` The URL parser tests passed, the data-pipeline tests passed, the fix was still missed — because the bug lived in the gap *between* layers: a `useState` initializer in the component. This is the exact surface area a "paste the URL, see if state restores" component-render test protects, and it's not covered by parser or pipeline tests. Worth prioritizing a thin TrendsModal component test that asserts `initialParams → rendered state` and `user-click → URL write`, because that's where wiring mistakes hide.
+- `[gotcha]` Visual-diff oversight in a block of six `useState(initialParams.X)` lines: line 322 (`totalToggle`) was hardcoded while line 323 (`phaseToggle`) was wired correctly. When you add a new field to `TrendsHashParams`, sweep every `useState` call-site in `TrendsModal.tsx` — it's not enough to add the field to the parser.
+
+**Process learnings:**
+- `[note]` Shipping this as v1.30.1 (not v1.31.0) follows the project's three-part semver rule: `vX.Y.Z` patches on the same `vX.Y` cover follow-up fixes without inflating the minor version. No design or planning docs; direct-on-main because there's no feature branch.
 
 ---
 

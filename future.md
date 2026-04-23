@@ -47,7 +47,7 @@
 - ~~filter by driver~~ — done in v1.15.0 (driver filter in sidebar + Trends, persisted and URL-honoring)
 - TrendsModal.tsx refactor (786 lines) — god component: chart data transform + color math + tooltips + controls + all state. Consider when actively working on trends features.
 - ~~**Sort-by-timestamp toggle in Trends**~~ — done in v1.29.0 (Sort dropdown Seq/Date; `sortAndSliceWindow`; `xIndex` rename on data points)
-- **`totalToggle` not restored from URL deep-link** — `TrendsModal` hardcodes initial `totalToggle` to `{ exec: false, recog: false, total: true }` instead of reading from `initialParams`. Pasting a `#trends?ttotal=exec,recog` URL doesn't restore the toggle. (Spotted during v1.29.0 review.)
+- ~~**`totalToggle` not restored from URL deep-link** — `TrendsModal` hardcodes initial `totalToggle` to `{ exec: false, recog: false, total: true }` instead of reading from `initialParams`. Pasting a `#trends?ttotal=exec,recog` URL doesn't restore the toggle. (Spotted during v1.29.0 review.)~~ — fixed; one-liner at `TrendsModal.tsx:322` now reads `initialParams.totalToggle`
 
 
 ## Import
@@ -73,6 +73,16 @@
 ## Tooling
 
 - **Extend `scripts/cost_extract.py` into a Claude skill** — wrap the script as a skill so cost queries ("what did this session cost?", "show me the storage-module breakdown") work conversationally without manually constructing CLI args or knowing the project-dir path.
+
+## Testing
+
+- **`TrendsModal` test scaffold + URL round-trip coverage** — motivation: `totalToggle`-from-URL bug (v1.29.0 review) was a wiring oversight the parser tests couldn't catch, and the manual QA step for "paste a deep-link, verify every dimension restores" is mechanical and slow. Plan:
+  1. Create `tests/components/TrendsModal.test.tsx`. Infra already exists (5 existing component render tests use `@testing-library/react`). Needs `ResizeObserver` shim (~3 lines) because Recharts `ResponsiveContainer` measures via it; toggle buttons live outside `ResponsiveContainer`, so contents don't need to render for state assertions.
+  2. First test = URL round-trip, not just `totalToggle` restoration. Two directions per field: `initialParams → rendered state` and `user interaction → written URL (via the write-effect at TrendsModal.tsx:395–415)`. Start with `totalToggle` (covers the bug we just fixed + its mirror). Button "active" state is asserted via inline `style.color` matching `TYPE_COLORS` (e.g. Exec active = `#4fc3f7`, inactive = `#555`).
+  3. Extend one `it(...)` per dimension over time: `tab`, `windowSize`, `grouped`, `sortMode`, `method`, `driver`, `phaseToggle`, `zoom`. Each added row removes one manual-QA click.
+  4. Defer level-2 tests (toggle click → which `<Recharts.Line>` actually renders, drag-to-zoom interactions) until the round-trip scaffold is in place and there's a pain signal — those need deeper Recharts-in-jsdom work.
+  - Not covered by existing tests: the wiring between URL params, local state, user interactions, and URL writes. Already covered: URL parser (`tests/hooks/useHashRouter.test.ts`), data pipeline (`tests/utils/trends.test.ts`, `tests/utils/solveStats.test.ts`).
+  - Frame the PR as "add TrendsModal test scaffold + URL round-trip coverage," not a regression test for a single toggle.
 
 ## UX
 
