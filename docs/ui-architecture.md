@@ -98,7 +98,7 @@ Note: because `solveStore` is a module-level singleton, updates made in debug mo
 
 Local state: `localSolve` (mirrors the `solve` prop, updated optimistically on method change), `saving` (disables `MethodSelector` and Delete during async save), `methodError` (inline error shown if phase recompute fails or save times out), `savedConfirmation` (shows "Saved ✓" for 2 seconds after a successful save). All other state (facelets at a given index, phase label, cancelled-move detection) is computed locally via pure functions (`computeFaceletsAtIndex`, `getPhaseLabelAtIndex`).
 
-Props: `onUpdate`, `onDelete`, `onShare?`, `onUnshare?`, `readOnly?` — `onShare`/`onUnshare` are only passed when cloud sync is enabled and the user is signed in. When `readOnly` is true (viewer mode), all action controls (delete, share, copy-as-example) are hidden.
+Props: `onUpdate`, `onDelete`, `onShare?`, `onUnshare?`, `readOnly?` — `onShare`/`onUnshare` are only passed when cloud sync is enabled and the user is signed in. When `readOnly` is true (viewer mode), all action controls (delete, share, copy-as-example) are hidden. When the solve has `importedFrom` set, a small "Imported from {source}" pill renders next to the title in the header (provenance label only — no action).
 
 Rendered in three contexts: inside `TimerScreen` (timer mode, editable), directly in `App` (debug mode — opened from the method mismatch detector results list), and in viewer mode when `#shared-{shareId}` is open (read-only).
 
