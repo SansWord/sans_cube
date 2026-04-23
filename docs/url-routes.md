@@ -83,6 +83,7 @@ Opens the TrendsModal with the given view state. All params are optional; missin
 |-------|--------|-------------|
 | `method` | `all` \| `cfop` \| `roux` | Method filter |
 | `driver` | `all` \| `cube` \| `mouse` | Driver filter |
+| `sort` | `seq` \| `date` | Sort order: by solve sequence (default) or by completion date |
 | `tab` | `total` \| `phases` | Active chart tab |
 | `window` | `25` \| `50` \| `100` \| `all` | Rolling average window size |
 | `group` | `grouped` \| `split` | Phase grouping toggle |
@@ -93,7 +94,7 @@ Opens the TrendsModal with the given view state. All params are optional; missin
 - `detailOpen` guard prevents TrendsModal from overwriting `#solve` or `#shared` URL while a detail modal is open.
 - **Handled in:** `TimerScreen.tsx` + `TrendsModal.tsx` (TimerScreen reads `currentRoute`; TrendsModal manages params state and URL sync)
 
-**Example:** `#trends?method=cfop&driver=cube&tab=total&window=50&group=grouped&ttotal=total&tphase=total`
+**Example:** `#trends?method=cfop&driver=cube&tab=total&window=50&group=grouped&sort=seq&ttotal=total&tphase=total`
 
 ---
 
