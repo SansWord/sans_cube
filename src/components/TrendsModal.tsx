@@ -14,10 +14,10 @@ import {
 } from 'recharts'
 import type { SolveRecord, SolveFilter } from '../types/solve'
 import { getMethod, CFOP, ROUX, FREEFORM } from '../methods/index'
-import { buildTotalData, buildPhaseData, sortAndSliceWindow } from '../utils/trends'
-import type { TotalDataPoint, PhaseDataPoint, SortMode } from '../utils/trends'
+import { buildTotalData, buildPhaseData, buildStatsData, windowStats } from '../utils/trends'
+import type { TotalDataPoint, PhaseDataPoint, SortMode, StatsSolvePoint } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
-import { filterSolves } from '../utils/solveStats'
+import { filterStats } from '../utils/solveStats'
 import { serializeZoomStack, type TrendsHashParams } from '../hooks/useHashRouter'
 
 type Tab = 'total' | 'phases'
@@ -146,7 +146,7 @@ function buildColorMap(
 }
 
 function buildMergedPhaseData(
-  windowed: SolveRecord[],
+  windowed: StatsSolvePoint[],
   phaseToggle: TimeToggle,
   grouped: boolean,
 ): PhaseDataPoint[] {
@@ -328,13 +328,14 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   const [zoomStack, setZoomStack] = useState<Array<[number, number]>>(initialParams.zoom ?? [])
   const [sortMode, setSortMode] = useState<SortMode>(initialParams.sortMode)
 
-  const filtered = filterSolves(solves, solveFilter)
   const method = getMethod(solveFilter.method === 'all' ? 'cfop' : solveFilter.method)
   const hasGroups = method.phases.some(p => p.group)
 
   const currentDomain: [number, number] | null = zoomStack.length > 0 ? zoomStack[zoomStack.length - 1] : null
 
-  const windowed = sortAndSliceWindow(filtered, windowSize, sortMode)
+  const indexed = buildStatsData(solves, sortMode)
+  const filteredStats = filterStats(indexed, solveFilter)
+  const windowed = windowStats(filteredStats, windowSize)
   const totalData = buildTotalData(windowed)
   const phaseData = buildMergedPhaseData(windowed, phaseToggle, grouped)
 
