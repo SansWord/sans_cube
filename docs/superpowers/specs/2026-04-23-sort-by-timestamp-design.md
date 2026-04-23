@@ -34,10 +34,10 @@ New exported type:
 export type SortMode = 'seq' | 'date'
 ```
 
-`sliceWindow` gains a `sortMode` parameter:
+Rename `sliceWindow` → `sortAndSliceWindow` and export it. Add a `sortMode` parameter:
 
 ```ts
-function sliceWindow(
+export function sortAndSliceWindow(
   solves: SolveRecord[],
   window: number | 'all',
   sortMode: SortMode,
@@ -52,15 +52,48 @@ function sliceWindow(
 }
 ```
 
-`buildTotalData` and `buildPhaseData` each gain a `sortMode: SortMode` parameter and forward it to `sliceWindow`. `buildMergedPhaseData` in `TrendsModal.tsx:148-168` likewise gains and forwards the parameter.
+`buildTotalData` and `buildPhaseData` no longer sort or slice internally. They accept a pre-windowed `SolveRecord[]`:
 
-### What `seq` means on the data points
+```ts
+export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] { ... }
 
-The `seq` field on `TotalDataPoint` and `PhaseDataPoint` remains `i + 1` — i.e., the **1..N position index** within the windowed, sorted view. It is *not* the `SolveRecord.seq`. Only the underlying solve order changes; the x-axis shape stays the same.
+export function buildPhaseData(
+  windowed: SolveRecord[],
+  timeType: 'exec' | 'recog' | 'total',
+  grouped: boolean,
+): PhaseDataPoint[] { ... }
+```
+
+`buildMergedPhaseData` in `TrendsModal.tsx:148-168` likewise accepts the pre-windowed array and forwards it to `buildPhaseData`.
+
+`TrendsModal` calls `sortAndSliceWindow` once per render and threads the result through both builders:
+
+```ts
+const windowed = sortAndSliceWindow(filtered, windowSize, sortMode)
+const totalData = buildTotalData(windowed)
+const phaseData = buildMergedPhaseData(windowed, phaseToggle, grouped)
+```
+
+This eliminates redundant sort+slice work (previously up to 4× per render: once for Total, plus once per active time-type in Phases).
+
+### Rename: data-point x-axis field `seq` → `xIndex`
+
+The x-axis position field on `TotalDataPoint` and `PhaseDataPoint` is renamed from `seq` to `xIndex` to avoid confusion with `SolveRecord.seq` (the solve's display number). Semantics unchanged: `xIndex = i + 1`, i.e., the 1..N position within the windowed, sorted view. It is *not* the `SolveRecord.seq`.
+
+Downstream touch-ups in `TrendsModal.tsx`:
+
+- `xAxisProps.dataKey: 'seq'` → `'xIndex'` (at line 480).
+- `buildDayLines` parameter type `Array<{ seq: number; solveId: number }>` → `Array<{ xIndex: number; solveId: number }>`; internal references updated.
+- Current-domain filters `pt.seq >= currentDomain[0] ...` → `pt.xIndex >= currentDomain[0] ...` (lines 343, 346).
+- `firstVisSeq` / `lastVisSeq` → `firstVisIndex` / `lastVisIndex`, reading `.xIndex`.
+- `buildMergedPhaseData`'s field-skip guard: `'seq' || 'solveId'` → `'xIndex' || 'solveId'`.
+- Tooltips: the fallback `Solve #{solve?.seq ?? d.seq}` / `Solve #{solve?.seq ?? pt.seq}` (lines 268, 299) — the fallback was to the data point's field, which under the rename is an x-axis index with no meaning as a solve identifier. Change to `Solve #{solve?.seq ?? '?'}` so the user sees an unambiguous placeholder if the `SolveRecord` lookup fails.
+
+The zoom stack continues to store `[leftXIndex, rightXIndex]` pairs.
 
 ### Ao5 / Ao12 semantics
 
-`rollingAo(values, index, n)` already operates on whatever order `sliceWindow` returns, so Ao5/Ao12 automatically reflect the new sort. In `sort=date` mode this means "Ao5 at solve X = trimmed mean of X plus the 4 solves that immediately precede it chronologically" — the chosen semantic.
+`rollingAo(values, index, n)` operates on whatever order the windowed array has, so Ao5/Ao12 automatically reflect the new sort. In `sort=date` mode this means "Ao5 at solve X = trimmed mean of X plus the 4 solves that immediately precede it chronologically" — the chosen semantic.
 
 ## 3. URL routing & initial params
 
@@ -106,11 +139,11 @@ No code change required.
 
 ### Unit tests — new file `src/utils/trends.test.ts`
 
-- `sliceWindow` with `sortMode: 'seq'` returns solves ordered by `seq` (preserves current behavior).
-- `sliceWindow` with `sortMode: 'date'` returns solves ordered by `date` even when `seq` disagrees (simulate post-import store: imported solves have high `seq` but old `date`).
-- `sliceWindow` window trimming: with `window = n`, returns the last n solves after sort, in both modes.
-- `buildTotalData` with `sortMode: 'date'`: Ao5 values at a given index match the date-ordered rolling window (compute expected trimmed mean manually and assert).
-- `buildPhaseData` with `sortMode: 'date'`: same check on phase times at a given index.
+- `sortAndSliceWindow` with `sortMode: 'seq'` returns solves ordered by `seq` (preserves current behavior).
+- `sortAndSliceWindow` with `sortMode: 'date'` returns solves ordered by `date` even when `seq` disagrees (simulate post-import store: imported solves have high `seq` but old `date`).
+- `sortAndSliceWindow` window trimming: with `window = n`, returns the last n solves after sort, in both modes.
+- `buildTotalData` on a date-ordered `windowed` array: Ao5 values at a given index match the date-ordered rolling window (compute expected trimmed mean manually and assert). Output rows carry `xIndex: i + 1` and the expected `solveId`.
+- `buildPhaseData` on a date-ordered `windowed` array: same check on phase times at a given index; output carries `xIndex`.
 
 ### Unit tests — router
 
