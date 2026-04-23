@@ -9,7 +9,7 @@ The trends charts support drag-to-zoom with a multi-level zoom stack. Users can 
 ### Zoom in
 Click and drag horizontally on the chart to select a range. A shaded `ReferenceArea` appears during the drag to show the selected region. Release to commit the zoom. The chart re-renders to show only solves within that range.
 
-**Drag sensitivity threshold:** The zoom only commits if `Math.abs(dragEnd - dragStart) >= 2` (in seq units). This prevents accidental single-click triggers, which matter on trackpads that produce tiny movement during a tap.
+**Drag sensitivity threshold:** The zoom only commits if `Math.abs(dragEnd - dragStart) >= 2` (in xIndex units). This prevents accidental single-click triggers, which matter on trackpads that produce tiny movement during a tap.
 
 ### Zoom stack
 Each committed zoom pushes a `[left, right]` tuple onto a `zoomStack: Array<[number, number]>` state. The current view domain is always the top of the stack. This enables multi-level zoom without limit.
@@ -22,24 +22,35 @@ Both buttons appear in the left side of the controls row 2. When the stack is em
 ### Click vs. drag disambiguation
 A `didZoomRef` (React ref, not state) is set to `true` only when a zoom actually commits in `handleChartMouseUp`. The chart-level `onClick` handler checks `didZoomRef.current` and skips the solve-detail open if it was a drag. The ref is reset to `false` on `mouseDown`. Because it's a ref (not state), toggling it never causes a re-render.
 
-## Data filtering
+## Data pipeline (four-step)
 
-The `XAxis domain` prop in Recharts only scales the axis — it does not remove out-of-range data points, which would still render as dots outside the visible area. To prevent this, `visibleTotalData` and `visiblePhaseData` are pre-filtered to the current domain before being passed to the chart:
+The chart data is computed in four stages, each a named function with a narrow contract:
 
-```ts
-const visibleTotalData = currentDomain
-  ? totalData.filter(pt => pt.seq >= currentDomain[0] && pt.seq <= currentDomain[1])
-  : totalData
+```
+buildStatsData(solves, sortMode)   → StatsSolvePoint[]   (assigns stable xIndex to full solve set)
+  → filterStats(indexed, filter)  → StatsSolvePoint[]   (drops non-matching solves, xIndex unchanged)
+  → windowStats(filtered, N)      → StatsSolvePoint[]   (slices last-N, xIndex unchanged)
+  → buildTotalData / buildPhaseData                      (reads xIndex from input, never recomputes it)
 ```
 
-## X-axis domain padding
+**Why this order matters:** `buildStatsData` assigns `xIndex` values (1-based position in the sorted set) **before** any filter is applied. Every subsequent stage passes those values through unchanged. This means the zoom range (`zoomStack` entries are raw `xIndex` pairs) stays valid when the user switches method/driver filter — the same solve always has the same `xIndex`, so zooming into `[50, 100]` and then switching from "all" to "Roux" simply shows only Roux solves whose `xIndex` falls in that window.
 
-The domain is set to `[firstVisSeq - 0.5, lastVisSeq + 0.5]` rather than the default. Without this, Recharts (with `type="number"`) defaults to `[0, max]`, so a zoomed range like `[10, 20]` would still show a blank left section starting from 0. The 0.5 padding also gives the first and last dots visual breathing room from the axis edges.
+**`filterSolves` vs `filterStats`:** The sidebar still uses `filterSolves` (which has example-bypass logic — examples always pass through regardless of method filter). The chart pipeline uses `filterStats`, which has no example bypass because `buildStatsData` already strips examples before assigning xIndex.
 
-## Window changes clear zoom
+## X-axis domain
 
-A `useEffect` on `[tab, windowSize]` resets `zoomStack` and clears `refAreaLeft`/`refAreaRight` whenever the tab or window size changes. This is intentional — the seq numbers in the new window don't correspond to the old zoom range.
+When **not zoomed**: domain is `[firstVisIndex - 0.5, lastVisIndex + 0.5]` — auto-fits to the visible data. The 0.5 padding gives the first and last dots visual breathing room from the axis edges.
+
+When **zoomed**: domain locks to `[currentDomain[0] - 0.5, currentDomain[1] + 0.5]` — the axis stays fixed to the zoom range even if the current filter leaves no visible dots in that range. This is intentional: filter changes are "look through the same window" operations, not "move the window" operations.
+
+## Data filtering (visible slice)
+
+The `XAxis domain` prop in Recharts only scales the axis — it does not remove out-of-range data points, which would still render as dots outside the visible area. To prevent this, `visibleTotalData` and `visiblePhaseData` are pre-filtered to `currentDomain` before being passed to the chart.
+
+## Zoom resets
+
+Zoom resets on **sort-mode change** and **window-size change** (via `changeSortMode` / `changeWindowSize` callbacks). These are the only two user actions that reassign all xIndex values, so a stored zoom domain would be invalid. Filter changes do **not** reset zoom.
 
 ## Day reference lines
 
-Day boundary `ReferenceLine` components are computed from the currently visible data (post-filter), so they always reflect the actual dates in the zoomed range. Labels show `M/D` format in browser local timezone.
+Day boundary `ReferenceLine` components are computed from the currently visible data (post-domain filter), so they always reflect the actual dates in the zoomed range. Labels show `M/D` format in browser local timezone.

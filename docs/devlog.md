@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.30.0](#v1300--trends-zoom-cross-filter-persistence-2026-04-23-1152) | Zoom survives method/driver filter changes — four-step pipeline (`buildStatsData→filterStats→windowStats→build*`) assigns stable xIndex before filtering; x-axis domain locks to zoom range; tooltip shows `#N` (xIndex position) |
 | [v1.29.1](#v1291--trends-zoom-url-persistence--dev-handle-2026-04-23-1015) | Trends chart zoom survives ESC-from-solve, reload, and URL paste — encoded as `zoom=a,b\|c,d` in the `#trends` hash; reset moved from effect to user-action handlers to avoid StrictMode double-mount wipe; `window.__solves` dev handle |
 | [v1.29.0](#v1290--trends-sort-by-timestamp-toggle-2026-04-23-0748) | Sort dropdown (Seq/Date) in Trends fixes backward day labels after import; `sortAndSliceWindow` computes windowed array once per render; `seq→xIndex` rename on data-point interfaces |
 | [v1.28.0](#v1280--import-source-badge-2026-04-22-1701) | "Imported from {source}" pill in `SolveDetailModal` header — conditional render gated on `importedFrom`; static provenance label (no link / tooltip); two component tests with `CubeCanvas` stubbed; docs + manual QA updated |
@@ -63,6 +64,31 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.30.0 — Trends zoom cross-filter persistence (2026-04-23 11:52)
+
+**Review:** complete
+**Design docs:**
+- Trends zoom cross-filter: [Spec](superpowers/specs/2026-04-23-trends-zoom-cross-filter.md) [Plan](superpowers/plans/2026-04-23-trends-zoom-cross-filter.md)
+
+**What was built:**
+- Zoom now survives method/driver filter changes in TrendsModal. Previously, switching filters while zoomed would render an empty chart because xIndex values were reassigned relative to the filtered set. Now they are stable.
+- New four-step data pipeline: `buildStatsData(solves, sortMode)` → `filterStats(indexed, filter)` → `windowStats(filtered, N)` → `buildTotalData / buildPhaseData`. `buildStatsData` assigns xIndex before any filter is applied; every subsequent stage passes values through unchanged.
+- `StatsSolvePoint` interface in `trends.ts` — the intermediate type that carries `xIndex`, `method`, `driver`, `phases` but strips `moves`, `scramble`, `seq`.
+- `filterStats` in `solveStats.ts` — xIndex-preserving filter on `StatsSolvePoint[]`. No example-bypass (examples are already stripped by `buildStatsData`). `filterSolves` retained for sidebar (keeps example-bypass logic).
+- `windowStats` in `trends.ts` — `slice(-N)` on `StatsSolvePoint[]`, xIndex unchanged.
+- `buildTotalData` and `buildPhaseData` signatures updated from `SolveRecord[]` to `StatsSolvePoint[]`; both now read `p.xIndex` from input instead of computing `i + 1`.
+- `sortAndSliceWindow` deleted — superseded entirely.
+- X-axis domain: when zoomed, domain locks to `[currentDomain[0] - 0.5, currentDomain[1] + 0.5]` instead of auto-fitting to visible data.
+- Tooltip header changed from `Solve #seq` to `#N` (xIndex position).
+- `docs/trends-zoom.md` updated to describe the new four-step pipeline and the filter-vs-sort reset distinction.
+
+**Key technical learnings:**
+- `[insight]` Assigning stable identifiers (xIndex) before any filter is applied — and making each pipeline stage a pure pass-through of those identifiers — is structurally superior to recomputing `i + 1` at the end. The invariant becomes impossible to break by construction rather than by convention. The test strategy that pins this: directly construct `StatsSolvePoint[]` with non-sequential xIndex values (100/200/350) and assert they come through `buildTotalData` and `buildPhaseData` unchanged.
+- `[insight]` Separating `filterSolves` (sidebar, example-bypass) from `filterStats` (chart pipeline, no bypass) reflects that the two callers have legitimately different semantics. `filterSolves` needs examples to always appear in the sidebar regardless of the active method filter. `filterStats` never sees examples because `buildStatsData` already stripped them when assigning xIndex. A single function with a flag parameter would have hidden this distinction.
+- `[note]` The x-axis domain lock ("when zoomed, use zoom range; otherwise auto-fit to visible data") is a two-line change but a meaningful UX decision: filter changes are "look through the same window" operations, not "move the window" operations. Locking makes this explicit.
 
 ---
 
