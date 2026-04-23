@@ -187,6 +187,7 @@
 - [ ] URL hash updates to `#trends?tab=...&window=...&group=...&timetype=...` while open
 - [ ] Paste a `#trends?...` URL → modal opens with tab/window/group/timetype restored
 - [ ] Cloud sync ON: paste `#trends?...` URL → modal opens after solves load (not blank)
+- [ ] **Trends sort toggle:** After an acubemy import, open Trends and toggle Sort between Seq and Date. In Date mode, day-boundary labels should be monotonically increasing. Changing Sort should clear any active zoom.
 
 ---
 
