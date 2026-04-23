@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   ComposedChart,
   LineChart,
@@ -18,7 +18,7 @@ import { buildTotalData, buildPhaseData, sortAndSliceWindow } from '../utils/tre
 import type { TotalDataPoint, PhaseDataPoint, SortMode } from '../utils/trends'
 import { formatSeconds } from '../utils/formatting'
 import { filterSolves } from '../utils/solveStats'
-import type { TrendsHashParams } from '../hooks/useHashRouter'
+import { serializeZoomStack, type TrendsHashParams } from '../hooks/useHashRouter'
 
 type Tab = 'total' | 'phases'
 type WindowSize = 25 | 50 | 100 | 'all'
@@ -325,7 +325,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
   const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
   const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
   const refAreaRightRef = useRef<number | null>(null)
-  const [zoomStack, setZoomStack] = useState<Array<[number, number]>>([])
+  const [zoomStack, setZoomStack] = useState<Array<[number, number]>>(initialParams.zoom ?? [])
   const [sortMode, setSortMode] = useState<SortMode>(initialParams.sortMode)
 
   const filtered = filterSolves(solves, solveFilter)
@@ -363,12 +363,30 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     }, new Set<string>())
   )
 
-  // Reset zoom when tab or window changes
-  useEffect(() => {
-    setZoomStack([])
-    setRefAreaLeft(null)
-    setRefAreaRight(null)
-  }, [windowSize, sortMode])
+  // Reset zoom at the user-action boundary (handlers below) rather than in an
+  // effect. A `useEffect` keyed on [windowSize, sortMode] fires on mount and on
+  // StrictMode's simulated remount, wiping `initialParams.zoom` hydrated from
+  // the URL.
+  const changeWindowSize = useCallback((next: WindowSize) => {
+    setWindowSize(prev => {
+      if (prev !== next) {
+        setZoomStack([])
+        setRefAreaLeft(null)
+        setRefAreaRight(null)
+      }
+      return next
+    })
+  }, [])
+  const changeSortMode = useCallback((next: SortMode) => {
+    setSortMode(prev => {
+      if (prev !== next) {
+        setZoomStack([])
+        setRefAreaLeft(null)
+        setRefAreaRight(null)
+      }
+      return next
+    })
+  }, [])
 
   // Sync URL hash
   useEffect(() => {
@@ -385,6 +403,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
       ttotal: activeTotalTypes,
       tphase: activePhaseTypes,
     })
+    if (zoomStack.length > 0) params.set('zoom', serializeZoomStack(zoomStack))
     const url = `${window.location.pathname}${window.location.search}#trends?${params.toString()}`
     if (isFirstMountRef.current) {
       history.pushState(null, '', url)
@@ -392,7 +411,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
     } else {
       history.replaceState(null, '', url)
     }
-  }, [solveFilter.method, solveFilter.driver, tab, windowSize, sortMode, grouped, totalToggle, phaseToggle, detailOpen])
+  }, [solveFilter.method, solveFilter.driver, tab, windowSize, sortMode, grouped, totalToggle, phaseToggle, detailOpen, zoomStack])
 
   const windowOptions: Array<{ label: string; value: WindowSize }> = [
     { label: '25', value: 25 },
@@ -564,7 +583,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
             <span style={{ color: '#555', fontSize: 11 }}>Sort</span>
             <select
               value={sortMode}
-              onChange={e => setSortMode(e.target.value as SortMode)}
+              onChange={e => changeSortMode(e.target.value as SortMode)}
               style={{
                 background: 'transparent',
                 border: '1px solid #333',
@@ -605,7 +624,7 @@ export function TrendsModal({ solves, solveFilter, updateSolveFilter, onSelectSo
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
             {windowOptions.map(opt => (
-              <button key={opt.label} onClick={() => setWindowSize(opt.value)} style={btnStyle(windowSize === opt.value)}>
+              <button key={opt.label} onClick={() => changeWindowSize(opt.value)} style={btnStyle(windowSize === opt.value)}>
                 {opt.label}
               </button>
             ))}
