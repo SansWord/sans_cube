@@ -71,6 +71,14 @@ export function buildStatsData(solves: SolveRecord[], sortMode: SortMode): Stats
   }))
 }
 
+export function windowStats(
+  indexed: StatsSolvePoint[],
+  windowSize: number | 'all',
+): StatsSolvePoint[] {
+  if (windowSize === 'all') return indexed
+  return indexed.slice(-windowSize)
+}
+
 export function buildTotalData(windowed: SolveRecord[]): TotalDataPoint[] {
   const execs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.executionMs, 0))
   const recogs = windowed.map(s => s.phases.reduce((sum, p) => sum + p.recognitionMs, 0))
