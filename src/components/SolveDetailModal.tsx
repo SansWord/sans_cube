@@ -294,7 +294,26 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
       }}>
         {/* Header */}
         <div className="solve-detail-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontWeight: 'bold', fontSize: 16 }}>{localSolve.isExample ? 'Example Solve' : `Solve #${localSolve?.seq ?? localSolve.id}`}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: 'bold', fontSize: 16 }}>
+              {localSolve.isExample ? 'Example Solve' : `Solve #${localSolve?.seq ?? localSolve.id}`}
+            </span>
+            {localSolve.importedFrom && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '2px 8px',
+                background: '#1a2a3a',
+                border: '1px solid #2a4a6a',
+                borderRadius: 10,
+                color: '#6ab0e8',
+                fontSize: 10,
+                fontWeight: 'normal',
+              }}>
+                Imported from {localSolve.importedFrom.source}
+              </span>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {localSolve.isExample && (
               <a

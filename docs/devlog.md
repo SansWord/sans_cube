@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.28.0](#v1280--import-source-badge-2026-04-22-1701) | "Imported from {source}" pill in `SolveDetailModal` header — conditional render gated on `importedFrom`; static provenance label (no link / tooltip); two component tests with `CubeCanvas` stubbed; docs + manual QA updated |
 | [v1.27.0](#v1270--resequence-scope-panel-2026-04-21-1248) | Resequence scope panel in debug mode — previews total count, first-mismatch cursor, renumber count before committing; tail-only semantics; `<DebugPanel>` shell extracted from `<RecomputePhasesPanel>` |
 | [v1.26.0](#v1260--shared-solve-store-2026-04-21) | Module-level `solveStore` singleton replaces `useSolveHistory`; zero Firestore re-reads on timer/debug toggles; chunked `addMany`; `Refresh solves` button |
 | [v1.25.0](#v1250--bulk-recompute-phases-2026-04-20-2119) | Bulk recompute phases debug panel — dry-run scan + commit only changed solves; single mount that branches on cloud-sync state; chunked `Promise.all(setDoc)` for cloud writes; clickable solve ids, sample filtered to turn-count diffs, batch-0 progress, optimized renumber |
@@ -60,6 +61,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.28.0 — Import source badge (2026-04-22 17:01)
+
+**Review:** complete
+**Design docs:**
+- Import source badge: [Spec](superpowers/specs/2026-04-22-import-source-badge-design.md) [Plan](superpowers/plans/2026-04-22-import-source-badge.md)
+
+**What was built:**
+- New "Imported from {source}" pill in `SolveDetailModal`'s header — gated on `localSolve.importedFrom`, renders next to the `Solve #N` / "Example Solve" title
+- Title span wrapped in a flex container so the pill sits inline with the title; outer `solve-detail-header` `space-between` row is untouched (LinkedIn pill + close button stay on the right)
+- Muted blue palette (`#1a2a3a` bg, `#2a4a6a` border, `#6ab0e8` text) distinguishes provenance info from warning/error hues used elsewhere in the header
+- Two component tests in `tests/components/SolveDetailModal.test.tsx` — with and without `importedFrom` — mock `CubeCanvas` so jsdom doesn't try to initialize WebGL
+- Docs caught up in the same cycle: `docs/import-data.md` caveat replaced, `docs/ui-architecture.md` note appended, `docs/manual-test-checklist.md` gained a `4e. Import badge` subsection
+
+**Key technical learnings:**
+- `[note]` In jsdom, Three.js blows up on module load when `CubeRenderer` instantiates a WebGL context. Mocking `CubeCanvas` to a plain stub short-circuits the renderer-dependent effects cleanly — no need to mock Three.js itself
+- `[note]` When narrowing an optional object inside JSX via `{obj && (<...>{obj.field}</...>)}`, TypeScript narrows `obj` correctly inside the render branch — no `!` assertion or `?.` needed
+
+**Process learnings:**
+- `[insight]` For a small UI-only change that's really a single conditional `<span>`, the spec + plan + review flow still earned its keep: spec pinned the exact style values, plan made them byte-for-byte reproducible, and the code reviewer caught one minor test-tightening opportunity. For changes this small the overhead is noticeable relative to the code, but the artifacts compound — the style table and placement rule are now reference docs for any future header-pill additions
 
 ---
 

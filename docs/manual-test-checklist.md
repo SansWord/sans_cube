@@ -100,6 +100,13 @@
 - [ ] Paste `#solve-N` URL → modal opens on that solve (after page load)
 - [ ] With cloud sync ON: paste `#solve-N` → modal opens after solves load (not blank)
 
+### 4e. Import badge
+
+- [ ] Open an imported solve (one with `importedFrom` set, e.g. an acubemy-imported solve) → pill reads "Imported from acubemy" next to the `Solve #N` title
+- [ ] Open a natively-recorded solve → no Imported pill
+- [ ] Open the example solve → no Imported pill (LinkedIn "Built by SansWord" pill on the right side is unchanged)
+- [ ] Open a shared imported solve via `#shared-{shareId}` → pill still renders in read-only mode
+
 ---
 
 ## 5. Cloud Sync (Firebase)
