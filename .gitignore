@@ -32,3 +32,6 @@ dist-ssr
 
 example/
 resume/
+
+# Private solve data (contains device hardware identifiers)
+articles/data_input/
