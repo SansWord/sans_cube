@@ -6,6 +6,7 @@ A record of what was built and what was learned, especially around co-working wi
 
 | Version | What shipped |
 |---|---|
+| [v1.31.0](#v1310--public-sharing-without-cloud-sync-2026-05-01-1409) | Share any solve without signing in — anonymous Firebase auth provisioned silently on first share; anon users blocked from cloud sync; visible error on share/unshare failure |
 | [v1.30.1](#v1301--totaltoggle-url-restore-fix-2026-04-23-1208) | Fix: `TrendsModal` restores `totalToggle` from `#trends?ttotal=…` URL — one-line wiring gap at `TrendsModal.tsx:322` (was hardcoded `{exec:false,recog:false,total:true}`); spotted during v1.29.0 review; filed `## Testing` backlog for a `TrendsModal` URL round-trip test scaffold |
 | [v1.30.0](#v1300--trends-zoom-cross-filter-persistence-2026-04-23-1152) | Zoom survives method/driver filter changes — four-step pipeline (`buildStatsData→filterStats→windowStats→build*`) assigns stable xIndex before filtering; x-axis domain locks to zoom range; tooltip shows `#N` (xIndex position) |
 | [v1.29.1](#v1291--trends-zoom-url-persistence--dev-handle-2026-04-23-1015) | Trends chart zoom survives ESC-from-solve, reload, and URL paste — encoded as `zoom=a,b\|c,d` in the `#trends` hash; reset moved from effect to user-action handlers to avoid StrictMode double-mount wipe; `window.__solves` dev handle |
@@ -65,6 +66,28 @@ A record of what was built and what was learned, especially around co-working wi
 | `[note]` | Useful context, well-documented — good to have written down but you'd find it in the docs |
 | `[insight]` | Non-obvious; meaningfully changes how you design or debug something |
 | `[gotcha]` | A specific trap that bit you; high risk of biting you again — bookmark this |
+
+---
+
+## v1.31.0 — Public sharing without cloud sync (2026-05-01 14:09)
+
+**Review:** not yet
+**Design docs:**
+- Public sharing without cloud sync: [Spec](superpowers/specs/2026-05-01-public-sharing-design.md) [Plan](superpowers/plans/2026-05-01-public-sharing.md)
+
+**What was built:**
+- Share button now works for every user — no Google sign-in required. On first share, `useCloudSync.signInAnonymously()` calls Firebase `signInAnonymously()` and returns the anonymous `User`. `TimerScreen.onShare` uses the anonymous UID if no account UID is present; falls through to the existing `shareSolve()` Firestore call unchanged.
+- `useCloudSync`: added `signInAnonymously` method; `onAuthStateChanged` now treats `u.isAnonymous` the same as `!u` — forces `enabled=false` and clears `CLOUD_SYNC_ENABLED` in localStorage. Anonymous users cannot enable cloud sync.
+- `CloudConfig` interface extended with `signInAnonymously: () => Promise<User>`. `App.tsx` wires it through; `useCloudNow` guards against anon (`&& !cloudSync.user.isAnonymous`); debug panel branch updated so anon users see "Sign in with Google" instead of "Signed in as undefined".
+- `SolveDetailModal`: share/unshare errors now show a visible 4-second error message ("Share failed — please try again." / "Could not remove share — please try again.") instead of silently resetting to idle.
+- 3 new test files: `tests/hooks/useCloudSync.test.ts` (3 tests — anon forces enabled=false, Google user unaffected, `signInAnonymously` method), `tests/components/TimerScreen.share.test.ts` (2 tests — pure logic for anon provisioning path), `tests/components/App.cloudSync.test.tsx` (2 tests — debug panel anon vs Google user).
+- Docs: `firebase-cloud-sync.md` — new "Anonymous auth for sharing" section with capabilities, caveats, and future-work note. `storage.md` — IndexedDB anonymous session note. `manual-test-checklist.md` — 6-step v1.31.0 QA section.
+- **Pre-deploy step required:** Enable Anonymous Authentication in Firebase Console → Authentication → Sign-in method. The `auth/admin-restricted-operation` error is thrown if this is skipped.
+
+**Key technical learnings:**
+- `[gotcha]` Firebase Anonymous Authentication is disabled by default in new projects. Calling `signInAnonymously()` without enabling it in the Firebase Console throws `auth/admin-restricted-operation` — same error class as other admin-only operations, so it looks like a permissions bug rather than a config gap. Always enable the sign-in method in the Console before testing.
+- `[insight]` The anonymous UID is persisted by Firebase in IndexedDB (`firebaseLocalStorageDb`), not in the app's own localStorage keys. This means the session survives page reloads in the same browser transparently — no app-level session management needed. But it also means clearing site data kills both the anonymous session and localStorage solves together, which is acceptable (the user can't unshare, but an error toast handles that case).
+- `[note]` Worktree double-counting in vitest: when running tests from the main checkout, vitest scans the entire project tree including `.worktrees/` subdirectories. The default include pattern (`**/*.test.*`) picks up all test files there too, doubling the count. Always remove the worktree before running the final post-merge test check.
 
 ---
 
