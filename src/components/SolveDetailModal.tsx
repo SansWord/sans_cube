@@ -80,6 +80,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
   const [copiedExample, setCopiedExample] = useState(false)
   const [shareState, setShareState] = useState<ShareState>('idle')
   const [shareCopied, setShareCopied] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
   const [migrationDebugLog, setMigrationDebugLog] = useState<string[] | null>(null)
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
@@ -171,6 +172,8 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
     } catch (e) {
       console.error('[share] onShare failed:', e)
       setShareState('idle')
+      setShareError('Share failed — please try again.')
+      setTimeout(() => setShareError(null), 4000)
       return
     }
     const updated = { ...localSolve, shareId }
@@ -193,7 +196,8 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
       setLocalSolve(updated)
       await onUpdate(updated)
     } catch {
-      // silently revert
+      setShareError('Could not remove share — please try again.')
+      setTimeout(() => setShareError(null), 4000)
     } finally {
       setShareState('idle')
     }
@@ -764,6 +768,7 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
 
             {/* Share row — only shown when onShare is provided */}
             {onShare && (
+              <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {shareUrl ? (
                   <>
@@ -820,6 +825,10 @@ export function SolveDetailModal({ solve, onClose, onDelete, onUseScramble, onUp
                   </button>
                 )}
               </div>
+              {shareError && (
+                <div style={{ fontSize: 11, color: '#e74c3c', marginTop: 2 }}>{shareError}</div>
+              )}
+              </>
             )}
 
             {/* Delete / confirm-delete row */}
