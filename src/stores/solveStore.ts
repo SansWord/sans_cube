@@ -18,6 +18,7 @@ export interface CloudConfig {
   enabled: boolean
   user: User | null
   authLoading?: boolean
+  signInAnonymously: () => Promise<User>
 }
 
 export interface AddManyResult {
