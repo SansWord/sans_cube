@@ -141,6 +141,19 @@ There is no in-app admin view. To inspect any user's data, use the [Firebase Con
 
 Firebase assigns each user a permanent UID when they sign in with Google. The same Google account always gets the same UID across all devices. You never generate or manage UIDs — `onAuthStateChanged` returns the signed-in user object and `user.uid` is read from it.
 
+## Anonymous auth for sharing
+
+When a user who has never signed in clicks Share, the app calls Firebase's `signInAnonymously()` to obtain a UID without a sign-in popup. The anonymous session is persisted by Firebase in IndexedDB (`firebaseLocalStorageDb`) and survives page reloads in the same browser.
+
+**What anonymous users can and cannot do:**
+- **Can share** a solve — the anonymous UID satisfies the Firestore security rule `request.auth.uid`.
+- **Cannot use cloud sync** for solves — anonymous users are treated the same as signed-out users; `enabled` is forced `false` and solves stay in localStorage.
+- **Can unshare from the same browser** — the anonymous UID is stable in IndexedDB across reloads; a different browser or incognito mode creates a fresh UID and cannot unshare.
+
+**Caveats:**
+- If the user clears site data, both the IndexedDB anonymous session and localStorage solves are gone together. The share URL still resolves on Firestore, but the user cannot unshare it (existing error toast is shown).
+- Signing in with Google after an anonymous share assigns a new Google UID. The share registry doc remains under the old anonymous UID; Unshare fails with a Firestore rule rejection (existing error toast is shown). A future fix will stamp `shareOwnerUid` on the localStorage record and hide the Unshare button when UIDs don't match — see `future.md` under `## firebase`.
+
 ## Local development
 
 `npm run dev` works out of the box. Firebase Auth automatically whitelists `localhost`, so Google Sign-In works without any extra configuration. Ensure `.env.local` exists with the Firebase config values before starting the dev server.

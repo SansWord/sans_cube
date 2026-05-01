@@ -86,6 +86,8 @@ Private ownership registry. Empty document — its existence proves the authenti
 | Method display filter | `sans_cube_method_filter` | — | localStorage only. Not synced. |
 | Driver display filter | `sans_cube_driver_filter` | — | localStorage only. Not synced. |
 | Cloud sync enabled | `sans_cube_cloud_sync_enabled` | — | localStorage only. Firebase Auth session is managed by the Firebase SDK independently. |
+
+**Firebase anonymous auth session:** Firebase persists the anonymous session in browser IndexedDB (`firebaseLocalStorageDb`). The app does not store the anonymous UID in its own localStorage keys. The session auto-restores on reload in the same browser.
 | Cube MAC address | `sans_cube_mac_address` | — | localStorage only. Not synced. Only needed on macOS. |
 
 ### Sync rules for the seq counter

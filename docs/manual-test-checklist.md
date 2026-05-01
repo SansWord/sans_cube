@@ -120,6 +120,36 @@
 
 ---
 
+## 5b. Share without cloud sync (v1.31.0)
+
+1. **Fresh browser, never signed in → Share → URL works**
+   - Open the app in a fresh browser profile (no existing state) or private/incognito window
+   - Click Share on any solve
+   - Verify the share URL appears; paste it in another tab — the solve loads
+
+2. **After anonymous share, Unshare removes the link**
+   - In the same browser as step 1, click Unshare on the shared solve
+   - Verify the URL no longer resolves (shows "Solve not found")
+
+3. **After anonymous share, page reload restores shared state**
+   - After step 1, reload the page
+   - Open the same solve — verify it still shows the Unshare button (Firebase restores the anonymous session from IndexedDB)
+
+4. **Debug panel shows "Not signed in" after anonymous auth provisioning**
+   - After step 1, open debug mode (`#debug`)
+   - Verify the Cloud Sync panel shows "Not signed in" and "Sign in with Google" — NOT "Signed in as undefined"
+
+5. **Shared URL works in a different browser (read-only)**
+   - Open the share URL from step 1 in a different browser (no account, no state)
+   - Verify the solve loads in read-only mode
+
+6. **Google sign-in share/unshare flow unchanged**
+   - Sign in with Google, enable cloud sync
+   - Share a solve → URL appears → paste in another tab → loads
+   - Unshare → URL no longer resolves
+
+---
+
 ## 6. Scramble Tracker — Normal Flow
 
 - [ ] Complete a CW step correctly → step turns green, advances to next
