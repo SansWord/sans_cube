@@ -43,7 +43,7 @@ Optionally: one-line reason.
 
 ---
 
-## Strategy matrix (N=5)
+## Strategy matrix (N=6)
 
 Model used per phase, with cost. Bold = the model we were deliberately testing for that feature.
 
@@ -54,14 +54,15 @@ Model used per phase, with cost. Bold = the model we were deliberately testing f
 | resequence-panel | v1.27.0 | Opus $19.27 | Sonnet $1.67 | Sonnet $10.43 | Sonnet $3.53 | $34.90 |
 | display-import-source | v1.28.0 | Opus $23.18 | Opus $10.88 | Opus $13.66 | Opus $12.01 | $59.73 |
 | sort-by-timestamp | v1.29.0 | Opus $34.74 | Sonnet $2.49 | Sonnet $7.99 | Sonnet $6.48 | $51.70 |
+| public-sharing | v1.31.0 | Opus $20.78 *(pre-framed)* | Sonnet $3.57 | Sonnet $5.60 | — (skipped) | $29.95 |
 
 ### Cell coverage
 
 | Phase | Opus | Sonnet | Haiku |
 |---|---|---|---|
-| Design | 5 | **0** | 0 |
-| Plan | 3 | 2 | 0 |
-| Implement | 2 | 3 | 0 (main) |
+| Design | 6 | **0** | 0 |
+| Plan | 3 | 3 | 0 |
+| Implement | 2 | 4 | 0 (main) |
 | Review | 1 | 3 | 0 |
 
 **The empty cell is the experiment.** Every design ran Opus — the primary question ("is Opus necessary for design?") cannot be answered with current data.
@@ -77,6 +78,7 @@ Model used per phase, with cost. Bold = the model we were deliberately testing f
 | resequence-panel | ✅ | ✅ (none) | ✅ | ✅ | _ | _ |
 | display-import-source | ✅ | ✅ (none) | ✅ | ✅ | _ | _ |
 | sort-by-timestamp | ✅ | ✅ (none) | ✅ | ✅ | _ | _ |
+| public-sharing | ✅ | ⏳ pending (shipped 2026-05-01; soak ends 2026-05-08) | ✅ | — (no review session) | _ | _ |
 
 *Acubemy shipped at v1.23.0 and the window to v1.26.0 spans 3 intermediate versions (v1.24.x, v1.25.x) with multiple "fix:" commits. Some touch solveStore (unrelated to acubemy's import pipeline); others are in the acubemy surface. Needs manual attribution to classify cleanly.
 
@@ -89,10 +91,11 @@ Model used per phase, with cost. Bold = the model we were deliberately testing f
 | Question | Status | Evidence | Confidence |
 |---|---|---|---|
 | Is Opus necessary for design? | **Unanswered** | N=0 Sonnet-design points | N/A |
-| Is Sonnet sufficient for plan? | Provisional yes | N=2 Sonnet plans shipped; 7–10% of design cost | Moderate |
-| Is Sonnet sufficient for implement? | Provisional yes | N=3 Sonnet implements shipped; ~5× cheaper per turn | Moderate-high |
+| Is Sonnet sufficient for plan? | Provisional yes | N=3 Sonnet plans shipped; 7–17% of design cost (band relaxed by public-sharing) | Moderate |
+| Is Sonnet sufficient for implement? | Provisional yes | N=4 Sonnet implements shipped; ~5× cheaper per turn | Moderate-high |
 | Is Sonnet sufficient for review? | Provisional yes | N=3 Sonnet reviews shipped; Opus-review ~3× pricier per token for no measured benefit | Moderate |
-| Is the "Opus design floor ~100 turns" real? | Confirmed for small-medium features | N=3 small-medium features at 86/97/102/104 turns | High |
+| Is the "Opus design floor ~100 turns" real? | Soft band, not hard floor | N=4 small-medium features at 86/87/102/104 turns; pre-framing (public-sharing) trims by ~15% but doesn't collapse it | High |
+| Does pre-framing the design prompt cut Opus design cost? | Provisional: modestly | N=1 pre-framed run (public-sharing): 87 turns / $20.78 vs short-prompt 102–104 / $23–35 — ~15% turn reduction, ~10% cost reduction | Low (single point) |
 
 The strategy recommendation (Opus-D, Sonnet P+I+R) rests on the middle three rows. It's defensible but not *proven* — all three rely on "shipped cleanly" as the quality bar, not on measured quality.
 
@@ -104,7 +107,8 @@ Strategy is chosen **before** the feature starts, not by feel. Interleave experi
 
 | Slot | Feature | Planned strategy | Reason | Kill switch |
 |---|---|---|---|---|
-| Slot 0 (next) | **Ao5 / Ao12 for phases** (`future.md` Statistic section) | **Sonnet D, Sonnet P+I+R** | First Sonnet-design data point. Pre-scoped in [`sonnet-design-experiment-prep.md`](sonnet-design-experiment-prep.md) with 4 enumerated decisions. Sibling anchor: resequence-panel (86 Opus design turns / $19). | See below |
+| ~~Slot 0 (skipped)~~ | ~~Ao5 / Ao12 for phases~~ | ~~Sonnet D, Sonnet P+I+R~~ | **Slot deferred — public-sharing (v1.31.0) shipped instead with Opus D, Sonnet P+I (no review).** That run did *not* consume the Sonnet-design slot. The Ao5/Ao12 Sonnet-design experiment is still pending. | See below |
+| Slot 0 (next) | **Ao5 / Ao12 for phases** (`future.md` Statistic section) | **Sonnet D, Sonnet P+I+R** | First Sonnet-design data point. Pre-scoped in [`sonnet-design-experiment-prep.md`](sonnet-design-experiment-prep.md) with 4 enumerated decisions. Sibling anchor: resequence-panel (86 Opus design turns / $19) and now public-sharing (87 Opus design turns / $20.78 with pre-framing). | See below |
 | Slot 1 | TBD | Opus D, Sonnet P+I+R (current recommendation) | Control: another data point for the recommended strategy, to detect drift. | N/A |
 | Slot 2 | TBD (candidate: Save a shared solve into own history) | **Sonnet D, Sonnet P+I+R** | Replication of Slot 0, *only if Slot 0 graded ≥ C*. | See below |
 | Slot 3 | TBD | Decide based on Slots 0 & 2 | If both Sonnet-design slots graded ≥ B: push to all-Sonnet. If D or F: return to current recommendation and stop the Sonnet-design branch. | — |

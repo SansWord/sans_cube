@@ -2,7 +2,7 @@
 
 > **This is the living document** that accumulates per-feature cost data points and keeps the model-selection recommendation current. When a new feature ships, append a data point to the **"Data points"** section at the bottom and, if the new evidence shifts the recommendation, update the block below.
 
-## Current Recommendation (as of 2026-04-23, N=5)
+## Current Recommendation (as of 2026-05-01, N=6)
 
 | Phase | Model | Rationale |
 |-------|-------|-----------|
@@ -13,7 +13,7 @@
 
 **Planning heuristic:** total feature cost ≈ **1.5–1.8× design cost** under the recommended strategy. Range reflects implementation size: focused single-feature work lands near 1.5×; medium-complexity features near 1.8×. Design cost is still the best single predictor of total cost.
 
-**Features tracked:** acubemy-import · storage-module · resequence-panel · display-import-source · sort-by-timestamp — see [Data points](#data-points) at the bottom of this article and the [cost analysis index](cost-analysis-index.md).
+**Features tracked:** acubemy-import · storage-module · resequence-panel · display-import-source · sort-by-timestamp · public-sharing — see [Data points](#data-points) at the bottom of this article and the [cost analysis index](cost-analysis-index.md).
 
 ---
 
@@ -335,4 +335,51 @@ sort-by-timestamp's design session ran on a standard short prompt ("let's design
 
 ---
 
-*Related: [acubemy vs storage-module comparison](cost-comparison-acubemy-vs-storage-module.md) · [session quality analysis](session-analysis-model-quality.md) · [turns as second complexity dimension](cost-comparison-with-turns.md) · [acubemy-import cost breakdown](cost-acubemy-import.md) · [storage-module cost breakdown](cost-storage-module.md) · [resequence-panel cost breakdown](cost-operation-resequence-panel.md) · [display-import-source cost breakdown](cost-display-import-source.md) · [sort-by-timestamp cost breakdown](cost-sort-timestamp.md)*
+### public-sharing — 2026-05-01 (v1.31.0)
+
+A sixth feature — **public-sharing** (v1.31.0) — ran a **3-phase variant** of the recommended strategy: Opus design, Sonnet plan, Sonnet implement, **no review session**. It's also the first feature in the dataset whose design session ran on a **pre-framed prompt** (a `handoff.md` doc with all design decisions enumerated). Total: **$29.95** across 343 turns and ~61m engaged — the cheapest fully-tracked feature so far.
+
+### Strategy
+
+| Feature | Design | Plan | Implement | Review |
+|---------|--------|------|-----------|--------|
+| public-sharing | Opus 4.7 (pre-framed) | Sonnet 4.6 | Sonnet 4.6 | — (skipped) |
+
+### Phase costs
+
+| Phase | Cost | Turns | Engaged |
+|-------|------|------:|---------|
+| Design | $20.78 | 87 | 30m 10s |
+| Plan | $3.57 | 64 | 14m 18s |
+| Implement | $5.60 | 192 | 16m 30s |
+| **Total (3 phases)** | **$29.95** | **343** | **~61m** |
+
+### What changed
+
+**1. Pre-framing trims the Opus design turn band by ~15%, not by ~half.**
+
+This is the first deliberate pre-framed Opus-design data point. The user supplied `handoff.md` — a full design doc covering goal, approach, accepted tradeoffs, decisions deferred, and a 4-section implementation sketch. The brainstorming session formalized this into the committed spec rather than exploring the design space.
+
+Result: **87 design turns / $20.78** vs the short-prompt small-medium band of 102–104 turns / $23–35 (display-import-source, sort-by-timestamp). Pre-framing trimmed the bottom of the band by ~15% on turns and ~10% on cost, but did not collapse it. Opus still walks through alternatives, asks clarifying questions, and writes the spec carefully even when handed a complete plan.
+
+This refines the "Opus deliberation floor ~100 turns" claim: the floor is not strictly 100 turns; it's a soft band of ~85–105 that pre-framing can shave but not eliminate. The model-driven nature of the floor is intact — the floor moves a little with input quality, but it doesn't move much.
+
+**2. Sonnet plan/design ratio is wider than the prior 7–10% band.**
+
+Prior Sonnet plans landed at 7.2% (sort-by-timestamp) and 8.7% (resequence). public-sharing's Sonnet plan came in at **17.2%** ($3.57 / $20.78) — over double the prior upper bound. 64 plan turns / 14m engaged is the highest Sonnet plan in the dataset. Likely cause: the implementation surface spans 4 files plus 3 new test files, and the plan had to decompose anonymous-auth wiring across them. Sonnet plan still cheap absolutely ($3.57), but the 7–10% band needs to relax to **7–17%** with N=3.
+
+**3. Total/Design ratio holds in the 1.4–1.8× band for recommended-strategy features.**
+
+public-sharing landed at 1.44× design (3 phases). Adding a hypothetical Sonnet review at typical 11.9–18.7% of design would push the ratio to ~1.56–1.63×, comfortably inside the 1.5–1.8× heuristic band. The 3-phase ratio is a useful *lower-bound* anchor: if you skip review, expect ~1.3–1.5× design rather than 1.5–1.8×.
+
+### What didn't change
+
+- **Recommended strategy is unchanged** — the 3 phases that ran matched the recommendation (Opus design + Sonnet plan + Sonnet implement) and shipped a $30 feature. Skipping review is a separate cost-saving choice; it's not a recommendation change. (Whether the no-review choice was wise is a different question — the 7-day soak window doesn't expire until 2026-05-08, so we don't know yet whether review would have caught anything.)
+- **Sonnet implement is the cheapest phase per token,** even on a multi-file change. 12.75M tokens / $5.60 / 16m engaged / 192 turns / 0 subagents. The "Sonnet for implement" recommendation continues to hold across N=4 implements.
+- **Design cost dominates total cost.** Design was $20.78 of $29.95 (69%) — even higher than sort-by-timestamp's 67% share. On small features, design is where the money goes regardless of pre-framing.
+
+*N=6 features. Sonnet plan/design band relaxed to 7–17%. Opus design turn floor relaxed to a soft 85–105 band that pre-framing trims modestly. Review-skip is now an observed pattern (N=2 with acubemy-import); cost effect is straightforward subtraction.*
+
+---
+
+*Related: [acubemy vs storage-module comparison](cost-comparison-acubemy-vs-storage-module.md) · [session quality analysis](session-analysis-model-quality.md) · [turns as second complexity dimension](cost-comparison-with-turns.md) · [acubemy-import cost breakdown](cost-acubemy-import.md) · [storage-module cost breakdown](cost-storage-module.md) · [resequence-panel cost breakdown](cost-operation-resequence-panel.md) · [display-import-source cost breakdown](cost-display-import-source.md) · [sort-by-timestamp cost breakdown](cost-sort-timestamp.md) · [public-sharing cost breakdown](cost-public-sharing.md)*
