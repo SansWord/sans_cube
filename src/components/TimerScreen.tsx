@@ -519,14 +519,19 @@ export function TimerScreen({
           onDelete={(id) => { deleteSolve(id); setSelectedSolve(null) }}
           onUseScramble={(s) => { loadScramble(s); setSelectedSolve(null) }}
           onUpdate={async (updated) => { await updateSolve(updated) }}
-          onShare={cloudConfig?.enabled && cloudConfig?.user
-            ? async (solve) => shareSolve(cloudConfig.user!.uid, solve)
-            : undefined
-          }
-          onUnshare={cloudConfig?.enabled && cloudConfig?.user
-            ? async (shareId) => unshareSolve(cloudConfig.user!.uid, shareId)
-            : undefined
-          }
+          onShare={async (solve) => {
+            let uid = cloudConfig?.user?.uid
+            if (!uid) {
+              if (!cloudConfig?.signInAnonymously) throw new Error('cloud config unavailable')
+              const anon = await cloudConfig.signInAnonymously()
+              uid = anon.uid
+            }
+            return shareSolve(uid, solve)
+          }}
+          onUnshare={async (shareId) => {
+            if (!cloudConfig?.user) throw new Error('not signed in')
+            await unshareSolve(cloudConfig.user.uid, shareId)
+          }}
         />
       )}
 

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth'
+import {
+  onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut,
+  signInAnonymously as fbSignInAnonymously,
+} from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { auth, googleProvider } from '../services/firebase'
 import { loadFromStorage, saveToStorage } from '../utils/storage'
@@ -14,6 +17,7 @@ export interface CloudSyncState {
   signOut: () => Promise<void>
   enable: () => void
   disable: () => void
+  signInAnonymously: () => Promise<User>
 }
 
 export function useCloudSync(): CloudSyncState {
@@ -28,7 +32,7 @@ export function useCloudSync(): CloudSyncState {
       setUser(u)
       setAuthLoading(false)
       setAnalyticsUser(u ? u.uid : null)
-      if (!u) {
+      if (!u || u.isAnonymous) {
         setEnabled(false)
         saveToStorage(STORAGE_KEYS.CLOUD_SYNC_ENABLED, false)
       }
@@ -55,5 +59,10 @@ export function useCloudSync(): CloudSyncState {
     saveToStorage(STORAGE_KEYS.CLOUD_SYNC_ENABLED, false)
   }, [])
 
-  return { enabled, user, authLoading, signIn, signOut, enable, disable }
+  const signInAnonymously = useCallback(async (): Promise<User> => {
+    const cred = await fbSignInAnonymously(auth)
+    return cred.user
+  }, [])
+
+  return { enabled, user, authLoading, signIn, signOut, enable, disable, signInAnonymously }
 }

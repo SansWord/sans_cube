@@ -57,7 +57,7 @@ export default function App() {
   const [battery, setBattery] = useState<number | null>(null)
   const storeStatus = useSolveStore().status
   const cloudSync = useCloudSync()
-  const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading }
+  const cloudConfig = { enabled: cloudSync.enabled, user: cloudSync.user, authLoading: cloudSync.authLoading, signInAnonymously: cloudSync.signInAnonymously }
 
   useEffect(() => {
     solveStore.configure(cloudConfig)
@@ -112,7 +112,7 @@ export default function App() {
 
   const handleAcubemyCommit = async (drafts: SolveRecord[]): Promise<void> => {
     const current = solveStore.getSnapshot().solves
-    const useCloudNow = !!(cloudSync.enabled && cloudSync.user)
+    const useCloudNow = !!(cloudSync.enabled && cloudSync.user && !cloudSync.user.isAnonymous)
     const uid = cloudSync.user?.uid ?? null
 
     const usedDates = new Set(current.map(s => s.date))
@@ -270,7 +270,7 @@ export default function App() {
 
             {cloudSync.authLoading ? (
               <div style={{ color: '#666' }}>Loading auth...</div>
-            ) : cloudSync.user ? (
+            ) : cloudSync.user && !cloudSync.user.isAnonymous ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ color: '#4c4' }}>Signed in as {cloudSync.user.email}</div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
